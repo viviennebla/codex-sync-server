@@ -1,0 +1,20 @@
+[Unit]
+Description=Codex Usage Dashboard Sync Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/codex-sync-server
+EnvironmentFile=/root/codex-sync-server/.env
+Environment=PORT=34777
+Environment=BIND=0.0.0.0
+Environment=STATE_DIR=/root/codex-sync-server/state
+ExecStart=/usr/local/bin/node /root/codex-sync-server/src/server.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/codex-sync.log
+StandardError=append:/var/log/codex-sync.log
+
+[Install]
+WantedBy=multi-user.target
