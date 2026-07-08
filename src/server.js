@@ -1,9 +1,12 @@
 import { createServer } from "node:http";
+import { readFile, readdir, mkdir, writeFile, rm } from "node:fs/promises";
+import { join, dirname } from "node:path";
 import { readDeviceStates, writeDeviceState, removeDeviceState } from "./state.js";
 
 const PORT = Number(process.env.PORT) || 34777;
 const BIND = process.env.BIND || "0.0.0.0";
 const STATE_DIR = process.env.STATE_DIR || "state";
+const SKILLS_DIR = process.env.SKILLS_DIR || "skills-store";
 const TOKEN = process.env.DASHBOARD_TOKEN || null;
 const STARTED_AT = Date.now();
 
@@ -56,6 +59,15 @@ function sendJson(res, status, data) {
 function sendError(res, status, message) {
   res.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   res.end(message);
+}
+
+async function readJson(path) {
+  try { return JSON.parse(await readFile(path, "utf8")); } catch { return null; }
+}
+
+async function writeJson(path, data) {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(data, null, 2), "utf8");
 }
 
 /* ── Routes ───────────────────────────────── */
@@ -147,6 +159,85 @@ const server = createServer(async (req, res) => {
         return;
       }
       sendJson(res, 200, device.snapshot);
+      return;
+    }
+
+    // ── GET /api/skills ── list all stored skills
+    if (method === "GET" && url.pathname === "/api/skills") {
+      const skills = [];
+      try {
+        const ents = await readdir(SKILLS_DIR, { withFileTypes: true });
+        for (const e of ents) {
+          if (!e.isDirectory()) continue;
+          const metaPath = join(SKILLS_DIR, e.name, "meta.json");
+          const meta = await readJson(metaPath);
+          if (meta) skills.push(meta);
+        }
+      } catch {}
+      sendJson(res, 200, skills);
+      return;
+    }
+
+    // ── POST /api/skills ── upload/update a skill
+    if (method === "POST" && url.pathname === "/api/skills") {
+      if (!checkAuth(req)) { sendError(res, 401, "Unauthorized"); return; }
+      const body = await readBody(req);
+      if (!body || !body.name || !body.files) {
+        sendError(res, 400, "Missing name or files");
+        return;
+      }
+      const skillDir = join(SKILLS_DIR, body.name);
+      await mkdir(skillDir, { recursive: true });
+      // Write skill files
+      for (const [filename, content] of Object.entries(body.files)) {
+        const filePath = join(skillDir, filename);
+        await mkdir(dirname(filePath), { recursive: true });
+        await writeFile(filePath, content, "utf8");
+      }
+      // Write metadata
+      const meta = {
+        name: body.name,
+        last_modified: body.last_modified || new Date().toISOString(),
+        sha256: body.sha256 || "",
+        device_id: body.device_id || "unknown",
+        file_count: Object.keys(body.files).length,
+      };
+      await writeJson(join(skillDir, "meta.json"), meta);
+      log("info", "skill stored", { name: body.name, device: meta.device_id });
+      sendJson(res, 200, { ok: true, name: body.name });
+      return;
+    }
+
+    // ── GET /api/skills/:name ── download a skill
+    if (method === "GET" && url.pathname.startsWith("/api/skills/")) {
+      const name = url.pathname.slice("/api/skills/".length);
+      if (!name) { sendError(res, 400, "Missing skill name"); return; }
+      const skillDir = join(SKILLS_DIR, name);
+      const files = {};
+      try {
+        const ents = await readdir(skillDir, { withFileTypes: true, recursive: true });
+        for (const e of ents) {
+          if (!e.isFile() || e.name === "meta.json") continue;
+          // Get relative path from skillDir
+          const relPath = e.path.replace(skillDir, "").replace(/^[/\\]/, "");
+          files[relPath] = await readFile(e.path, "utf8");
+        }
+      } catch { sendError(res, 404, `Skill "${name}" not found`); return; }
+      const meta = await readJson(join(skillDir, "meta.json")) || {};
+      sendJson(res, 200, { name, files, ...meta });
+      return;
+    }
+
+    // ── DELETE /api/skills/:name ── remove a skill
+    if (method === "DELETE" && url.pathname.startsWith("/api/skills/")) {
+      if (!checkAuth(req)) { sendError(res, 401, "Unauthorized"); return; }
+      const name = url.pathname.slice("/api/skills/".length);
+      if (!name) { sendError(res, 400, "Missing skill name"); return; }
+      try {
+        await rm(join(SKILLS_DIR, name), { recursive: true, force: true });
+        log("info", "skill removed", { name });
+        sendJson(res, 200, { ok: true, removed: name });
+      } catch { sendError(res, 404, `Skill "${name}" not found`); }
       return;
     }
 
