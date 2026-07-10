@@ -109,9 +109,13 @@ const server = createServer(async (req, res) => {
       }
       const deviceId = String(body.device_id).replace(/[^a-zA-Z0-9._-]/g, "_");
       const deviceName = body.device_name || deviceId;
-      await writeDeviceState(deviceId, deviceName, body.snapshot, STATE_DIR);
-      log("info", "push received", { device_id: deviceId, device_name: deviceName });
-      sendJson(res, 200, { ok: true, device_id: deviceId });
+      const result = await writeDeviceState(deviceId, deviceName, body.snapshot, STATE_DIR);
+      log("info", result.updated ? "push received" : "stale push ignored", {
+        device_id: deviceId,
+        device_name: deviceName,
+        reason: result.reason,
+      });
+      sendJson(res, 200, { ok: true, device_id: deviceId, ...result });
       return;
     }
 

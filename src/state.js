@@ -29,6 +29,20 @@ async function readJson(path) {
   }
 }
 
+function snapshotTime(snapshot) {
+  const value = Date.parse(snapshot?.generated_at || "");
+  return Number.isFinite(value) ? value : null;
+}
+
+export function shouldReplaceSnapshot(existing, incoming) {
+  if (!existing) return true;
+  const existingTime = snapshotTime(existing);
+  const incomingTime = snapshotTime(incoming);
+  if (incomingTime === null) return false;
+  if (existingTime === null) return true;
+  return incomingTime > existingTime;
+}
+
 /**
  * Scan the state directory and return all device snapshots.
  * Skips "latest.json" (reserved for local dashboard use).
@@ -76,6 +90,16 @@ export async function readDeviceStates(stateDir = "state") {
 export async function writeDeviceState(deviceId, deviceName, snapshot, stateDir = "state") {
   const safeId = String(deviceId).replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = join(stateDir, `${safeId}.json`);
+  const existing = await readJson(path);
+  if (!shouldReplaceSnapshot(existing, snapshot)) {
+    return {
+      deviceId: safeId,
+      path,
+      updated: false,
+      reason: "stored_snapshot_is_newer_or_incoming_timestamp_missing",
+      generatedAt: existing?.generated_at || null,
+    };
+  }
 
   const stored = {
     ...snapshot,
@@ -85,7 +109,7 @@ export async function writeDeviceState(deviceId, deviceName, snapshot, stateDir 
   };
 
   await writeJson(path, stored);
-  return { deviceId: safeId, path };
+  return { deviceId: safeId, path, updated: true, generatedAt: stored.generated_at || null };
 }
 
 /**
