@@ -2,13 +2,26 @@ import { createServer } from "node:http";
 import { createHash } from "node:crypto";
 import { readFile, readdir, mkdir, writeFile, rm } from "node:fs/promises";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { readDeviceStates, writeDeviceState, removeDeviceState } from "./state.js";
 import {
   authenticateInstallation,
   consumePairingCode,
   createPairingCode,
+  readDenglemaUser,
+  readDenglemaUsers,
+  readUserTotals,
+  upsertFeishuUser,
   upsertUsageSample,
 } from "./denglema-state.js";
+import {
+  clearSessionCookie,
+  createWebSession,
+  exchangeFeishuCode,
+  parseCookieHeader,
+  sessionCookie,
+  verifyWebSession,
+} from "./denglema-auth.js";
 
 const PORT = Number(process.env.PORT) || 34777;
 const BIND = process.env.BIND || "0.0.0.0";
@@ -17,6 +30,13 @@ const SKILLS_DIR = process.env.SKILLS_DIR || "skills-store";
 const SKILL_BUNDLE_FILE = "skills-bundle.json";
 const TOKEN = process.env.DASHBOARD_TOKEN || null;
 const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || "UTC";
+const DENGLEMA_BASE_URL = (process.env.DENGLEMA_BASE_URL || `http://${BIND}:${PORT}`).replace(/\/+$/, "");
+const FEISHU_APP_ID = process.env.FEISHU_APP_ID || "";
+const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET || "";
+const FEISHU_REDIRECT_URI = process.env.FEISHU_REDIRECT_URI || "";
+const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || "";
+const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 7 * 24 * 60 * 60;
+const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
 
 /* ── Logging ─────────────────────────────── */
@@ -45,6 +65,30 @@ function checkAuth(req) {
   return bearerToken(req) === TOKEN;
 }
 
+function requestIsSecure(req) {
+  return DENGLEMA_BASE_URL.startsWith("https://")
+    || String(req.headers["x-forwarded-proto"] || "").toLowerCase() === "https";
+}
+
+function currentDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DENGLEMA_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+async function webUserFromRequest(req) {
+  if (!DENGLEMA_SESSION_SECRET) return null;
+  const cookies = parseCookieHeader(req.headers.cookie || "");
+  const session = verifyWebSession(cookies.denglema_session, DENGLEMA_SESSION_SECRET);
+  if (!session?.user_id) return null;
+  return readDenglemaUser(session.user_id, STATE_DIR);
+}
+
 /* ── Helpers ──────────────────────────────── */
 
 function readBody(req) {
@@ -59,11 +103,12 @@ function readBody(req) {
   });
 }
 
-function sendJson(res, status, data) {
+function sendJson(res, status, data, headers = {}) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
+    ...headers,
   });
   res.end(body);
 }
@@ -71,6 +116,15 @@ function sendJson(res, status, data) {
 function sendError(res, status, message) {
   res.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   res.end(message);
+}
+
+async function sendStatic(res, filename, contentType) {
+  const body = await readFile(join(PUBLIC_DIR, filename));
+  res.writeHead(200, {
+    "content-type": contentType,
+    "cache-control": "no-store",
+  });
+  res.end(body);
 }
 
 async function readJson(path) {
@@ -229,6 +283,91 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const method = req.method;
 
+    // ── GET /api/feishu/config ── public H5 bootstrap config
+    if (method === "GET" && url.pathname === "/api/feishu/config") {
+      sendJson(res, 200, {
+        configured: Boolean(FEISHU_APP_ID && FEISHU_APP_SECRET && DENGLEMA_SESSION_SECRET),
+        app_id: FEISHU_APP_ID || null,
+        base_url: DENGLEMA_BASE_URL,
+        timezone: DENGLEMA_TIMEZONE,
+      });
+      return;
+    }
+
+    // ── POST /api/auth/feishu/login ── exchange H5 auth code for local session
+    if (method === "POST" && url.pathname === "/api/auth/feishu/login") {
+      const body = await readBody(req);
+      try {
+        const profile = await exchangeFeishuCode(body?.code, {
+          appId: FEISHU_APP_ID,
+          appSecret: FEISHU_APP_SECRET,
+          redirectUri: FEISHU_REDIRECT_URI || undefined,
+        });
+        const user = await upsertFeishuUser(profile, STATE_DIR);
+        const session = createWebSession(user.id, DENGLEMA_SESSION_SECRET, {
+          ttlSeconds: WEB_SESSION_TTL_SECONDS,
+        });
+        sendJson(res, 200, {
+          ok: true,
+          user: { user_id: user.id, avatar_url: user.avatar_url || null },
+        }, {
+          "set-cookie": sessionCookie(session, {
+            secure: requestIsSecure(req),
+            maxAge: WEB_SESSION_TTL_SECONDS,
+          }),
+        });
+      } catch (error) {
+        sendJson(res, error?.statusCode || 502, { error: error?.message || "Feishu login failed" });
+      }
+      return;
+    }
+
+    // ── POST /api/auth/logout ── clear local session
+    if (method === "POST" && url.pathname === "/api/auth/logout") {
+      sendJson(res, 200, { ok: true }, {
+        "set-cookie": clearSessionCookie({ secure: requestIsSecure(req) }),
+      });
+      return;
+    }
+
+    // ── GET /api/me ── current Denglema user
+    if (method === "GET" && url.pathname === "/api/me") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      sendJson(res, 200, {
+        user: { user_id: user.id, avatar_url: user.avatar_url || null },
+      });
+      return;
+    }
+
+    // ── GET /api/riders ── team projection for the future race UI
+    if (method === "GET" && url.pathname === "/api/riders") {
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      const [totals, users] = await Promise.all([
+        readUserTotals(date, STATE_DIR),
+        readDenglemaUsers(STATE_DIR),
+      ]);
+      const byId = new Map(users.map((user) => [user.id, user]));
+      sendJson(res, 200, {
+        date,
+        riders: totals.map((row) => ({
+          user_id: row.user_id,
+          avatar_url: byId.get(row.user_id)?.avatar_url || null,
+          today_tokens: row.total_tokens,
+          installations: row.installations,
+          recent_rate_tpm: null,
+        })),
+      });
+      return;
+    }
+
     // ── GET /health ──
     if (method === "GET" && url.pathname === "/health") {
       const devices = await readDeviceStates(STATE_DIR);
@@ -237,27 +376,32 @@ const server = createServer(async (req, res) => {
         uptime_seconds: Math.floor((Date.now() - STARTED_AT) / 1000),
         device_count: devices.size,
         auth_enabled: !!TOKEN,
+        denglema_auth_configured: Boolean(FEISHU_APP_ID && FEISHU_APP_SECRET && DENGLEMA_SESSION_SECRET),
       });
       log("info", "health", { status: 200, ms: Date.now() - start });
       return;
     }
 
-    // ── POST /api/pairing-codes ── temporary authenticated pairing-code issuer
+    // ── POST /api/pairing-codes ── logged-in user creates own pairing code
     if (method === "POST" && url.pathname === "/api/pairing-codes") {
-      if (!TOKEN) {
-        sendError(res, 503, "Pairing code issuer requires DASHBOARD_TOKEN");
-        return;
+      const webUser = await webUserFromRequest(req);
+      let userId = webUser?.id || null;
+
+      // Keep bearer-admin compatibility for development/bootstrap only.
+      if (!userId) {
+        if (!TOKEN || !checkAuth(req)) {
+          sendError(res, 401, "Login required");
+          return;
+        }
+        const body = await readBody(req);
+        userId = String(body?.user_id || "").trim();
+        if (!userId) {
+          sendError(res, 400, "Missing user_id");
+          return;
+        }
       }
-      if (!checkAuth(req)) {
-        sendError(res, 401, "Unauthorized");
-        return;
-      }
-      const body = await readBody(req);
-      if (!body?.user_id) {
-        sendError(res, 400, "Missing user_id");
-        return;
-      }
-      const pairing = await createPairingCode(body.user_id, STATE_DIR);
+
+      const pairing = await createPairingCode(userId, STATE_DIR);
       sendJson(res, 200, pairing);
       return;
     }
@@ -488,6 +632,20 @@ const server = createServer(async (req, res) => {
         log("info", "skill removed", { name });
         sendJson(res, 200, { ok: true, removed: name });
       } catch { sendError(res, 404, `Skill "${name}" not found`); }
+      return;
+    }
+
+    // ── Minimal Denglema H5 shell ──
+    if (method === "GET" && url.pathname === "/") {
+      await sendStatic(res, "index.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/app.js") {
+      await sendStatic(res, "app.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/styles.css") {
+      await sendStatic(res, "styles.css", "text/css; charset=utf-8");
       return;
     }
 

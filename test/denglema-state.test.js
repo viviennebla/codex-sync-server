@@ -8,7 +8,9 @@ import {
   authenticateInstallation,
   consumePairingCode,
   createPairingCode,
+  readDenglemaUser,
   readUserTotals,
+  upsertFeishuUser,
   upsertUsageSample,
 } from "../src/denglema-state.js";
 
@@ -61,4 +63,27 @@ test("cumulative samples are idempotent and aggregate multiple installations by 
     { user_id: "user-1", total_tokens: 170, installations: 2 },
     { user_id: "user-2", total_tokens: 60, installations: 1 },
   ]);
+});
+test("Feishu identity keeps a stable internal user id across logins", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-users-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const first = await upsertFeishuUser({
+    open_id: "ou_123",
+    avatar_url: "https://example.test/a.png",
+  }, root, {
+    userId: "usr-fixed",
+    now: () => new Date("2026-09-24T01:00:00Z"),
+  });
+  const second = await upsertFeishuUser({
+    open_id: "ou_123",
+    avatar_url: "https://example.test/b.png",
+  }, root, {
+    now: () => new Date("2026-09-24T02:00:00Z"),
+  });
+
+  assert.equal(first.id, "usr-fixed");
+  assert.equal(second.id, "usr-fixed");
+  assert.equal(second.avatar_url, "https://example.test/b.png");
+  assert.equal((await readDenglemaUser("usr-fixed", root)).feishu_open_id, "ou_123");
 });

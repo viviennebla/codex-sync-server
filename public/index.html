@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>蹬了吗</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.44.js"></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <p class="eyebrow">DENGLEMA · 蹬了吗</p>
+      <h1>今天蹬了吗？</h1>
+      <p id="status" class="status">正在确认飞书身份…</p>
+
+      <div id="profile" class="profile hidden">
+        <img id="avatar" class="avatar" alt="飞书头像">
+        <div>
+          <strong>已进入赛场</strong>
+          <p id="userId" class="muted"></p>
+        </div>
+      </div>
+
+      <div id="actions" class="actions hidden">
+        <button id="pairButton" class="primary">绑定我的 Codex</button>
+        <button id="retryButton" class="secondary hidden">重新登录</button>
+      </div>
+
+      <div id="pairing" class="pairing hidden">
+        <span>Pairing code</span>
+        <code id="pairingCode"></code>
+        <pre id="bindCommand"></pre>
+        <p class="muted">5 分钟内在需要统计的 Codex 环境执行。每台设备/服务器分别绑定一次。</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

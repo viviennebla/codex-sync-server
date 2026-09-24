@@ -28,8 +28,44 @@ function paths(stateDir) {
     root,
     installations: join(root, "installations.json"),
     pairingCodes: join(root, "pairing-codes.json"),
+    users: join(root, "users.json"),
     usage: (date) => join(root, "usage", `${date}.json`),
   };
+}
+
+export async function upsertFeishuUser(profile, stateDir = "state", options = {}) {
+  const openId = String(profile?.open_id || "").trim();
+  if (!openId) throw new Error("feishu open_id is required");
+  const now = options.now?.() || new Date();
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {}, by_feishu_open_id: {} });
+  let userId = store.by_feishu_open_id[openId] || null;
+  if (!userId) {
+    userId = options.userId || `usr_${randomUUID()}`;
+    store.by_feishu_open_id[openId] = userId;
+  }
+  const current = store.by_id[userId] || {};
+  store.by_id[userId] = {
+    id: userId,
+    feishu_open_id: openId,
+    avatar_url: profile?.avatar_url || current.avatar_url || null,
+    created_at: current.created_at || now.toISOString(),
+    last_login_at: now.toISOString(),
+  };
+  await writeJson(file, store);
+  return store.by_id[userId];
+}
+
+export async function readDenglemaUser(userId, stateDir = "state") {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const store = await readJson(paths(stateDir).users, { by_id: {} });
+  return store.by_id?.[id] || null;
+}
+
+export async function readDenglemaUsers(stateDir = "state") {
+  const store = await readJson(paths(stateDir).users, { by_id: {} });
+  return Object.values(store.by_id || {});
 }
 
 export function validateUsageSample(sample) {
