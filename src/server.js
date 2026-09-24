@@ -3,6 +3,12 @@ import { createHash } from "node:crypto";
 import { readFile, readdir, mkdir, writeFile, rm } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { readDeviceStates, writeDeviceState, removeDeviceState } from "./state.js";
+import {
+  authenticateInstallation,
+  consumePairingCode,
+  createPairingCode,
+  upsertUsageSample,
+} from "./denglema-state.js";
 
 const PORT = Number(process.env.PORT) || 34777;
 const BIND = process.env.BIND || "0.0.0.0";
@@ -10,6 +16,7 @@ const STATE_DIR = process.env.STATE_DIR || "state";
 const SKILLS_DIR = process.env.SKILLS_DIR || "skills-store";
 const SKILL_BUNDLE_FILE = "skills-bundle.json";
 const TOKEN = process.env.DASHBOARD_TOKEN || null;
+const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || "UTC";
 const STARTED_AT = Date.now();
 
 /* ── Logging ─────────────────────────────── */
@@ -28,11 +35,14 @@ function log(level, msg, extra = {}) {
 
 /* ── Auth ─────────────────────────────────── */
 
+function bearerToken(req) {
+  const header = req.headers.authorization || "";
+  return header.replace(/^Bearer\s+/i, "").trim();
+}
+
 function checkAuth(req) {
   if (!TOKEN) return true; // auth disabled if no token configured
-  const header = req.headers.authorization || "";
-  const bearer = header.replace(/^Bearer\s+/i, "").trim();
-  return bearer === TOKEN;
+  return bearerToken(req) === TOKEN;
 }
 
 /* ── Helpers ──────────────────────────────── */
@@ -229,6 +239,64 @@ const server = createServer(async (req, res) => {
         auth_enabled: !!TOKEN,
       });
       log("info", "health", { status: 200, ms: Date.now() - start });
+      return;
+    }
+
+    // ── POST /api/pairing-codes ── temporary authenticated pairing-code issuer
+    if (method === "POST" && url.pathname === "/api/pairing-codes") {
+      if (!TOKEN) {
+        sendError(res, 503, "Pairing code issuer requires DASHBOARD_TOKEN");
+        return;
+      }
+      if (!checkAuth(req)) {
+        sendError(res, 401, "Unauthorized");
+        return;
+      }
+      const body = await readBody(req);
+      if (!body?.user_id) {
+        sendError(res, 400, "Missing user_id");
+        return;
+      }
+      const pairing = await createPairingCode(body.user_id, STATE_DIR);
+      sendJson(res, 200, pairing);
+      return;
+    }
+
+    // ── POST /api/installations/pair ── exchange one-time code for installation credentials
+    if (method === "POST" && url.pathname === "/api/installations/pair") {
+      const body = await readBody(req);
+      if (!body?.code) {
+        sendError(res, 400, "Missing pairing code");
+        return;
+      }
+      const result = await consumePairingCode(body.code, body.installation_name, STATE_DIR);
+      if (!result) {
+        sendError(res, 401, "Invalid or expired pairing code");
+        return;
+      }
+      sendJson(res, 200, { ...result, timezone: DENGLEMA_TIMEZONE });
+      return;
+    }
+
+    // ── POST /api/usage/sample ── cumulative daily usage for one installation
+    if (method === "POST" && url.pathname === "/api/usage/sample") {
+      const installation = await authenticateInstallation(bearerToken(req), STATE_DIR);
+      if (!installation) {
+        sendError(res, 401, "Unauthorized installation");
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const result = await upsertUsageSample(installation, body, STATE_DIR);
+        sendJson(res, 200, {
+          ok: true,
+          installation_id: installation.id,
+          user_id: installation.user_id,
+          ...result,
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Invalid usage sample");
+      }
       return;
     }
 
