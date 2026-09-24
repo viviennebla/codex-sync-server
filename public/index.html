@@ -9,32 +9,74 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <main class="shell">
-    <section class="card">
-      <p class="eyebrow">DENGLEMA · 蹬了吗</p>
-      <h1>今天蹬了吗？</h1>
-      <p id="status" class="status">正在确认飞书身份…</p>
-
-      <div id="profile" class="profile hidden">
-        <img id="avatar" class="avatar" alt="飞书头像">
-        <div>
-          <strong>已进入赛场</strong>
-          <p id="userId" class="muted"></p>
-        </div>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-title">蹬了吗</span>
+        <span class="brand-spark">〽</span>
       </div>
-
-      <div id="actions" class="actions hidden">
-        <button id="pairButton" class="primary">绑定我的 Codex</button>
-        <button id="retryButton" class="secondary hidden">重新登录</button>
+      <div class="today-total">
+        <span>今日</span>
+        <strong id="todayTotal">—</strong>
+        <span class="tiny-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
+      <button id="pairButton" class="bind-button" type="button">🔗 绑定设备</button>
+    </header>
 
-      <div id="pairing" class="pairing hidden">
-        <span>Pairing code</span>
-        <code id="pairingCode"></code>
-        <pre id="bindCommand"></pre>
-        <p class="muted">5 分钟内在需要统计的 Codex 环境执行。每台设备/服务器分别绑定一次。</p>
+    <section class="office-strip" aria-hidden="true">
+      <div class="plant plant-left">🌿</div>
+      <div class="sleepy-cat">🐈</div>
+      <div class="sticky-note note-a">少点 Bug<br>多点快乐 :)</div>
+      <div class="window">
+        <span class="cloud cloud-a"></span>
+        <span class="cloud cloud-b"></span>
+        <span class="building b1"></span><span class="building b2"></span>
+        <span class="building b3"></span><span class="building b4"></span>
       </div>
+      <div class="sticky-note note-b">下班<br>骑一会 :)</div>
+      <div class="plant plant-right">🌱</div>
+    </section>
+
+    <section class="race-stage" aria-label="蹬了吗赛场">
+      <div class="track-motion" aria-hidden="true"></div>
+      <div id="lane1" class="lane" data-lane="1"><span class="lane-number">1</span></div>
+      <div id="lane2" class="lane" data-lane="2"><span class="lane-number">2</span></div>
+      <div id="lane3" class="lane" data-lane="3"><span class="lane-number">3</span></div>
+      <div id="lane4" class="lane" data-lane="4"><span class="lane-number">4</span></div>
+      <div class="finish-mark" aria-hidden="true"></div>
+    </section>
+
+    <section class="desk-edge" aria-hidden="true">
+      <div class="monitor"><span>&lt;/&gt;</span></div>
+      <div class="desk-note">骑一会<br>再写 :)</div>
+      <div class="mug">&lt;/&gt;</div>
+      <div class="chair"></div>
+      <div class="desk-cat">🐈</div>
     </section>
   </main>
+  <dialog id="pairDialog" class="pair-dialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">绑定一个 Codex 环境</p>
+      <h2>让这台设备也来蹬</h2>
+      <p class="dialog-copy">每台 Windows / WSL / Server 分别绑定一次，最后会自动算到同一个人。</p>
+      <button id="createPairingButton" type="button" class="dialog-primary">生成 pairing code</button>
+      <div id="pairingResult" class="pairing-result hidden">
+        <code id="pairingCode"></code>
+        <pre id="bindCommand"></pre>
+        <p>5 分钟有效</p>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="mini-bike">🚲</div>
+      <strong id="status">正在从飞书进入赛场…</strong>
+      <button id="retryButton" class="retry-button hidden" type="button">重新登录</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
 </body>
 </html>
