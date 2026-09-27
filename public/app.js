@@ -19,6 +19,7 @@ let directorTimer = null;
 let refreshTimer = null;
 let ambientTimer = null;
 let previewMode = false;
+const activeMotion = new Map();
 
 function avatarSvg(bg, ink, mood) {
   const eyes = mood === "rage"
@@ -234,26 +235,31 @@ function positionPlan(riders) {
 
 function riderMarkup(rider) {
   const classes = stateFor(rider).join(" ");
+  const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
+  const cadence = rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72;
   const burst = rider.mood === "burning" ? "冲啊!!" : "蹬!";
   return (
     '<div class="rider ' + classes + '" data-rider-id="' + rider.user_id + '"' +
-      ' style="--x:' + rider.x + '%;--accent:' + (rider.accent || "#4c8ad9") + '">' +
+      ' style="--x:' + rider.x + '%;--accent:' + (rider.accent || "#4c8ad9") +
+      ';--phase:' + phase + 's;--cadence:' + cadence + 's">' +
       '<div class="effect-speed"></div>' +
       '<div class="effect-fire"></div>' +
       '<div class="effect-dust"></div>' +
       '<div class="effect-sweat"></div>' +
       '<div class="effect-music">♪</div>' +
       '<div class="effect-burst">' + burst + '</div>' +
-      '<div class="rider-inner">' +
-        '<div class="avatar-ring"><img src="' + (rider.avatar_url || DEMO_RIDERS[0].avatar_url) + '" alt=""></div>' +
-        '<div class="body"></div>' +
-        '<div class="arm"></div>' +
-        '<div class="leg leg-a"></div>' +
-        '<div class="leg leg-b"></div>' +
-        '<div class="bike">' +
-          '<div class="wheel back"></div>' +
-          '<div class="wheel front"></div>' +
-          '<div class="frame"></div>' +
+      '<div class="rider-motion">' +
+        '<div class="rider-inner">' +
+          '<div class="avatar-ring"><img src="' + (rider.avatar_url || DEMO_RIDERS[0].avatar_url) + '" alt=""></div>' +
+          '<div class="body"></div>' +
+          '<div class="arm"></div>' +
+          '<div class="leg leg-a"></div>' +
+          '<div class="leg leg-b"></div>' +
+          '<div class="bike">' +
+            '<div class="wheel back"></div>' +
+            '<div class="wheel front"></div>' +
+            '<div class="frame"></div>' +
+          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="name-chip">' +
@@ -302,29 +308,90 @@ async function loadRaceData() {
   renderRiders([...real, ...DEMO_RIDERS]);
 }
 
+const MOTION_ACTIONS = {
+  sprint: {
+    className: "is-sprinting",
+    duration: 2200,
+    bursts: ["冲啊!!", "腿冒烟了!", "加班腿!"]
+  },
+  wheelie: {
+    className: "is-wheelie",
+    duration: 1900,
+    bursts: ["芜湖!", "起飞!", "别翻!"]
+  },
+  bonk: {
+    className: "is-bonking",
+    duration: 2300,
+    bursts: ["腿呢…", "没电了", "CPU 过热"]
+  },
+  celebrate: {
+    className: "is-celebrating",
+    duration: 2000,
+    bursts: ["领先!", "今天猛!", "嘿嘿!"]
+  }
+};
+
+function chooseMotion(rider) {
+  const roll = Math.random();
+  if (rider.mood === "burning") {
+    if (roll < 0.68) return MOTION_ACTIONS.sprint;
+    if (roll < 0.84) return MOTION_ACTIONS.wheelie;
+    return MOTION_ACTIONS.celebrate;
+  }
+  if (rider.mood === "tired") {
+    if (roll < 0.62) return MOTION_ACTIONS.bonk;
+    if (roll < 0.78) return MOTION_ACTIONS.sprint;
+    return MOTION_ACTIONS.wheelie;
+  }
+  if (rider.mood === "chill") {
+    if (roll < 0.42) return MOTION_ACTIONS.wheelie;
+    if (roll < 0.7) return MOTION_ACTIONS.celebrate;
+    return MOTION_ACTIONS.sprint;
+  }
+  if (roll < 0.48) return MOTION_ACTIONS.sprint;
+  if (roll < 0.67) return MOTION_ACTIONS.wheelie;
+  if (roll < 0.84) return MOTION_ACTIONS.bonk;
+  return MOTION_ACTIONS.celebrate;
+}
+
+function triggerMotion(rider, node, action) {
+  if (!node || activeMotion.has(rider.user_id)) return;
+  const burst = node.querySelector(".effect-burst");
+  const text = action.bursts[Math.floor(Math.random() * action.bursts.length)];
+  if (burst) burst.textContent = text;
+
+  activeMotion.set(rider.user_id, action.className);
+  node.classList.add(action.className);
+  if (action === MOTION_ACTIONS.sprint && Math.random() > 0.38) {
+    node.classList.add("effect-heavy");
+  }
+
+  window.setTimeout(() => {
+    node.classList.remove(action.className);
+    if (rider.mood !== "burning") node.classList.remove("effect-heavy");
+    activeMotion.delete(rider.user_id);
+  }, action.duration);
+}
+
 function scheduleDirector() {
   clearTimeout(directorTimer);
-  const delay = 4500 + Math.random() * 4500;
+  const delay = 3000 + Math.random() * 3600;
   directorTimer = setTimeout(() => {
-    const candidates = [...visibleRiders]
-      .sort((a, b) => b.today_tokens - a.today_tokens)
-      .slice(0, Math.min(2, visibleRiders.length));
-    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-    const node = chosen && document.querySelector('[data-rider-id="' + chosen.user_id + '"]');
-
-    if (node) {
-      node.classList.add("is-sprinting");
-      if (Math.random() > 0.45) node.classList.add("effect-heavy");
-      const baseX = Number(chosen.x || 50);
-      node.style.left = Math.min(86, baseX + 2.2 + Math.random() * 2.8) + "%";
-      const sprintMs = 1500 + Math.random() * 1100;
-      setTimeout(() => {
-        node.classList.remove("is-sprinting");
-        if (chosen.mood !== "burning") node.classList.remove("effect-heavy");
-        node.style.left = baseX + "%";
-      }, sprintMs);
+    if (!visibleRiders.length) {
+      scheduleDirector();
+      return;
     }
 
+    const ranked = [...visibleRiders].sort((a, b) => b.today_tokens - a.today_tokens);
+    const pool = ranked.slice(0, Math.min(4, ranked.length));
+    if (ranked.length > 4 && Math.random() > 0.55) {
+      pool.push(ranked[4 + Math.floor(Math.random() * (ranked.length - 4))]);
+    }
+    const available = pool.filter((rider) => !activeMotion.has(rider.user_id));
+    const chosen = available[Math.floor(Math.random() * available.length)];
+    const node = chosen && document.querySelector('[data-rider-id="' + chosen.user_id + '"]');
+
+    if (node) triggerMotion(chosen, node, chooseMotion(chosen));
     scheduleDirector();
   }, delay);
 }
@@ -334,11 +401,13 @@ function scheduleAmbientDrift() {
   ambientTimer = setInterval(() => {
     visibleRiders.forEach((rider) => {
       const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
-      if (!node || node.classList.contains("is-sprinting")) return;
-      const tiny = (Math.random() - 0.5) * 1.5;
-      node.style.left = Math.max(17, Math.min(84, rider.x + tiny)) + "%";
+      if (!node || activeMotion.has(rider.user_id)) return;
+      const current = Number(node.dataset.drift || 0);
+      const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
+      node.dataset.drift = String(next);
+      node.style.left = Math.max(17, Math.min(84, Number(rider.x || 50) + next)) + "%";
     });
-  }, 7000);
+  }, 4200);
 }
 async function bootstrap() {
   previewMode = new URLSearchParams(location.search).get("preview") === "1";

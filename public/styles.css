@@ -251,21 +251,29 @@ button { font: inherit; }
   height: 104px;
   transform: translate(-50%, -52%) scale(var(--scale));
   transform-origin: 50% 70%;
-  transition: left 4.5s cubic-bezier(.2,.75,.24,1), filter .3s ease;
+  transition: left 6.4s cubic-bezier(.22,.68,.28,1), filter .3s ease;
   z-index: 6;
+}
+
+.rider-motion {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 78%;
 }
 
 .rider-inner {
   position: absolute;
   inset: 0;
   animation: riderBob 1.1s ease-in-out infinite;
+  animation-delay: var(--phase);
   transform-origin: 50% 75%;
 }
 
-.rider.is-sprinting .rider-inner {
-  animation: sprintJolt .18s steps(2,end) infinite;
-}
-.rider.is-tired .rider-inner { animation: tiredWobble .55s ease-in-out infinite; }
+.rider.is-sprinting .rider-motion { animation: sprintSurge 2.2s cubic-bezier(.2,.72,.26,1) both; }
+.rider.is-wheelie .rider-motion { animation: wheeliePop 1.9s cubic-bezier(.22,.72,.22,1) both; }
+.rider.is-bonking .rider-motion { animation: bonkSag 2.3s ease-in-out both; }
+.rider.is-celebrating .rider-motion { animation: victoryHop 2s cubic-bezier(.2,.75,.22,1) both; }
+.rider.is-tired .rider-inner { animation: tiredWobble .62s ease-in-out infinite; }
 .rider.is-chill .rider-inner { animation-duration: 1.65s; }
 
 .avatar-ring {
@@ -289,8 +297,20 @@ button { font: inherit; }
   object-fit: cover;
 }
 .rider.is-sprinting .avatar-ring {
-  top: -11px;
-  transform: rotate(-7deg) scale(1.07);
+  top: -12px;
+  transform: rotate(-9deg) scale(1.08);
+}
+.rider.is-wheelie .avatar-ring {
+  top: -5px;
+  transform: rotate(-12deg) scale(1.05);
+}
+.rider.is-bonking .avatar-ring {
+  top: 8px;
+  transform: rotate(11deg) scale(.96);
+}
+.rider.is-celebrating .avatar-ring {
+  top: -8px;
+  transform: rotate(7deg) scale(1.08);
 }
 
 .body {
@@ -307,8 +327,20 @@ button { font: inherit; }
   transition: top .22s ease, transform .22s ease;
 }
 .rider.is-sprinting .body {
-  top: 38px;
-  transform: rotate(25deg) translateX(7px);
+  top: 36px;
+  transform: rotate(28deg) translateX(8px) scaleY(1.08);
+}
+.rider.is-wheelie .body {
+  top: 45px;
+  transform: rotate(-5deg) translateX(-2px);
+}
+.rider.is-bonking .body {
+  top: 57px;
+  transform: rotate(18deg) translateX(2px) scaleY(.9);
+}
+.rider.is-celebrating .body {
+  top: 45px;
+  transform: rotate(-8deg) translateY(-4px);
 }
 
 .arm {
@@ -323,7 +355,10 @@ button { font: inherit; }
   transform: rotate(23deg);
   transform-origin: left center;
 }
-.rider.is-sprinting .arm { top: 45px; transform: rotate(39deg) scaleX(1.12); }
+.rider.is-sprinting .arm { top: 43px; transform: rotate(43deg) scaleX(1.16); }
+.rider.is-wheelie .arm { top: 49px; transform: rotate(9deg) scaleX(1.08); }
+.rider.is-bonking .arm { top: 63px; transform: rotate(30deg) scaleX(.92); }
+.rider.is-celebrating .arm { top: 37px; transform: rotate(-62deg) scaleX(1.18); }
 
 .bike {
   position: absolute;
@@ -331,7 +366,11 @@ button { font: inherit; }
   top: 57px;
   width: 100px;
   height: 45px;
+  transform-origin: 45% 78%;
 }
+.rider.is-wheelie .bike { animation: bikeWheelie 1.9s ease-in-out both; }
+.rider.is-bonking .bike { animation: bikeClunk 2.3s ease-in-out both; }
+.rider.is-celebrating .bike { animation: bikeBounce 2s ease-in-out both; }
 .wheel {
   position: absolute;
   bottom: 0;
@@ -342,9 +381,13 @@ button { font: inherit; }
   background:
     linear-gradient(90deg, transparent 47%, rgba(39,49,60,.35) 48% 52%, transparent 53%),
     linear-gradient(0deg, transparent 47%, rgba(39,49,60,.35) 48% 52%, transparent 53%);
-  animation: wheelSpin .72s linear infinite;
+  animation: wheelSpin var(--cadence) linear infinite;
+  animation-delay: var(--phase);
 }
-.rider.is-sprinting .wheel { animation-duration: .25s; }
+.rider.is-sprinting .wheel { animation-duration: .23s; }
+.rider.is-wheelie .wheel { animation-duration: .5s; }
+.rider.is-bonking .wheel { animation-duration: 1.35s; }
+.rider.is-celebrating .wheel { animation-duration: .42s; }
 .rider.is-chill .wheel { animation-duration: 1.2s; }
 .wheel.front { right: 4px; }
 .wheel.back { left: 4px; }
@@ -383,7 +426,10 @@ button { font: inherit; }
   animation: pedalLeg .72s ease-in-out infinite;
 }
 .leg.leg-b { animation-delay: -.36s; }
-.rider.is-sprinting .leg { animation-duration: .25s; height: 34px; top: 54px; }
+.rider.is-sprinting .leg { animation-duration: .23s; height: 35px; top: 52px; }
+.rider.is-wheelie .leg { animation-duration: .5s; }
+.rider.is-bonking .leg { animation-duration: 1.35s; height: 27px; top: 69px; }
+.rider.is-celebrating .leg { animation-duration: .42s; }
 .rider.is-chill .leg { animation-duration: 1.2s; }
 .name-chip {
   position: absolute;
@@ -496,7 +542,8 @@ button { font: inherit; }
   box-shadow: 12px 8px 0 -2px #77b8e9;
 }
 .rider.is-tired .effect-sweat,
-.rider.is-sprinting .effect-sweat { display: block; animation: sweatPop .8s ease-in-out infinite; }
+.rider.is-sprinting .effect-sweat,
+.rider.is-bonking .effect-sweat { display: block; animation: sweatPop .8s ease-in-out infinite; }
 
 .effect-music {
   display: none;
@@ -518,7 +565,16 @@ button { font: inherit; }
   transform: rotate(-5deg);
   white-space: nowrap;
 }
-.rider.is-sprinting .effect-burst { display: block; animation: burstPop .28s ease-out both; }
+.rider.is-sprinting .effect-burst,
+.rider.is-wheelie .effect-burst,
+.rider.is-bonking .effect-burst,
+.rider.is-celebrating .effect-burst {
+  display: block;
+  animation: burstPop .32s cubic-bezier(.2,.85,.25,1.15) both;
+}
+.rider.is-wheelie .effect-burst { transform: rotate(6deg); }
+.rider.is-bonking .effect-burst { top: -18px; transform: rotate(8deg); }
+.rider.is-celebrating .effect-burst { top: -30px; transform: rotate(-8deg) scale(1.08); }
 
 .desk-edge {
   position: relative;
@@ -646,8 +702,38 @@ button { font: inherit; }
 
 @keyframes trackFlow { to { background-position-x: -330px; } }
 @keyframes riderBob { 0%,100% { transform: translateY(0) rotate(-.5deg); } 50% { transform: translateY(-3px) rotate(.7deg); } }
+@keyframes sprintSurge {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  14% { transform: translate(3px,-3px) rotate(-1.5deg); }
+  36% { transform: translate(12px,-6px) rotate(-3deg); }
+  68% { transform: translate(18px,-4px) rotate(-2deg); }
+  86% { transform: translate(7px,-1px) rotate(.8deg); }
+}
+@keyframes wheeliePop {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  20% { transform: translate(2px,-3px) rotate(-2deg); }
+  42%,62% { transform: translate(8px,-10px) rotate(-10deg); }
+  78% { transform: translate(5px,-5px) rotate(-5deg); }
+}
+@keyframes bonkSag {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  18% { transform: translate(-2px,3px) rotate(2deg); }
+  42% { transform: translate(-4px,8px) rotate(4deg); }
+  60% { transform: translate(1px,5px) rotate(-2deg); }
+  78% { transform: translate(-2px,7px) rotate(3deg); }
+}
+@keyframes victoryHop {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  20% { transform: translate(3px,-3px) rotate(-2deg); }
+  40% { transform: translate(7px,-13px) rotate(4deg); }
+  58% { transform: translate(10px,-5px) rotate(-3deg); }
+  76% { transform: translate(8px,-10px) rotate(3deg); }
+}
 @keyframes sprintJolt { 0% { transform: translate(-2px,-2px) rotate(-1deg); } 100% { transform: translate(3px,1px) rotate(1.5deg); } }
 @keyframes tiredWobble { 0%,100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(2deg) translateY(2px); } }
+@keyframes bikeWheelie { 0%,100% { transform: rotate(0deg); } 42%,62% { transform: rotate(-9deg); } }
+@keyframes bikeClunk { 0%,100% { transform: translateY(0) rotate(0); } 42% { transform: translateY(3px) rotate(2deg); } 60% { transform: translateY(1px) rotate(-1deg); } }
+@keyframes bikeBounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 58% { transform: translateY(1px); } 76% { transform: translateY(-3px); } }
 @keyframes wheelSpin { to { transform: rotate(360deg); } }
 @keyframes pedalLeg { 0%,100% { transform: rotate(36deg); } 50% { transform: rotate(-38deg); } }
 @keyframes speedFlicker { 50% { transform: translateX(-8px) scaleX(1.15); opacity: .72; } }
