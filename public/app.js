@@ -91,6 +91,7 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#d6d5ea", "#3b3a4b", "smile"),
     today_tokens: 220000,
     recent_rate_tpm: 0,
+    mood: "tired",
     accent: "#7b79ac"
   }
 ];
@@ -189,6 +190,7 @@ function formatTokens(value) {
 function stateFor(rider) {
   if (rider.mood === "burning") return ["is-fast", "is-burning", "effect-heavy"];
   if (rider.mood === "chill") return ["is-chill"];
+  if (rider.mood === "tired") return ["is-tired"];
   const rate = Number(rider.recent_rate_tpm || 0);
   if (rate >= 30000) return ["is-fast", "is-burning", "effect-heavy"];
   if (rate >= 10000) return ["is-fast"];
