@@ -18,6 +18,7 @@ let visibleRiders = [];
 let directorTimer = null;
 let refreshTimer = null;
 let ambientTimer = null;
+let previewMode = false;
 
 function avatarSvg(bg, ink, mood) {
   const eyes = mood === "rage"
@@ -56,6 +57,41 @@ const DEMO_RIDERS = [
     demo: true,
     mood: "burning",
     accent: "#f0793e"
+  }
+];
+
+const PREVIEW_RIDERS = [
+  {
+    user_id: "preview_me",
+    display_name: "我",
+    avatar_url: avatarSvg("#a7c7f4", "#26354b", "smile"),
+    today_tokens: 72432,
+    recent_rate_tpm: 0,
+    accent: "#4c8ad9"
+  },
+  {
+    user_id: "preview_alice",
+    display_name: "Alice",
+    avatar_url: avatarSvg("#f7b7c4", "#49323a", "smile"),
+    today_tokens: 960000,
+    recent_rate_tpm: 15000,
+    accent: "#dd718e"
+  },
+  {
+    user_id: "preview_bob",
+    display_name: "Bob",
+    avatar_url: avatarSvg("#b7dfc7", "#29443a", "smile"),
+    today_tokens: 640000,
+    recent_rate_tpm: 7000,
+    accent: "#4ca87c"
+  },
+  {
+    user_id: "preview_tired",
+    display_name: "摸鱼中",
+    avatar_url: avatarSvg("#d6d5ea", "#3b3a4b", "smile"),
+    today_tokens: 220000,
+    recent_rate_tpm: 0,
+    accent: "#7b79ac"
   }
 ];
 
@@ -250,6 +286,10 @@ function renderRiders(riders) {
 }
 
 async function loadRaceData() {
+  if (previewMode) {
+    renderRiders([...PREVIEW_RIDERS, ...DEMO_RIDERS]);
+    return;
+  }
   const payload = await jsonFetch("/api/riders");
   const real = (payload.riders || []).map((rider, index) => ({
     ...rider,
@@ -299,17 +339,30 @@ function scheduleAmbientDrift() {
   }, 7000);
 }
 async function bootstrap() {
-  config = await jsonFetch("/api/feishu/config");
-  const preview = new URLSearchParams(location.search).get("preview") === "1";
+  previewMode = new URLSearchParams(location.search).get("preview") === "1";
 
-  if (!preview) {
-    try {
-      const result = await jsonFetch("/api/me");
-      me = result.user;
-    } catch (error) {
-      if (error.status !== 401) throw error;
-      await loginWithFeishu();
-    }
+  if (previewMode) {
+    config = {
+      configured: false,
+      app_id: null,
+      base_url: "http://localhost:1600",
+      timezone: "Asia/Shanghai"
+    };
+    me = { user_id: "preview_me" };
+    loginOverlay.classList.add("hidden");
+    await loadRaceData();
+    scheduleDirector();
+    scheduleAmbientDrift();
+    return;
+  }
+
+  config = await jsonFetch("/api/feishu/config");
+  try {
+    const result = await jsonFetch("/api/me");
+    me = result.user;
+  } catch (error) {
+    if (error.status !== 401) throw error;
+    await loginWithFeishu();
   }
 
   loginOverlay.classList.add("hidden");
@@ -327,6 +380,15 @@ pairButton.addEventListener("click", () => {
 createPairingButton.addEventListener("click", async () => {
   createPairingButton.disabled = true;
   try {
+    if (previewMode) {
+      pairingResult.classList.remove("hidden");
+      pairingCodeEl.textContent = "DEMO1600";
+      bindCommandEl.textContent =
+        "node src/cli.js denglema bind --server http://localhost:1600 --code DEMO1600";
+      showToast("预览模式：这是演示 pairing code");
+      return;
+    }
+
     const result = await jsonFetch("/api/pairing-codes", {
       method: "POST",
       body: JSON.stringify({})
