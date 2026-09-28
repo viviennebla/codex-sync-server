@@ -76,6 +76,13 @@ button { font: inherit; }
 .tiny-bars i:nth-child(2) { height: 13px; }
 .tiny-bars i:nth-child(3) { height: 20px; }
 
+.top-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .bind-button {
   justify-self: end;
   border: 1.5px solid #7da0e4;
@@ -88,6 +95,18 @@ button { font: inherit; }
   box-shadow: 0 3px 0 rgba(84,121,198,.14);
 }
 .bind-button:hover { transform: translateY(-1px); }
+
+.upload-button {
+  border: 1.5px solid #dcaa2d;
+  background: #fff5c8;
+  color: #665018;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(220,170,45,.15);
+}
+.upload-button:hover { transform: translateY(-1px); }
 
 .office-strip {
   position: relative;
@@ -715,6 +734,22 @@ button { font: inherit; }
 .pairing-result code { font-size: 28px; font-weight: 950; color: #f6d65d; letter-spacing: .08em; }
 .pairing-result pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #c9d7f4; font-size: 12px; }
 
+.upload-prompt-box {
+  margin: 18px 0;
+  padding: 18px 20px;
+  border: 3px dashed #27313c;
+  border-radius: 16px;
+  background: #fff4bd;
+  text-align: center;
+  transform: rotate(-.5deg);
+}
+.upload-prompt-box code {
+  color: #27313c;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
 .login-overlay {
   position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
   background: #f7f2e7;
@@ -787,6 +822,8 @@ button { font: inherit; }
   body { overflow: auto; }
   .app-shell { min-height: 780px; grid-template-rows: 72px 92px 480px 100px; }
   .topbar { grid-template-columns: 1fr auto; padding: 10px 16px; }
+  .top-actions { gap: 6px; }
+  .bind-button, .upload-button { padding: 9px 11px; font-size: 12px; }
   .today-total { display: none; }
   .brand-title { font-size: 34px; }
   .office-strip { opacity: .9; }

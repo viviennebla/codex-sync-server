@@ -20,7 +20,10 @@
         <strong id="todayTotal">—</strong>
         <span class="tiny-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
-      <button id="pairButton" class="bind-button" type="button">🔗 绑定新设备</button>
+      <div class="top-actions">
+        <button id="uploadPromptButton" class="upload-button" type="button">⬆ 手动上传</button>
+        <button id="pairButton" class="bind-button" type="button">🔗 绑定新设备</button>
+      </div>
     </header>
 
     <section class="office-strip" aria-hidden="true">
@@ -66,6 +69,17 @@
         <pre id="bindCommand"></pre>
         <p>5 分钟有效 · 成功绑定后立即失效 · 每个环境请生成新的 code</p>
       </div>
+    </form>
+  </dialog>
+
+  <dialog id="uploadDialog" class="pair-dialog upload-dialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">手动刷新赛道</p>
+      <h2>把这句发给 Codex</h2>
+      <p class="dialog-copy">网页不会直接控制你的本地 Codex。复制下面的 Prompt，回到当前 Codex 会话发送即可上传 latest snapshot。</p>
+      <div class="upload-prompt-box"><code id="uploadPromptText">上传蹬了吗</code></div>
+      <button id="copyUploadPromptButton" type="button" class="dialog-primary">复制 Prompt</button>
     </form>
   </dialog>
 

@@ -5,6 +5,10 @@ const statusEl = $("status");
 const retryButton = $("retryButton");
 const pairButton = $("pairButton");
 const pairDialog = $("pairDialog");
+const uploadPromptButton = $("uploadPromptButton");
+const uploadDialog = $("uploadDialog");
+const copyUploadPromptButton = $("copyUploadPromptButton");
+const uploadPromptText = $("uploadPromptText");
 const createPairingButton = $("createPairingButton");
 const pairingResult = $("pairingResult");
 const pairingCodeEl = $("pairingCode");
@@ -496,6 +500,18 @@ function clearBindIntentFromUrl() {
   history.replaceState(null, "", next.pathname + next.search + next.hash);
 }
 
+async function waitForTodaySample(maxAttempts = 8, delayMs = 850) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const meResult = await jsonFetch("/api/me");
+      me = meResult.user;
+      if (me?.has_today_sample) return true;
+    } catch {}
+    await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+  }
+  return false;
+}
+
 function startPairingPoll(code) {
   stopPairingPoll();
 
@@ -508,23 +524,19 @@ function startPairingPoll(code) {
       if (result.status === "consumed") {
         stopPairingPoll();
         pairingCodeEl.textContent = "绑定成功 ✓";
-        bindCommandEl.textContent = "回到 Codex 说：上传蹬了吗";
+        bindCommandEl.textContent = "正在自动上传 latest snapshot…";
         clearBindIntentFromUrl();
 
-        window.setTimeout(async () => {
-          if (pairDialog.open) pairDialog.close();
-          try {
-            const meResult = await jsonFetch("/api/me");
-            me = meResult.user;
-            await loadRaceData();
-          } catch {}
+        const uploaded = await waitForTodaySample();
+        if (pairDialog.open) pairDialog.close();
 
-          if (me?.has_today_sample) {
-            showToast("设备绑定成功，今日数据已刷新", 4200);
-          } else {
-            showToast("设备已绑定；今天还没上传快照。回 Codex 说「上传蹬了吗」即可上赛道", 6500);
-          }
-        }, 650);
+        try { await loadRaceData(); } catch {}
+
+        if (uploaded) {
+          showToast("设备绑定成功，latest snapshot 已自动上传并刷新赛道", 4800);
+        } else {
+          showToast("设备已绑定，但自动上传还没完成。可点「手动上传」复制 Prompt", 6500);
+        }
         return;
       }
 
@@ -541,6 +553,29 @@ function startPairingPoll(code) {
   void check();
   pairingPollTimer = setInterval(() => { void check(); }, 1200);
 }
+
+uploadPromptButton.addEventListener("click", () => {
+  uploadDialog.showModal();
+});
+
+copyUploadPromptButton.addEventListener("click", async () => {
+  const prompt = uploadPromptText.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(prompt);
+    copyUploadPromptButton.textContent = "已复制 ✓";
+    showToast("Prompt 已复制，回 Codex 粘贴发送即可", 2800);
+  } catch {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(uploadPromptText);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    showToast("已选中 Prompt，请复制后回 Codex 发送", 3200);
+  }
+  window.setTimeout(() => {
+    copyUploadPromptButton.textContent = "复制 Prompt";
+  }, 1800);
+});
 
 pairButton.addEventListener("click", () => {
   stopPairingPoll();
