@@ -24,7 +24,7 @@
         <a class="profile-button" href="/me">👤 我的主页</a>
         <button id="devicesButton" class="devices-button" type="button">💻 我的设备</button>
         <button id="uploadPromptButton" class="upload-button" type="button">⬆ 手动上传</button>
-        <button id="pairButton" class="bind-button" type="button">🔗 绑定新设备</button>
+        <button id="pairButton" class="bind-button" type="button">🔗 接入这台 Codex</button>
       </div>
     </header>
 
@@ -62,14 +62,19 @@
   <dialog id="pairDialog" class="pair-dialog">
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
-      <p class="dialog-kicker">绑定一个 Codex 环境</p>
-      <h2>让这台设备也来蹬</h2>
-      <p class="dialog-copy">每个 Windows / WSL / macOS Codex 环境分别绑定一次；同一个蹬了吗身份下的设备会自动聚合到同一个 rider。</p>
-      <button id="createPairingButton" type="button" class="dialog-primary">生成 pairing code</button>
+      <p class="dialog-kicker">接入 Codex</p>
+      <h2>复制一条命令，然后开蹬</h2>
+      <p class="dialog-copy">命令会自动安装/更新 Plugin、绑定当前骑手，并立即采集和上传第一次快照。你不需要理解 pairing code。</p>
+      <button id="createPairingButton" type="button" class="dialog-primary">生成一键接入命令</button>
       <div id="pairingResult" class="pairing-result hidden">
-        <code id="pairingCode"></code>
+        <code id="pairingCode">接入命令已生成</code>
+        <div class="onboarding-platforms">
+          <button id="useShellCommandButton" type="button" class="auth-link">WSL / macOS / Linux</button>
+          <button id="usePowerShellCommandButton" type="button" class="auth-link">Windows PowerShell</button>
+        </div>
         <pre id="bindCommand"></pre>
-        <p>5 分钟有效 · 成功绑定后立即失效 · 每个环境请生成新的 code</p>
+        <button id="copyBindCommandButton" type="button" class="dialog-primary">复制命令</button>
+        <p>执行完后不用再操作网页；设备会自动出现，第一次快照也会自动上传。</p>
       </div>
     </form>
   </dialog>
