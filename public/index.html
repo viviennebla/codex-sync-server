@@ -20,7 +20,7 @@
         <strong id="todayTotal">—</strong>
         <span class="tiny-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
-      <button id="pairButton" class="bind-button" type="button">🔗 绑定设备</button>
+      <button id="pairButton" class="bind-button" type="button">🔗 绑定新设备</button>
     </header>
 
     <section class="office-strip" aria-hidden="true">
@@ -59,12 +59,12 @@
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
       <p class="dialog-kicker">绑定一个 Codex 环境</p>
       <h2>让这台设备也来蹬</h2>
-      <p class="dialog-copy">每台 Windows / WSL / Server 分别绑定一次，最后会自动算到同一个人。</p>
+      <p class="dialog-copy">每个 Windows / WSL / macOS Codex 环境分别绑定一次；同一飞书账号最终会自动算到同一个人。</p>
       <button id="createPairingButton" type="button" class="dialog-primary">生成 pairing code</button>
       <div id="pairingResult" class="pairing-result hidden">
         <code id="pairingCode"></code>
         <pre id="bindCommand"></pre>
-        <p>5 分钟有效</p>
+        <p>5 分钟有效 · 成功绑定后立即失效 · 每个环境请生成新的 code</p>
       </div>
     </form>
   </dialog>

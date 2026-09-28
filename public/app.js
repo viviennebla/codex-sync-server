@@ -488,7 +488,7 @@ createPairingButton.addEventListener("click", async () => {
       pairingResult.classList.remove("hidden");
       pairingCodeEl.textContent = "DEMO1600";
       bindCommandEl.textContent =
-        "node src/cli.js denglema bind --server http://localhost:1600 --code DEMO1600";
+        "在当前 Codex 中说：绑定蹬了吗 DEMO1600";
       showToast("预览模式：这是演示 pairing code");
       return;
     }
@@ -500,7 +500,7 @@ createPairingButton.addEventListener("click", async () => {
     pairingResult.classList.remove("hidden");
     pairingCodeEl.textContent = result.code;
     bindCommandEl.textContent =
-      "node src/cli.js denglema bind --server " + config.base_url + " --code " + result.code;
+      "在当前 Codex 中说：绑定蹬了吗 " + result.code;
   } catch (error) {
     showToast("生成失败：" + error.message);
   } finally {
