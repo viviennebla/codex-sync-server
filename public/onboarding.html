@@ -37,7 +37,7 @@
     <p class="hint">页面会尝试自动唤起飞书。如果没有跳转，请点击上面的按钮；仍打不开时，在飞书工作台搜索「蹬了吗」。</p>
   </main>
   <script>
-    const appLink = "https://applink.feishu.cn/client/web_app/open?appId=cli_aa15ccc6faf8dbdb&path=%2F%3Fbind%3D1&mode=sidebar-semi";
+    const appLink = "https://applink.feishu.cn/client/web_app/open?appId=cli_aa15ccc6faf8dbdb&path=%2F%3Fbind%3D1&mode=window";
     const button = document.getElementById("openFeishu");
     button.href = appLink;
     window.setTimeout(() => { window.location.href = appLink; }, 900);

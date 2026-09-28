@@ -74,7 +74,7 @@ codex plugin add denglema@denglema</pre>
     const appId = "cli_aa15ccc6faf8dbdb";
     const feishu = (path) =>
       "https://applink.feishu.cn/client/web_app/open?appId=" + appId +
-      "&path=" + encodeURIComponent(path) + "&mode=sidebar-semi";
+      "&path=" + encodeURIComponent(path) + "&mode=window";
     const enterUrl = feishu("/");
     const bindUrl = feishu("/?bind=1");
 
