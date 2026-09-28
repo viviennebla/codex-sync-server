@@ -12,6 +12,7 @@ import {
   readDenglemaUser,
   readUserInstallations,
   readUserTotals,
+  revokeUserInstallation,
   upsertFeishuUser,
   upsertUsageSample,
 } from "../src/denglema-state.js";
@@ -157,6 +158,41 @@ test("user installations expose today's per-device token totals without credenti
     { id: "inst-b", name: "WSL", today_tokens: 80, has_today_sample: true },
   ]);
   assert.equal(JSON.stringify(devices).includes("secret-a"), false);
+});
+
+test("user can revoke only their own installation and the token stops authenticating", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-revoke-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const pair = await createPairingCode("user-1", root, {
+    code: "REVOKE-ME",
+    now: () => new Date("2026-09-28T00:00:00Z"),
+  });
+  await consumePairingCode(pair.code, "Old Laptop", root, {
+    token: "revoke-secret",
+    installationId: "inst-revoke",
+    now: () => new Date("2026-09-28T00:01:00Z"),
+  });
+
+  assert.equal(
+    await revokeUserInstallation("user-2", "inst-revoke", root),
+    null,
+  );
+  assert.notEqual(await authenticateInstallation("revoke-secret", root), null);
+
+  const revoked = await revokeUserInstallation("user-1", "inst-revoke", root, {
+    now: () => new Date("2026-09-28T02:00:00Z"),
+  });
+  assert.deepEqual(revoked, {
+    id: "inst-revoke",
+    name: "Old Laptop",
+    revoked_at: "2026-09-28T02:00:00.000Z",
+  });
+  assert.equal(await authenticateInstallation("revoke-secret", root), null);
+  assert.deepEqual(
+    await readUserInstallations("user-1", "2026-09-28", root),
+    [],
+  );
 });
 
 test("Feishu identity keeps a stable internal user id across logins", async (t) => {

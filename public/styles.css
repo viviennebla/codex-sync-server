@@ -789,11 +789,30 @@ button { font: inherit; }
   color: #7a726b;
   font-size: 12px;
 }
+.device-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .device-tokens {
+  min-width: 70px;
+  text-align: right;
   font-weight: 950;
   color: #e76543;
   font-size: 17px;
 }
+.device-revoke {
+  border: 1.5px solid #cf725d;
+  background: #fff0eb;
+  color: #8c3f31;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.device-revoke:hover { transform: translateY(-1px); }
+.device-revoke:disabled { opacity: .55; cursor: wait; }
 .leader-crown {
   position: absolute;
   z-index: 18;

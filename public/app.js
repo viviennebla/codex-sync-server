@@ -608,11 +608,41 @@ function renderDevices(payload) {
       : "今天还没上传";
     left.append(name, meta);
 
+    const actions = document.createElement("div");
+    actions.className = "device-actions";
+
     const tokens = document.createElement("div");
     tokens.className = "device-tokens";
     tokens.textContent = formatTokens(device.today_tokens || 0);
 
-    row.append(left, tokens);
+    const revoke = document.createElement("button");
+    revoke.type = "button";
+    revoke.className = "device-revoke";
+    revoke.textContent = "解除";
+    revoke.addEventListener("click", async () => {
+      const label = device.name || "这台设备";
+      if (!window.confirm("解除绑定「" + label + "」？\n解除后这台设备需要重新 pairing 才能继续上传。")) {
+        return;
+      }
+
+      revoke.disabled = true;
+      revoke.textContent = "解除中…";
+      try {
+        await jsonFetch(
+          "/api/me/installations/" + encodeURIComponent(device.id),
+          { method: "DELETE" }
+        );
+        showToast("已解除「" + label + "」；历史 token 保留", 3800);
+        await loadDevices();
+      } catch (error) {
+        showToast("解除失败：" + error.message, 4200);
+        revoke.disabled = false;
+        revoke.textContent = "解除";
+      }
+    });
+
+    actions.append(tokens, revoke);
+    row.append(left, actions);
     devicesList.appendChild(row);
   });
 }

@@ -13,6 +13,7 @@ import {
   readDenglemaUsers,
   readUserInstallations,
   readUserTotals,
+  revokeUserInstallation,
   upsertFeishuUser,
   upsertUsageSample,
 } from "./denglema-state.js";
@@ -370,6 +371,24 @@ const server = createServer(async (req, res) => {
         total_tokens: installations.reduce((sum, item) => sum + item.today_tokens, 0),
         installations,
       });
+      return;
+    }
+
+    // ── DELETE /api/me/installations/:id ── revoke one of the current user's installations
+    const revokeInstallationMatch = url.pathname.match(/^\/api\/me\/installations\/([^/]+)$/);
+    if (method === "DELETE" && revokeInstallationMatch) {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const installationId = decodeURIComponent(revokeInstallationMatch[1]);
+      const revoked = await revokeUserInstallation(user.id, installationId, STATE_DIR);
+      if (!revoked) {
+        sendError(res, 404, "Installation not found");
+        return;
+      }
+      sendJson(res, 200, { ok: true, installation: revoked });
       return;
     }
 

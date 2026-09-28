@@ -201,6 +201,30 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
   return { accepted_total: acceptedTotal, reset_detected: reset };
 }
 
+export async function revokeUserInstallation(userId, installationId, stateDir = "state", options = {}) {
+  const user = String(userId || "").trim();
+  const id = String(installationId || "").trim();
+  if (!user || !id) return null;
+
+  const file = paths(stateDir).installations;
+  const store = await readJson(file, { version: 1, items: {} });
+  const installation = store.items?.[id];
+  if (!installation || installation.user_id !== user) return null;
+
+  if (!installation.revoked_at) {
+    const now = options.now?.() || new Date();
+    installation.revoked_at = now.toISOString();
+    store.items[id] = installation;
+    await writeJson(file, store);
+  }
+
+  return {
+    id: installation.id,
+    name: installation.name || installation.id,
+    revoked_at: installation.revoked_at,
+  };
+}
+
 export async function readUserInstallations(userId, date, stateDir = "state") {
   const user = String(userId || "").trim();
   if (!user) return [];
