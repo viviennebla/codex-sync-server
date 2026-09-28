@@ -286,6 +286,9 @@ button { font: inherit; }
   z-index: 6;
 }
 
+.rider.is-clickable { cursor: pointer; }
+.rider.is-clickable:hover { filter: drop-shadow(0 5px 8px rgba(39,49,60,.18)); }
+
 .rider-motion {
   position: absolute;
   inset: 0;
@@ -822,6 +825,94 @@ button { font: inherit; }
 }
 .device-revoke:hover { transform: translateY(-1px); }
 .device-revoke:disabled { opacity: .55; cursor: wait; }
+.rider-detail-card { width: min(720px, calc(100vw - 36px)); }
+.rider-detail-card h3 {
+  margin: 0 0 9px;
+  font-size: 13px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #6b655f;
+}
+.rider-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 18px 0;
+}
+.rider-detail-grid section,
+.trend-section,
+.rider-devices-section {
+  padding: 14px;
+  border: 2px solid rgba(39,49,60,.12);
+  border-radius: 15px;
+  background: #fffdf7;
+}
+.breakdown-list { display: grid; gap: 9px; }
+.breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.breakdown-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 850;
+  color: #343b45;
+}
+.breakdown-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: #eee8dc;
+  overflow: hidden;
+}
+.breakdown-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--fill);
+  border-radius: inherit;
+  background: #e76543;
+}
+.breakdown-row strong { color: #6e625b; font-size: 11px; }
+.breakdown-empty { color: #968d86; font-size: 12px; padding: 4px 0; }
+.trend-bars {
+  height: 104px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+.trend-bar-item {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+}
+.trend-value {
+  width: min(28px, 75%);
+  min-height: 5px;
+  border-radius: 8px 8px 3px 3px;
+  background: #5479c6;
+}
+.trend-bar-item span { font-size: 10px; color: #8b8179; }
+.rider-devices-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: #5d5752;
+  font-size: 12px;
+}
+.rider-device-chip {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #f3eee5;
+  font-weight: 800;
+}
+
 .leader-crown {
   position: absolute;
   z-index: 18;
@@ -938,5 +1029,7 @@ button { font: inherit; }
   .window { right: 4%; width: 52%; }
   .lane-number { left: 10px; font-size: 34px; }
   .rider { --scale: 1.02; }
+  .rider-detail-grid { grid-template-columns: 1fr; }
+  .rider-detail-card { padding: 22px; }
   .finish-mark { right: 2%; }
 }

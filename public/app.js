@@ -8,6 +8,13 @@ const devicesButton = $("devicesButton");
 const devicesDialog = $("devicesDialog");
 const devicesSummary = $("devicesSummary");
 const devicesList = $("devicesList");
+const riderDialog = $("riderDialog");
+const riderDetailTitle = $("riderDetailTitle");
+const riderDetailSummary = $("riderDetailSummary");
+const riderModels = $("riderModels");
+const riderProjects = $("riderProjects");
+const riderTrend = $("riderTrend");
+const riderDevices = $("riderDevices");
 const uploadPromptButton = $("uploadPromptButton");
 const uploadDialog = $("uploadDialog");
 const copyUploadPromptButton = $("copyUploadPromptButton");
@@ -250,6 +257,118 @@ function formatTokens(value) {
   return n.toLocaleString("en-US");
 }
 
+function renderBreakdown(container, rows) {
+  container.replaceChildren();
+  const values = Array.isArray(rows) ? rows.slice(0, 6) : [];
+  if (!values.length) {
+    const empty = document.createElement("div");
+    empty.className = "breakdown-empty";
+    empty.textContent = "还没有明细";
+    container.appendChild(empty);
+    return;
+  }
+
+  const max = Math.max(...values.map((row) => Number(row.total_tokens || 0)), 1);
+  values.forEach((row) => {
+    const item = document.createElement("div");
+    item.className = "breakdown-row";
+
+    const label = document.createElement("span");
+    label.className = "breakdown-name";
+    label.textContent = row.name || "unknown";
+
+    const bar = document.createElement("span");
+    bar.className = "breakdown-bar";
+    bar.style.setProperty("--fill", Math.max(3, Number(row.total_tokens || 0) / max * 100) + "%");
+
+    const value = document.createElement("strong");
+    value.textContent = formatTokens(row.total_tokens || 0);
+
+    item.append(label, bar, value);
+    container.appendChild(item);
+  });
+}
+
+function renderRiderTrend(rows) {
+  riderTrend.replaceChildren();
+  const values = Array.isArray(rows) ? rows : [];
+  const max = Math.max(...values.map((row) => Number(row.total_tokens || 0)), 1);
+  values.forEach((row) => {
+    const item = document.createElement("div");
+    item.className = "trend-bar-item";
+
+    const value = document.createElement("div");
+    value.className = "trend-value";
+    value.style.height = Math.max(5, Number(row.total_tokens || 0) / max * 72) + "px";
+    value.title = row.date + " · " + formatTokens(row.total_tokens || 0);
+
+    const label = document.createElement("span");
+    label.textContent = String(row.date || "").slice(5).replace("-", "/");
+
+    item.append(value, label);
+    riderTrend.appendChild(item);
+  });
+}
+
+function renderRiderDevices(items) {
+  riderDevices.replaceChildren();
+  const devices = Array.isArray(items) ? items : [];
+  if (!devices.length) {
+    riderDevices.textContent = "今天没有设备快照";
+    return;
+  }
+  devices.forEach((device) => {
+    const item = document.createElement("div");
+    item.className = "rider-device-chip";
+    item.textContent = (device.name || "Codex 设备") + " · " + formatTokens(device.today_tokens || 0);
+    riderDevices.appendChild(item);
+  });
+}
+
+async function openRiderDetail(rider) {
+  if (!rider || rider.demo) return;
+  riderDetailTitle.textContent = rider.display_name || "骑手";
+  riderDetailSummary.textContent = "正在读取今天的 model / project 明细…";
+  riderModels.replaceChildren();
+  riderProjects.replaceChildren();
+  riderTrend.replaceChildren();
+  riderDevices.replaceChildren();
+  if (!riderDialog.open) riderDialog.showModal();
+
+  try {
+    if (previewMode) {
+      const fake = {
+        today_tokens: rider.today_tokens || 0,
+        models: [{ name: "gpt-5.6-sol", total_tokens: Math.round((rider.today_tokens || 0) * .8) }],
+        projects: [{ name: "vimo-sop", total_tokens: Math.round((rider.today_tokens || 0) * .55) }],
+        trend: Array.from({ length: 7 }, (_v, i) => ({
+          date: "09/" + String(22 + i).padStart(2, "0"),
+          total_tokens: Math.round((rider.today_tokens || 0) * (.35 + i * .1)),
+        })),
+        installations: [{ name: "Preview device", today_tokens: rider.today_tokens || 0 }],
+      };
+      riderDetailSummary.textContent = "今日 " + formatTokens(fake.today_tokens);
+      renderBreakdown(riderModels, fake.models);
+      renderBreakdown(riderProjects, fake.projects);
+      renderRiderTrend(fake.trend);
+      renderRiderDevices(fake.installations);
+      return;
+    }
+
+    const payload = await jsonFetch("/api/riders/" + encodeURIComponent(rider.user_id));
+    riderDetailTitle.textContent = payload.user?.display_name || rider.display_name || "骑手";
+    riderDetailSummary.textContent =
+      "今日 " + formatTokens(payload.today_tokens || 0) +
+      " · " + (payload.installations || []).length + " 台设备";
+    renderBreakdown(riderModels, payload.models);
+    renderBreakdown(riderProjects, payload.projects);
+    renderRiderTrend(payload.trend);
+    renderRiderDevices(payload.installations);
+  } catch (error) {
+    riderDetailSummary.textContent = "读取失败：" + error.message;
+  }
+}
+
 function stateFor(rider) {
   if (rider.mood === "burning") return ["is-fast", "is-burning", "effect-heavy"];
   if (rider.mood === "chill") return ["is-chill"];
@@ -397,6 +516,11 @@ function renderRiders(riders) {
       const riderId = node.dataset.riderId || String(index);
       const sizeJitter = (stableHash(riderId + ":size") % 5) * 0.035;
       node.style.setProperty("--scale", String(1.16 + sizeJitter));
+      const rider = visibleRiders.find((item) => item.user_id === riderId);
+      if (rider && !rider.demo) {
+        node.classList.add("is-clickable");
+        node.addEventListener("click", () => { void openRiderDetail(rider); });
+      }
     });
   });
 }
