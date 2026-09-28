@@ -787,13 +787,21 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // ── Minimal Denglema H5 shell ──
+    // ── Denglema web shell ──
     if (method === "GET" && url.pathname === "/") {
       await sendStatic(res, "index.html", "text/html; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/me") {
+      await sendStatic(res, "profile.html", "text/html; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/app.js") {
       await sendStatic(res, "app.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/profile.js") {
+      await sendStatic(res, "profile.js", "text/javascript; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/styles.css") {
