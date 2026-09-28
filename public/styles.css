@@ -96,6 +96,18 @@ button { font: inherit; }
 }
 .bind-button:hover { transform: translateY(-1px); }
 
+.devices-button {
+  border: 1.5px solid #7aa88c;
+  background: #eef8f1;
+  color: #315844;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(76,168,124,.14);
+}
+.devices-button:hover { transform: translateY(-1px); }
+
 .upload-button {
   border: 1.5px solid #dcaa2d;
   background: #fff5c8;
@@ -750,6 +762,50 @@ button { font: inherit; }
   letter-spacing: .02em;
 }
 
+.devices-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.device-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 14px;
+  border: 2px solid rgba(39,49,60,.15);
+  border-radius: 14px;
+  background: #fffdf7;
+}
+.device-name {
+  font-weight: 900;
+  color: #303844;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.device-meta {
+  margin-top: 3px;
+  color: #7a726b;
+  font-size: 12px;
+}
+.device-tokens {
+  font-weight: 950;
+  color: #e76543;
+  font-size: 17px;
+}
+.leader-crown {
+  position: absolute;
+  z-index: 18;
+  left: 62px;
+  top: -28px;
+  font-size: 31px;
+  line-height: 1;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 2px 0 rgba(39,49,60,.16));
+  animation: crownBob 1.5s ease-in-out infinite;
+}
+
 .login-overlay {
   position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
   background: #f7f2e7;
@@ -817,13 +873,14 @@ button { font: inherit; }
 }
 @keyframes burstPop { from { transform: scale(.5) rotate(-10deg); opacity: 0; } to { transform: scale(1) rotate(-5deg); opacity: 1; } }
 @keyframes miniRide { 50% { transform: translateY(-4px) rotate(-3deg); } }
+@keyframes crownBob { 50% { transform: translateY(-4px) rotate(4deg) scale(1.06); } }
 
 @media (max-width: 900px) {
   body { overflow: auto; }
   .app-shell { min-height: 780px; grid-template-rows: 72px 92px 480px 100px; }
   .topbar { grid-template-columns: 1fr auto; padding: 10px 16px; }
   .top-actions { gap: 6px; }
-  .bind-button, .upload-button { padding: 9px 11px; font-size: 12px; }
+  .bind-button, .upload-button, .devices-button { padding: 9px 10px; font-size: 11px; }
   .today-total { display: none; }
   .brand-title { font-size: 34px; }
   .office-strip { opacity: .9; }

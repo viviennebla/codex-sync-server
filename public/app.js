@@ -5,6 +5,10 @@ const statusEl = $("status");
 const retryButton = $("retryButton");
 const pairButton = $("pairButton");
 const pairDialog = $("pairDialog");
+const devicesButton = $("devicesButton");
+const devicesDialog = $("devicesDialog");
+const devicesSummary = $("devicesSummary");
+const devicesList = $("devicesList");
 const uploadPromptButton = $("uploadPromptButton");
 const uploadDialog = $("uploadDialog");
 const copyUploadPromptButton = $("copyUploadPromptButton");
@@ -284,6 +288,7 @@ function riderMarkup(rider) {
       '<div class="effect-sweat"></div>' +
       '<div class="effect-music">♪</div>' +
       '<div class="effect-burst">' + burst + '</div>' +
+      (rider.is_leader ? '<div class="leader-crown" aria-label="第一名">👑</div>' : '') +
       '<div class="rider-motion">' +
         '<div class="rider-inner">' +
           '<div class="avatar-ring"><img src="' + (rider.avatar_url || DEMO_RIDERS[0].avatar_url) + '" alt=""></div>' +
@@ -311,7 +316,15 @@ function renderRiders(riders) {
     document.querySelectorAll("#lane" + lane + " .rider").forEach((node) => node.remove());
   }
 
-  visibleRiders = positionPlan(lanePlan(riders));
+  const realLeader = [...riders]
+    .filter((rider) => !rider.demo)
+    .sort((a, b) => Number(b.today_tokens || 0) - Number(a.today_tokens || 0))[0];
+  const leaderId = realLeader?.user_id || null;
+
+  visibleRiders = positionPlan(lanePlan(riders)).map((rider) => ({
+    ...rider,
+    is_leader: rider.user_id === leaderId,
+  }));
   visibleRiders.forEach((rider) => {
     const lane = $("lane" + rider.lane);
     lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
@@ -553,6 +566,81 @@ function startPairingPoll(code) {
   void check();
   pairingPollTimer = setInterval(() => { void check(); }, 1200);
 }
+
+function formatDeviceTime(value) {
+  if (!value) return "还没上传";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "时间未知";
+  return date.toLocaleString("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function renderDevices(payload) {
+  const devices = payload.installations || [];
+  devicesSummary.textContent =
+    "今日合计 " + formatTokens(payload.total_tokens || 0) + " · " + devices.length + " 台设备";
+  devicesList.replaceChildren();
+
+  if (!devices.length) {
+    const empty = document.createElement("div");
+    empty.className = "device-row";
+    empty.textContent = "还没有绑定设备";
+    devicesList.appendChild(empty);
+    return;
+  }
+
+  devices.forEach((device) => {
+    const row = document.createElement("div");
+    row.className = "device-row";
+
+    const left = document.createElement("div");
+    const name = document.createElement("div");
+    name.className = "device-name";
+    name.textContent = device.name || "Codex 设备";
+    const meta = document.createElement("div");
+    meta.className = "device-meta";
+    meta.textContent = device.has_today_sample
+      ? "最近上传 " + formatDeviceTime(device.last_seen_at)
+      : "今天还没上传";
+    left.append(name, meta);
+
+    const tokens = document.createElement("div");
+    tokens.className = "device-tokens";
+    tokens.textContent = formatTokens(device.today_tokens || 0);
+
+    row.append(left, tokens);
+    devicesList.appendChild(row);
+  });
+}
+
+async function loadDevices() {
+  if (previewMode) {
+    renderDevices({
+      total_tokens: 1032432,
+      installations: [
+        { name: "Windows Laptop", today_tokens: 72432, has_today_sample: true, last_seen_at: new Date().toISOString() },
+        { name: "WSL Ubuntu", today_tokens: 960000, has_today_sample: true, last_seen_at: new Date().toISOString() }
+      ]
+    });
+    return;
+  }
+  renderDevices(await jsonFetch("/api/me/installations"));
+}
+
+devicesButton.addEventListener("click", async () => {
+  devicesSummary.textContent = "正在读取设备…";
+  devicesList.replaceChildren();
+  devicesDialog.showModal();
+  try {
+    await loadDevices();
+  } catch (error) {
+    devicesSummary.textContent = "读取失败：" + error.message;
+  }
+});
 
 uploadPromptButton.addEventListener("click", () => {
   uploadDialog.showModal();

@@ -11,6 +11,7 @@ import {
   readPairingCodeStatus,
   readDenglemaUser,
   readDenglemaUsers,
+  readUserInstallations,
   readUserTotals,
   upsertFeishuUser,
   upsertUsageSample,
@@ -347,6 +348,27 @@ const server = createServer(async (req, res) => {
           today_tokens: today?.total_tokens || 0,
           has_today_sample: Boolean(today),
         },
+      });
+      return;
+    }
+
+    // ── GET /api/me/installations ── current user's bound native Codex environments
+    if (method === "GET" && url.pathname === "/api/me/installations") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      const installations = await readUserInstallations(user.id, date, STATE_DIR);
+      sendJson(res, 200, {
+        date,
+        total_tokens: installations.reduce((sum, item) => sum + item.today_tokens, 0),
+        installations,
       });
       return;
     }

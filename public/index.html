@@ -21,6 +21,7 @@
         <span class="tiny-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
       <div class="top-actions">
+        <button id="devicesButton" class="devices-button" type="button">💻 我的设备</button>
         <button id="uploadPromptButton" class="upload-button" type="button">⬆ 手动上传</button>
         <button id="pairButton" class="bind-button" type="button">🔗 绑定新设备</button>
       </div>
@@ -69,6 +70,16 @@
         <pre id="bindCommand"></pre>
         <p>5 分钟有效 · 成功绑定后立即失效 · 每个环境请生成新的 code</p>
       </div>
+    </form>
+  </dialog>
+
+  <dialog id="devicesDialog" class="pair-dialog devices-dialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">我的设备</p>
+      <h2>今天都在哪儿蹬</h2>
+      <p id="devicesSummary" class="dialog-copy">正在读取设备…</p>
+      <div id="devicesList" class="devices-list"></div>
     </form>
   </dialog>
 

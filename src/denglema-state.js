@@ -201,6 +201,36 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
   return { accepted_total: acceptedTotal, reset_detected: reset };
 }
 
+export async function readUserInstallations(userId, date, stateDir = "state") {
+  const user = String(userId || "").trim();
+  if (!user) return [];
+
+  const p = paths(stateDir);
+  const [store, day] = await Promise.all([
+    readJson(p.installations, { version: 1, items: {} }),
+    readJson(p.usage(date), { version: 1, date, installations: {} }),
+  ]);
+
+  return Object.values(store.items || {})
+    .filter((installation) => installation.user_id === user && !installation.revoked_at)
+    .map((installation) => {
+      const usage = day.installations?.[installation.id] || null;
+      return {
+        id: installation.id,
+        name: installation.name || installation.id,
+        created_at: installation.created_at || null,
+        last_seen_at: installation.last_seen_at || null,
+        today_tokens: Number(usage?.max_total_tokens || 0),
+        has_today_sample: Boolean(usage),
+      };
+    })
+    .sort((a, b) => (
+      b.today_tokens - a.today_tokens
+      || String(b.last_seen_at || "").localeCompare(String(a.last_seen_at || ""))
+      || a.name.localeCompare(b.name)
+    ));
+}
+
 export async function readUserTotals(date, stateDir = "state") {
   const day = await readJson(paths(stateDir).usage(date), { installations: {} });
   const totals = new Map();

@@ -10,6 +10,7 @@ import {
   createPairingCode,
   readPairingCodeStatus,
   readDenglemaUser,
+  readUserInstallations,
   readUserTotals,
   upsertFeishuUser,
   upsertUsageSample,
@@ -99,6 +100,65 @@ test("cumulative samples are idempotent and aggregate multiple installations by 
     { user_id: "user-2", total_tokens: 60, installations: 1 },
   ]);
 });
+
+
+test("user installations expose today's per-device token totals without credentials", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-installations-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const pairA = await createPairingCode("user-1", root, {
+    code: "PAIR-A",
+    now: () => new Date("2026-09-28T00:00:00Z"),
+  });
+  const a = await consumePairingCode(pairA.code, "Windows Laptop", root, {
+    token: "secret-a",
+    installationId: "inst-a",
+    now: () => new Date("2026-09-28T00:01:00Z"),
+  });
+  const pairB = await createPairingCode("user-1", root, {
+    code: "PAIR-B",
+    now: () => new Date("2026-09-28T00:02:00Z"),
+  });
+  const b = await consumePairingCode(pairB.code, "WSL", root, {
+    token: "secret-b",
+    installationId: "inst-b",
+    now: () => new Date("2026-09-28T00:03:00Z"),
+  });
+
+  await upsertUsageSample(
+    { id: a.installation_id, user_id: "user-1" },
+    {
+      schema_version: 1,
+      date: "2026-09-28",
+      observed_at: "2026-09-28T01:00:00Z",
+      total_tokens: 120,
+    },
+    root,
+  );
+  await upsertUsageSample(
+    { id: b.installation_id, user_id: "user-1" },
+    {
+      schema_version: 1,
+      date: "2026-09-28",
+      observed_at: "2026-09-28T01:05:00Z",
+      total_tokens: 80,
+    },
+    root,
+  );
+
+  const devices = await readUserInstallations("user-1", "2026-09-28", root);
+  assert.deepEqual(devices.map((device) => ({
+    id: device.id,
+    name: device.name,
+    today_tokens: device.today_tokens,
+    has_today_sample: device.has_today_sample,
+  })), [
+    { id: "inst-a", name: "Windows Laptop", today_tokens: 120, has_today_sample: true },
+    { id: "inst-b", name: "WSL", today_tokens: 80, has_today_sample: true },
+  ]);
+  assert.equal(JSON.stringify(devices).includes("secret-a"), false);
+});
+
 test("Feishu identity keeps a stable internal user id across logins", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "denglema-users-"));
   t.after(() => rm(root, { recursive: true, force: true }));
