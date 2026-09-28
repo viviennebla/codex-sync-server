@@ -761,8 +761,11 @@ button { font: inherit; }
   background: #f3cf4d; font-weight: 900; cursor: pointer;
 }
 .pairing-result { margin-top: 18px; padding: 16px; border-radius: 14px; background: #20252c; color: #fff; }
-.pairing-result code { font-size: 28px; font-weight: 950; color: #f6d65d; letter-spacing: .08em; }
+.pairing-result code { font-size: 13px; font-weight: 900; color: #f6d65d; letter-spacing: .02em; }
 .pairing-result pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #c9d7f4; font-size: 12px; }
+.onboarding-platforms { display: flex; gap: 8px; margin: 12px 0 8px; }
+.onboarding-platforms .auth-link { color: #aebbd3; }
+.onboarding-platforms .auth-link.is-selected { color: #f6d65d; text-decoration: underline; }
 
 .upload-prompt-box {
   margin: 18px 0;

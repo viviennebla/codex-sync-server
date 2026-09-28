@@ -23,6 +23,9 @@ const createPairingButton = $("createPairingButton");
 const pairingResult = $("pairingResult");
 const pairingCodeEl = $("pairingCode");
 const bindCommandEl = $("bindCommand");
+const copyBindCommandButton = $("copyBindCommandButton");
+const useShellCommandButton = $("useShellCommandButton");
+const usePowerShellCommandButton = $("usePowerShellCommandButton");
 const todayTotalEl = $("todayTotal");
 const toastEl = $("toast");
 const registerPanel = $("registerPanel");
@@ -45,8 +48,13 @@ let directorTimer = null;
 let refreshTimer = null;
 let ambientTimer = null;
 let pairingPollTimer = null;
+let pairingCodeCurrent = null;
+let pairingCommandMode = "shell";
 let previewMode = false;
 const activeMotion = new Map();
+
+const DENGLEMA_SERVER = "https://vimo-dev-server.taila62aff.ts.net";
+const DENGLEMA_MARKETPLACE = "viviennebla/codex-usage-dashboard";
 
 function avatarSvg(bg, ink, mood) {
   const eyes = mood === "rage"
@@ -783,6 +791,33 @@ async function bootstrap() {
   }
 }
 
+function buildOneStepCommand(code, mode = pairingCommandMode) {
+  if (!code) return "";
+  if (mode === "powershell") {
+    return [
+      "codex plugin marketplace add " + DENGLEMA_MARKETPLACE + " 2>$null | Out-Null",
+      "codex plugin marketplace upgrade denglema | Out-Null",
+      "$p = codex plugin add --json denglema@denglema | ConvertFrom-Json",
+      "node (Join-Path $p.installedPath 'src/cli.js') denglema bind --server " + DENGLEMA_SERVER + " --code " + code
+    ].join("; ");
+  }
+
+  const readRoot =
+    "node -e 'let s=\"\";process.stdin.on(\"data\",c=>s+=c).on(\"end\",()=>process.stdout.write(JSON.parse(s).installedPath))'";
+  return [
+    "codex plugin marketplace add " + DENGLEMA_MARKETPLACE + " >/dev/null 2>&1 || true",
+    "codex plugin marketplace upgrade denglema >/dev/null",
+    "ROOT=$(codex plugin add --json denglema@denglema | " + readRoot + ")",
+    "node \"$ROOT/src/cli.js\" denglema bind --server " + DENGLEMA_SERVER + " --code " + code
+  ].join("; ");
+}
+
+function renderOneStepCommand() {
+  bindCommandEl.textContent = buildOneStepCommand(pairingCodeCurrent);
+  useShellCommandButton.classList.toggle("is-selected", pairingCommandMode === "shell");
+  usePowerShellCommandButton.classList.toggle("is-selected", pairingCommandMode === "powershell");
+}
+
 function stopPairingPoll() {
   if (pairingPollTimer !== null) clearInterval(pairingPollTimer);
   pairingPollTimer = null;
@@ -818,8 +853,8 @@ function startPairingPoll(code) {
 
       if (result.status === "consumed") {
         stopPairingPoll();
-        pairingCodeEl.textContent = "绑定成功 ✓";
-        bindCommandEl.textContent = "正在自动上传 latest snapshot…";
+        pairingCodeEl.textContent = "接入成功 ✓";
+        bindCommandEl.textContent = "正在完成第一次快照上传…";
         clearBindIntentFromUrl();
 
         const uploaded = await waitForTodaySample();
@@ -837,8 +872,8 @@ function startPairingPoll(code) {
 
       if (result.status === "expired") {
         stopPairingPoll();
-        pairingCodeEl.textContent = "已过期";
-        bindCommandEl.textContent = "请重新生成 pairing code";
+        pairingCodeEl.textContent = "命令已过期";
+        bindCommandEl.textContent = "请重新生成一键接入命令";
       }
     } catch (error) {
       if (error.status === 401 || error.status === 404) stopPairingPoll();
@@ -903,7 +938,7 @@ function renderDevices(payload) {
     revoke.textContent = "解除";
     revoke.addEventListener("click", async () => {
       const label = device.name || "这台设备";
-      if (!window.confirm("解除绑定「" + label + "」？\n解除后这台设备需要重新 pairing 才能继续上传。")) {
+      if (!window.confirm("解除绑定「" + label + "」？\n解除后这台设备需要重新执行接入命令才能继续上传。")) {
         return;
       }
 
@@ -979,6 +1014,8 @@ copyUploadPromptButton.addEventListener("click", async () => {
 
 pairButton.addEventListener("click", () => {
   stopPairingPoll();
+  pairingCodeCurrent = null;
+  pairingCommandMode = "shell";
   pairingResult.classList.add("hidden");
   pairDialog.showModal();
 });
@@ -989,11 +1026,11 @@ createPairingButton.addEventListener("click", async () => {
   createPairingButton.disabled = true;
   try {
     if (previewMode) {
+      pairingCodeCurrent = "DEMO1600";
       pairingResult.classList.remove("hidden");
-      pairingCodeEl.textContent = "DEMO1600";
-      bindCommandEl.textContent =
-        "在当前 Codex 中说：绑定蹬了吗 DEMO1600";
-      showToast("预览模式：这是演示 pairing code");
+      pairingCodeEl.textContent = "演示接入命令";
+      renderOneStepCommand();
+      showToast("预览模式：命令不会真的绑定设备");
       return;
     }
 
@@ -1001,16 +1038,46 @@ createPairingButton.addEventListener("click", async () => {
       method: "POST",
       body: JSON.stringify({})
     });
+    pairingCodeCurrent = result.code;
     pairingResult.classList.remove("hidden");
-    pairingCodeEl.textContent = result.code;
-    bindCommandEl.textContent =
-      "在当前 Codex 中说：绑定蹬了吗 " + result.code;
+    pairingCodeEl.textContent = "命令 5 分钟有效";
+    renderOneStepCommand();
     startPairingPoll(result.code);
   } catch (error) {
     showToast("生成失败：" + error.message);
   } finally {
     createPairingButton.disabled = false;
   }
+});
+
+useShellCommandButton.addEventListener("click", () => {
+  pairingCommandMode = "shell";
+  renderOneStepCommand();
+});
+
+usePowerShellCommandButton.addEventListener("click", () => {
+  pairingCommandMode = "powershell";
+  renderOneStepCommand();
+});
+
+copyBindCommandButton.addEventListener("click", async () => {
+  const command = bindCommandEl.textContent.trim();
+  if (!command) return;
+  try {
+    await navigator.clipboard.writeText(command);
+    copyBindCommandButton.textContent = "已复制 ✓";
+    showToast("命令已复制，去 Codex 所在终端执行即可", 3200);
+  } catch {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(bindCommandEl);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    showToast("命令已选中，请复制到 Codex 所在终端执行", 3200);
+  }
+  window.setTimeout(() => {
+    copyBindCommandButton.textContent = "复制命令";
+  }, 1800);
 });
 
 showRecoverButton.addEventListener("click", showRecoverPanel);

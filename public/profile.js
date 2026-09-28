@@ -150,8 +150,7 @@ async function loadProfile() {
 }
 
 profilePairButton.addEventListener("click", () => {
-  profilePairingResult.classList.add("hidden");
-  profilePairDialog.showModal();
+  location.href = "/?bind=1";
 });
 
 profileCreatePairingButton.addEventListener("click", async () => {

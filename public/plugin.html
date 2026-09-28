@@ -19,26 +19,21 @@
       <div class="profile-identity">
         <p class="dialog-kicker">Denglema Codex Plugin</p>
         <h1>把 Codex token 蹬进赛道</h1>
-        <p>本地生成使用量快照；你明确上传时才把聚合数据发到蹬了吗。</p>
+        <p>首次接入会自动上传一份快照；之后只在你明确说「上传蹬了吗」时上传。</p>
       </div>
     </section>
 
     <section class="plugin-doc-grid">
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>1. 安装</h2><span>Git marketplace</span></div>
-        <pre class="plugin-command">codex plugin marketplace add viviennebla/codex-usage-dashboard
-codex plugin add denglema@denglema</pre>
-        <p class="plugin-doc-copy">安装完成后重启 Codex。首次使用会打开蹬了吗网页。</p>
+        <div class="profile-panel-head"><h2>1. 接入</h2><span>一次完成</span></div>
+        <p class="plugin-doc-copy">在蹬了吗网页点击「接入这台 Codex」，复制页面生成的一条命令到 Codex 所在终端执行。</p>
+        <p class="plugin-doc-copy">命令会自动安装/更新 Plugin、绑定当前骑手、fresh collect，并上传第一份 schema v2 快照。</p>
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>2. 绑定设备</h2><span>每个环境一次</span></div>
-        <ol class="plugin-doc-steps">
-          <li>在蹬了吗里创建/恢复你的骑手身份。</li>
-          <li>点击「绑定新设备」生成 5 分钟有效的 pairing code。</li>
-          <li>在对应 Codex 环境发送：<code>绑定蹬了吗 &lt;pairing-code&gt;</code></li>
-          <li>只有服务端返回真实 installation ID 并二次验证成功，才算绑定完成。</li>
-        </ol>
+        <div class="profile-panel-head"><h2>2. 开蹬</h2><span>之后只说一句</span></div>
+        <pre class="plugin-command">上传蹬了吗</pre>
+        <p class="plugin-doc-copy">以后需要刷新赛道时，只需要把这句话发给 Codex。pairing code 不需要用户查看或手工处理。</p>
       </article>
 
       <article class="profile-panel">
@@ -83,9 +78,9 @@ codex plugin add denglema@denglema</pre>
     <section class="profile-panel recovery-panel">
       <div>
         <h2>多设备</h2>
-        <p>Windows、WSL、macOS 各自作为一个 installation；绑定到同一个骑手身份后，服务端按 rider 聚合。</p>
+        <p>Windows、WSL、macOS 各自作为一个 installation；分别执行一次「接入这台 Codex」后，服务端按同一个 rider 聚合。</p>
       </div>
-      <a class="profile-button plugin-doc-cta" href="/?bind=1">去绑定新设备 →</a>
+      <a class="profile-button plugin-doc-cta" href="/?bind=1">接入这台 Codex →</a>
     </section>
   </main>
 </body>
