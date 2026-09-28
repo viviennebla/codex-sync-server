@@ -12,6 +12,7 @@ import {
   readPairingCodeStatus,
   readDenglemaUser,
   readDenglemaUsers,
+  readDimensionLeaderboard,
   recoverWebUser,
   readUserInstallations,
   readUserTotals,
@@ -367,7 +368,11 @@ const server = createServer(async (req, res) => {
         sendJson(res, 401, { error: "Not logged in" });
         return;
       }
-      const totals = await readUserTotals(currentDateKey(), STATE_DIR);
+      const date = currentDateKey();
+      const [totals, installations] = await Promise.all([
+        readUserTotals(date, STATE_DIR),
+        readUserInstallations(user.id, date, STATE_DIR),
+      ]);
       const today = totals.find((row) => row.user_id === user.id) || null;
       sendJson(res, 200, {
         user: {
@@ -377,6 +382,13 @@ const server = createServer(async (req, res) => {
           avatar_url: user.avatar_url || null,
           today_tokens: today?.total_tokens || 0,
           has_today_sample: Boolean(today),
+          installation_count: installations.length,
+          latest_seen_at: installations
+            .map((item) => item.last_seen_at)
+            .filter(Boolean)
+            .sort()
+            .at(-1) || null,
+          needs_onboarding: installations.length === 0,
         },
       });
       return;
@@ -472,6 +484,17 @@ const server = createServer(async (req, res) => {
         })),
         trend,
       });
+      return;
+    }
+
+    // ── GET /api/leaderboards/dimensions ── model/project burn board
+    if (method === "GET" && url.pathname === "/api/leaderboards/dimensions") {
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      sendJson(res, 200, await readDimensionLeaderboard(date, STATE_DIR));
       return;
     }
 
@@ -798,6 +821,14 @@ const server = createServer(async (req, res) => {
     }
     if (method === "GET" && url.pathname === "/plugin") {
       await sendStatic(res, "plugin.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/leaderboards") {
+      await sendStatic(res, "leaderboards.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/leaderboards.js") {
+      await sendStatic(res, "leaderboards.js", "text/javascript; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/app.js") {
