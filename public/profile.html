@@ -13,9 +13,9 @@
       <a href="/" class="profile-back">← 回赛道</a>
       <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
       <div class="profile-actions">
-        <a class="plugin-info-link" href="/plugin">Plugin 说明</a>
-        <button id="profileUploadButton" class="upload-button" type="button">⬆ 手动上传</button>
-        <button id="profilePairButton" class="bind-button" type="button">🔗 接入这台 Codex</button>
+        <a class="plugin-info-link" href="/leaderboards">🔥 烧榜</a>
+        <button id="profileUploadButton" class="upload-button" type="button">⬆ 刷新赛道</button>
+        <button id="profilePairButton" class="bind-button" type="button">＋ 接入新 Codex</button>
       </div>
     </header>
 
@@ -61,23 +61,9 @@
         <h2>身份恢复</h2>
         <p>恢复码用于换浏览器、清 cookie 后找回同一个骑手。当前浏览器已登录时不需要输入它。</p>
       </div>
-      <div class="recovery-note">恢复码只在创建身份时显示一次；服务端只保存 hash。</div>
+      <div class="recovery-note">恢复码只在创建身份时显示一次；服务端只保存 hash。<br><a class="plugin-info-link" href="/plugin">Plugin 说明 →</a></div>
     </section>
   </main>
-
-  <dialog id="profilePairDialog" class="pair-dialog">
-    <form method="dialog" class="dialog-card">
-      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
-      <p class="dialog-kicker">绑定新设备</p>
-      <h2>让另一台 Codex 也来蹬</h2>
-      <button id="profileCreatePairingButton" type="button" class="dialog-primary">生成 pairing code</button>
-      <div id="profilePairingResult" class="pairing-result hidden">
-        <code id="profilePairingCode"></code>
-        <pre id="profileBindCommand"></pre>
-        <p>5 分钟有效 · 成功绑定后立即失效</p>
-      </div>
-    </form>
-  </dialog>
 
   <dialog id="profileUploadDialog" class="pair-dialog">
     <form method="dialog" class="dialog-card">

@@ -10,11 +10,6 @@ const profileTrend = $("profileTrend");
 const profileDevices = $("profileDevices");
 const profileDevicesSummary = $("profileDevicesSummary");
 const profilePairButton = $("profilePairButton");
-const profilePairDialog = $("profilePairDialog");
-const profileCreatePairingButton = $("profileCreatePairingButton");
-const profilePairingResult = $("profilePairingResult");
-const profilePairingCode = $("profilePairingCode");
-const profileBindCommand = $("profileBindCommand");
 const profileUploadButton = $("profileUploadButton");
 const profileUploadDialog = $("profileUploadDialog");
 const profileCopyUploadButton = $("profileCopyUploadButton");
@@ -139,9 +134,18 @@ async function loadProfile() {
   const user = me.user;
   profileAvatar.textContent = user.avatar_emoji || "🚴";
   profileName.textContent = user.display_name || "骑手";
-  profileMeta.textContent = "赛道 ID " + user.user_id.slice(0, 8) + "… · 这个网页身份就是你的骑手身份";
 
   const detail = await jsonFetch("/api/riders/" + encodeURIComponent(user.user_id));
+  const latestSeen = (detail.installations || [])
+    .map((item) => item.last_seen_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null;
+  const latestLabel = latestSeen
+    ? new Date(latestSeen).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "还没上传";
+  profileMeta.textContent =
+    (detail.installations || []).length + " 台 Codex · 最近上传 " + latestLabel;
   profileToday.textContent = formatTokens(detail.today_tokens || 0);
   renderBreakdown(profileModels, detail.models);
   renderBreakdown(profileProjects, detail.projects);
@@ -151,22 +155,6 @@ async function loadProfile() {
 
 profilePairButton.addEventListener("click", () => {
   location.href = "/?bind=1";
-});
-
-profileCreatePairingButton.addEventListener("click", async () => {
-  profileCreatePairingButton.disabled = true;
-  profileCreatePairingButton.textContent = "生成中…";
-  try {
-    const result = await jsonFetch("/api/pairing-codes", { method: "POST", body: "{}" });
-    profilePairingCode.textContent = result.code;
-    profileBindCommand.textContent = "绑定蹬了吗 " + result.code;
-    profilePairingResult.classList.remove("hidden");
-  } catch (error) {
-    showToast("生成失败：" + error.message, 4200);
-  } finally {
-    profileCreatePairingButton.disabled = false;
-    profileCreatePairingButton.textContent = "生成 pairing code";
-  }
 });
 
 profileUploadButton.addEventListener("click", () => profileUploadDialog.showModal());

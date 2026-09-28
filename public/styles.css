@@ -1335,3 +1335,115 @@ button { font: inherit; }
   .rider-detail-card { padding: 22px; }
   .finish-mark { right: 2%; }
 }
+
+.burn-shell { max-width: 980px; }
+.burn-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 28px;
+  border: 2px solid rgba(39,49,60,.12);
+  border-radius: 24px;
+  background: #fffaf0;
+}
+.burn-hero h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); line-height: 1; }
+.burn-subtitle { margin: 10px 0 0; color: #6d665f; font-size: 13px; font-weight: 800; }
+.burn-flame { font-size: clamp(54px, 9vw, 92px); transform: rotate(7deg); }
+.burn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.burn-panel { margin-top: 0; min-width: 0; }
+.burn-list { display: grid; gap: 14px; }
+.burn-row { min-width: 0; }
+.burn-row-head {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.burn-rank { font-size: 19px; text-align: center; }
+.burn-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #313944;
+  font-size: 14px;
+}
+.burn-total { color: #494f58; font-weight: 950; font-size: 13px; }
+.burn-track {
+  height: 9px;
+  margin: 7px 0 5px 40px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee8dd;
+}
+.burn-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #df7654;
+}
+.burn-contributors {
+  margin-left: 40px;
+  color: #8a8178;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.burn-empty {
+  padding: 28px 8px;
+  color: #938b84;
+  text-align: center;
+  font-weight: 800;
+}
+.burn-footnote {
+  margin: 14px 4px 0;
+  color: #8a8178;
+  font-size: 11px;
+  line-height: 1.6;
+}
+@media (max-width: 760px) {
+  .burn-grid { grid-template-columns: 1fr; }
+  .burn-hero { padding: 22px 20px; }
+  .burn-flame { font-size: 54px; }
+}
+
+.today-freshness {
+  color: #8a8178;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.is-background-paused .track-motion,
+.is-background-paused .rider-inner,
+.is-background-paused .wheel,
+.is-background-paused .leg,
+.is-background-paused .leader-crown,
+.is-background-paused .effect-fire,
+.is-background-paused .effect-dust,
+.is-background-paused .effect-sweat,
+.is-background-paused .effect-music {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .track-motion,
+  .rider-inner,
+  .wheel,
+  .leg,
+  .leader-crown,
+  .mini-bike,
+  .effect-fire,
+  .effect-dust,
+  .effect-sweat,
+  .effect-music {
+    animation: none !important;
+  }
+  .rider { transition: none !important; }
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>烧榜 · 蹬了吗</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/leaderboards.js"></script>
+</head>
+<body class="profile-page burn-page">
+  <main class="profile-shell burn-shell">
+    <header class="profile-topbar">
+      <a href="/" class="profile-back">← 回赛道</a>
+      <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
+      <a href="/me" class="plugin-info-link">我的主页</a>
+    </header>
+
+    <section class="burn-hero">
+      <div>
+        <p class="dialog-kicker">今日烧榜</p>
+        <h1>谁在烧 Token 🔥</h1>
+        <p id="burnCoverage" class="burn-subtitle">正在统计今天的火力…</p>
+      </div>
+      <div class="burn-flame" aria-hidden="true">🔥</div>
+    </section>
+
+    <section class="burn-grid">
+      <article class="profile-panel burn-panel">
+        <div class="profile-panel-head">
+          <h2>🤖 Model</h2>
+          <span>今天谁最费模型</span>
+        </div>
+        <div id="modelBoard" class="burn-list"></div>
+      </article>
+
+      <article class="profile-panel burn-panel">
+        <div class="profile-panel-head">
+          <h2>🧩 Project</h2>
+          <span>今天哪个项目最能烧</span>
+        </div>
+        <div id="projectBoard" class="burn-list"></div>
+      </article>
+    </section>
+
+    <p id="burnFootnote" class="burn-footnote"></p>
+  </main>
+</body>
+</html>

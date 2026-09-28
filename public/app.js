@@ -27,6 +27,7 @@ const copyBindCommandButton = $("copyBindCommandButton");
 const useShellCommandButton = $("useShellCommandButton");
 const usePowerShellCommandButton = $("usePowerShellCommandButton");
 const todayTotalEl = $("todayTotal");
+const todayFreshnessEl = $("todayFreshness");
 const toastEl = $("toast");
 const registerPanel = $("registerPanel");
 const recoverPanel = $("recoverPanel");
@@ -263,6 +264,23 @@ function formatTokens(value) {
   if (n >= 1000000) return (n / 1000000).toFixed(2) + "M";
   if (n >= 100000) return Math.round(n / 1000) + "K";
   return n.toLocaleString("en-US");
+}
+
+function formatFreshness(value) {
+  if (!value) return "还没上传";
+  const ms = Date.now() - Date.parse(value);
+  if (!Number.isFinite(ms)) return "时间未知";
+  const minutes = Math.max(0, Math.floor(ms / 60000));
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return minutes + " 分钟前";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + " 小时前";
+  return Math.floor(hours / 24) + " 天前";
+}
+
+function renderFreshness() {
+  if (!todayFreshnessEl) return;
+  todayFreshnessEl.textContent = formatFreshness(me?.latest_seen_at);
 }
 
 function renderBreakdown(container, rows) {
@@ -751,20 +769,51 @@ function scheduleAmbientDrift() {
     });
   }, 4200);
 }
-async function enterRace() {
-  loginOverlay.classList.add("hidden");
-  await loadRaceData();
-  if (me?.has_today_sample === false) {
-    showToast("今天还没有上传快照；已绑定设备可说「上传蹬了吗」", 5200);
-  }
+
+function stopRaceRuntime() {
+  clearTimeout(directorTimer);
+  clearInterval(ambientTimer);
+  clearInterval(refreshTimer);
+  directorTimer = null;
+  ambientTimer = null;
+  refreshTimer = null;
+}
+
+function startRaceRuntime() {
+  stopRaceRuntime();
+  if (document.hidden) return;
   scheduleDirector();
   scheduleAmbientDrift();
-  clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => loadRaceData().catch(() => {}), 20000);
+  refreshTimer = setInterval(() => {
+    if (!document.hidden) loadRaceData().catch(() => {});
+  }, 20000);
+}
 
-  if ((new URLSearchParams(location.search).get("bind") === "1" || new URLSearchParams(location.search).get("action") === "bind")) {
+async function enterRace() {
+  loginOverlay.classList.add("hidden");
+
+  if (!previewMode && typeof me?.installation_count !== "number") {
+    try {
+      const result = await jsonFetch("/api/me");
+      me = result.user;
+    } catch {}
+  }
+
+  renderFreshness();
+  await loadRaceData();
+  if (me?.has_today_sample === false && !me?.needs_onboarding) {
+    showToast("今天还没刷新赛道；对 Codex 说「上传蹬了吗」即可", 5200);
+  }
+  startRaceRuntime();
+
+  const params = new URLSearchParams(location.search);
+  const wantsBind = params.get("bind") === "1" || params.get("action") === "bind";
+  if (me?.needs_onboarding || wantsBind) {
     pairingResult.classList.add("hidden");
+    pairingCodeCurrent = null;
+    pairingCommandMode = "shell";
     if (!pairDialog.open) pairDialog.showModal();
+    if (me?.needs_onboarding) createPairingButton.click();
   }
 }
 
@@ -775,8 +824,7 @@ async function bootstrap() {
     me = { user_id: "preview_me", display_name: "我", avatar_emoji: "🚴" };
     loginOverlay.classList.add("hidden");
     await loadRaceData();
-    scheduleDirector();
-    scheduleAmbientDrift();
+    startRaceRuntime();
     return;
   }
 
@@ -835,6 +883,7 @@ async function waitForTodaySample(maxAttempts = 8, delayMs = 850) {
     try {
       const meResult = await jsonFetch("/api/me");
       me = meResult.user;
+      renderFreshness();
       if (me?.has_today_sample) return true;
     } catch {}
     await new Promise((resolve) => window.setTimeout(resolve, delayMs));
@@ -1078,6 +1127,27 @@ copyBindCommandButton.addEventListener("click", async () => {
   window.setTimeout(() => {
     copyBindCommandButton.textContent = "复制命令";
   }, 1800);
+});
+
+document.addEventListener("visibilitychange", () => {
+  document.body.classList.toggle("is-background-paused", document.hidden);
+  if (document.hidden) {
+    stopRaceRuntime();
+    return;
+  }
+  if (!loginOverlay.classList.contains("hidden")) return;
+
+  void (async () => {
+    if (!previewMode) {
+      try {
+        const result = await jsonFetch("/api/me");
+        me = result.user;
+        renderFreshness();
+      } catch {}
+    }
+    try { await loadRaceData(); } catch {}
+    startRaceRuntime();
+  })();
 });
 
 showRecoverButton.addEventListener("click", showRecoverPanel);

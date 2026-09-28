@@ -426,3 +426,78 @@ export async function readUserTotals(date, stateDir = "state") {
     }))
     .sort((a, b) => b.total_tokens - a.total_tokens);
 }
+
+export async function readDimensionLeaderboard(date, stateDir = "state") {
+  const [day, users] = await Promise.all([
+    readJson(paths(stateDir).usage(date), { installations: {} }),
+    readDenglemaUsers(stateDir),
+  ]);
+  const profiles = new Map(users.map((user) => [user.id, user]));
+  const models = new Map();
+  const projects = new Map();
+  let totalTokens = 0;
+  let coveredTokens = 0;
+  let installations = 0;
+  let v2Installations = 0;
+
+  const add = (target, rows, userId) => {
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const name = String(row?.name || "").trim();
+      const tokens = Number(row?.total_tokens || 0);
+      if (!name || !Number.isFinite(tokens) || tokens <= 0) continue;
+      const current = target.get(name) || {
+        name,
+        total_tokens: 0,
+        contributors: new Map(),
+      };
+      current.total_tokens += tokens;
+      current.contributors.set(
+        userId,
+        (current.contributors.get(userId) || 0) + tokens,
+      );
+      target.set(name, current);
+    }
+  };
+
+  for (const row of Object.values(day.installations || {})) {
+    const userId = row?.user_id;
+    if (!userId) continue;
+    const tokens = Number(row?.max_total_tokens || 0);
+    totalTokens += tokens;
+    installations += 1;
+
+    const isV2 = Number(row?.latest?.schema_version) === 2;
+    if (isV2) {
+      coveredTokens += tokens;
+      v2Installations += 1;
+    }
+    add(models, row?.max_models || row?.latest?.models, userId);
+    add(projects, row?.max_projects || row?.latest?.projects, userId);
+  }
+
+  const rows = (target) => [...target.values()]
+    .map((row) => ({
+      name: row.name,
+      total_tokens: row.total_tokens,
+      contributors: [...row.contributors.entries()]
+        .map(([user_id, total_tokens]) => ({
+          user_id,
+          display_name: profiles.get(user_id)?.display_name || "骑手",
+          avatar_emoji: profiles.get(user_id)?.avatar_emoji || "🚴",
+          total_tokens,
+        }))
+        .sort((a, b) => b.total_tokens - a.total_tokens),
+    }))
+    .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name));
+
+  return {
+    date,
+    total_tokens: totalTokens,
+    covered_tokens: coveredTokens,
+    coverage_ratio: totalTokens > 0 ? coveredTokens / totalTokens : 0,
+    installations,
+    v2_installations: v2Installations,
+    models: rows(models),
+    projects: rows(projects),
+  };
+}

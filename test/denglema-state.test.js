@@ -11,6 +11,7 @@ import {
   createWebUser,
   readPairingCodeStatus,
   readDenglemaUser,
+  readDimensionLeaderboard,
   recoverWebUser,
   readUserInstallations,
   readUserTotals,
@@ -286,4 +287,95 @@ test("user can revoke only their own installation and the token stops authentica
     await readUserInstallations("user-1", "2026-09-28", root),
     [],
   );
+});
+
+test("dimension leaderboard aggregates v2 breakdowns and reports coverage", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-dimensions-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  for (const [id, name, emoji] of [
+    ["user-a", "Alice", "🐱"],
+    ["user-b", "Bob", "🐶"],
+    ["user-c", "Carol", "🐼"],
+  ]) {
+    await createWebUser({ display_name: name, avatar_emoji: emoji }, root, {
+      userId: id,
+      recoveryCode: "RECOVERY-" + id,
+    });
+  }
+
+  async function install(userId, code, installationId) {
+    await createPairingCode(userId, root, { code });
+    return consumePairingCode(code, installationId, root, {
+      token: "token-" + installationId,
+      installationId,
+    });
+  }
+
+  const a = await install("user-a", "PAIR-A-DIM", "inst-a-dim");
+  const b = await install("user-b", "PAIR-B-DIM", "inst-b-dim");
+  const c = await install("user-c", "PAIR-C-DIM", "inst-c-dim");
+
+  await upsertUsageSample(
+    { id: a.installation_id, user_id: "user-a" },
+    {
+      schema_version: 2,
+      date: "2026-09-28",
+      observed_at: "2026-09-28T08:00:00Z",
+      total_tokens: 1000,
+      models: [
+        { name: "gpt-5.6-luna", total_tokens: 600 },
+        { name: "gpt-5.6-sol", total_tokens: 400 },
+      ],
+      projects: [{ name: "alpha", total_tokens: 700 }],
+    },
+    root,
+  );
+  await upsertUsageSample(
+    { id: b.installation_id, user_id: "user-b" },
+
+    {
+      schema_version: 2,
+      date: "2026-09-28",
+      observed_at: "2026-09-28T08:05:00Z",
+      total_tokens: 500,
+      models: [{ name: "gpt-5.6-luna", total_tokens: 300 }],
+      projects: [{ name: "alpha", total_tokens: 200 }],
+    },
+    root,
+  );
+  await upsertUsageSample(
+    { id: c.installation_id, user_id: "user-c" },
+    {
+      schema_version: 1,
+      date: "2026-09-28",
+      observed_at: "2026-09-28T08:10:00Z",
+      total_tokens: 250,
+    },
+    root,
+  );
+
+  const board = await readDimensionLeaderboard("2026-09-28", root);
+  assert.equal(board.total_tokens, 1750);
+  assert.equal(board.covered_tokens, 1500);
+
+  assert.equal(board.installations, 3);
+  assert.equal(board.v2_installations, 2);
+  assert.equal(board.coverage_ratio, 1500 / 1750);
+  assert.deepEqual(board.models[0], {
+    name: "gpt-5.6-luna",
+    total_tokens: 900,
+    contributors: [
+      { user_id: "user-a", display_name: "Alice", avatar_emoji: "🐱", total_tokens: 600 },
+      { user_id: "user-b", display_name: "Bob", avatar_emoji: "🐶", total_tokens: 300 },
+    ],
+  });
+  assert.deepEqual(board.projects[0], {
+    name: "alpha",
+    total_tokens: 900,
+    contributors: [
+      { user_id: "user-a", display_name: "Alice", avatar_emoji: "🐱", total_tokens: 700 },
+      { user_id: "user-b", display_name: "Bob", avatar_emoji: "🐶", total_tokens: 200 },
+    ],
+  });
 });
