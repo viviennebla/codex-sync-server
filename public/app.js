@@ -2,7 +2,6 @@ const $ = (id) => document.getElementById(id);
 
 const loginOverlay = $("loginOverlay");
 const statusEl = $("status");
-const retryButton = $("retryButton");
 const pairButton = $("pairButton");
 const pairDialog = $("pairDialog");
 const devicesButton = $("devicesButton");
@@ -19,8 +18,20 @@ const pairingCodeEl = $("pairingCode");
 const bindCommandEl = $("bindCommand");
 const todayTotalEl = $("todayTotal");
 const toastEl = $("toast");
+const registerPanel = $("registerPanel");
+const recoverPanel = $("recoverPanel");
+const recoveryCreated = $("recoveryCreated");
+const displayNameInput = $("displayNameInput");
+const avatarEmojiInput = $("avatarEmojiInput");
+const recoveryCodeInput = $("recoveryCodeInput");
+const recoveryCodeCreated = $("recoveryCodeCreated");
+const registerButton = $("registerButton");
+const recoverButton = $("recoverButton");
+const showRecoverButton = $("showRecoverButton");
+const showRegisterButton = $("showRegisterButton");
+const copyRecoveryButton = $("copyRecoveryButton");
+const enterAfterRecoveryButton = $("enterAfterRecoveryButton");
 
-let config = null;
 let me = null;
 let visibleRiders = [];
 let directorTimer = null;
@@ -134,59 +145,101 @@ async function jsonFetch(url, options) {
   return payload;
 }
 
-function requestAuthCode(appId, redirectUri) {
-  return new Promise((resolve, reject) => {
-    if (!window.h5sdk || !window.tt) {
-      reject(new Error("请从飞书客户端的工作台打开「蹬了吗」"));
-      return;
-    }
-
-    const success = (result) => result && result.code
-      ? resolve(result.code)
-      : reject(new Error("飞书未返回免登 code"));
-    const fail = (error) => reject(new Error((error && (error.errString || error.message)) || "飞书免登失败"));
-
-    window.h5sdk.ready(() => {
-      const fallback = () => {
-        if (typeof window.tt.requestAuthCode !== "function") {
-          fail(new Error("当前飞书客户端不支持免登接口"));
-          return;
-        }
-        window.tt.requestAuthCode({ appId, success, fail });
-      };
-
-      if (typeof window.tt.requestAccess !== "function") {
-        fallback();
-        return;
-      }
-
-      window.tt.requestAccess({
-        appID: appId,
-        scopeList: [],
-        redirect_uri: redirectUri,
-        success,
-        fail: fallback
-      });
-    });
-
-    if (typeof window.h5sdk.error === "function") {
-      window.h5sdk.error((error) => fail(error));
-    }
-  });
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
-async function loginWithFeishu() {
-  if (!config || !config.configured || !config.app_id) {
-    throw new Error("服务端尚未配置飞书应用");
+function showRegisterPanel() {
+  registerPanel.classList.remove("hidden");
+  recoverPanel.classList.add("hidden");
+  recoveryCreated.classList.add("hidden");
+  statusEl.textContent = "第一次来只需要一个昵称。换浏览器时用恢复码找回同一个 rider。";
+}
+
+function showRecoverPanel() {
+  registerPanel.classList.add("hidden");
+  recoverPanel.classList.remove("hidden");
+  recoveryCreated.classList.add("hidden");
+  statusEl.textContent = "输入你之前保存的恢复码。";
+}
+
+async function registerIdentity() {
+  const displayName = displayNameInput.value.trim();
+  const avatarEmoji = avatarEmojiInput.value.trim() || "🚴";
+  if (!displayName) {
+    statusEl.textContent = "先取个昵称。";
+    displayNameInput.focus();
+    return;
   }
-  statusEl.textContent = "正在从飞书进入赛场…";
-  const code = await requestAuthCode(config.app_id, config.base_url + "/");
-  const result = await jsonFetch("/api/auth/feishu/login", {
-    method: "POST",
-    body: JSON.stringify({ code })
-  });
-  me = result.user;
-  loginOverlay.classList.add("hidden");
+
+  registerButton.disabled = true;
+  statusEl.textContent = "正在领车…";
+  try {
+    const result = await jsonFetch("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        display_name: displayName,
+        avatar_emoji: avatarEmoji
+      })
+    });
+    me = result.user;
+    recoveryCodeCreated.textContent = result.recovery_code;
+    registerPanel.classList.add("hidden");
+    recoverPanel.classList.add("hidden");
+    recoveryCreated.classList.remove("hidden");
+    statusEl.textContent = "身份创建好了。保存恢复码后就可以开蹬。";
+  } catch (error) {
+    statusEl.textContent = "创建失败：" + error.message;
+  } finally {
+    registerButton.disabled = false;
+  }
+}
+
+async function recoverIdentity() {
+  const code = recoveryCodeInput.value.trim();
+  if (!code) {
+    statusEl.textContent = "请输入恢复码。";
+    recoveryCodeInput.focus();
+    return;
+  }
+
+  recoverButton.disabled = true;
+  statusEl.textContent = "正在找车…";
+  try {
+    const result = await jsonFetch("/api/auth/recover", {
+      method: "POST",
+      body: JSON.stringify({ recovery_code: code })
+    });
+    me = result.user;
+    loginOverlay.classList.add("hidden");
+    await enterRace();
+  } catch (error) {
+    statusEl.textContent = "恢复失败：" + error.message;
+  } finally {
+    recoverButton.disabled = false;
+  }
+}
+
+async function copyRecoveryCode() {
+  const code = recoveryCodeCreated.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(code);
+    copyRecoveryButton.textContent = "已复制 ✓";
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents(recoveryCodeCreated);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  window.setTimeout(() => {
+    copyRecoveryButton.textContent = "复制恢复码";
+  }, 1600);
 }
 
 function formatTokens(value) {
@@ -291,7 +344,11 @@ function riderMarkup(rider) {
       (rider.is_leader ? '<div class="leader-crown" aria-label="第一名">👑</div>' : '') +
       '<div class="rider-motion">' +
         '<div class="rider-inner">' +
-          '<div class="avatar-ring"><img src="' + (rider.avatar_url || DEMO_RIDERS[0].avatar_url) + '" alt=""></div>' +
+          '<div class="avatar-ring">' +
+            (rider.avatar_url
+              ? '<img src="' + escapeHtml(rider.avatar_url) + '" alt="">'
+              : '<span class="emoji-avatar">' + escapeHtml(rider.avatar_emoji || "🚴") + '</span>') +
+          '</div>' +
           '<div class="body"></div>' +
           '<div class="arm"></div>' +
           '<div class="leg leg-a"></div>' +
@@ -304,7 +361,7 @@ function riderMarkup(rider) {
         '</div>' +
       '</div>' +
       '<div class="name-chip">' +
-        '<span>' + (rider.display_name || "同事") + '</span>' +
+        '<span>' + escapeHtml(rider.display_name || "同事") + '</span>' +
         '<span class="tokens">' + formatTokens(rider.today_tokens) + '</span>' +
       '</div>' +
     '</div>'
@@ -350,9 +407,11 @@ async function loadRaceData() {
     return;
   }
   const payload = await jsonFetch("/api/riders");
-  const real = (payload.riders || []).map((rider, index) => ({
+  const real = (payload.riders || []).map((rider) => ({
     ...rider,
-    display_name: rider.user_id === (me && me.user_id) ? "我" : ("同事 " + (index + 1)),
+    display_name: rider.user_id === (me && me.user_id)
+      ? ("我 · " + (rider.display_name || "骑手"))
+      : (rider.display_name || "骑手"),
     accent: rider.user_id === (me && me.user_id) ? "#4c8ad9" : "#5eaa7d"
   }));
 
@@ -460,17 +519,28 @@ function scheduleAmbientDrift() {
     });
   }, 4200);
 }
+async function enterRace() {
+  loginOverlay.classList.add("hidden");
+  await loadRaceData();
+  if (me?.has_today_sample === false) {
+    showToast("今天还没有上传快照；已绑定设备可说「上传蹬了吗」", 5200);
+  }
+  scheduleDirector();
+  scheduleAmbientDrift();
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => loadRaceData().catch(() => {}), 20000);
+
+  if ((new URLSearchParams(location.search).get("bind") === "1" || new URLSearchParams(location.search).get("action") === "bind")) {
+    pairingResult.classList.add("hidden");
+    if (!pairDialog.open) pairDialog.showModal();
+  }
+}
+
 async function bootstrap() {
   previewMode = new URLSearchParams(location.search).get("preview") === "1";
 
   if (previewMode) {
-    config = {
-      configured: false,
-      app_id: null,
-      base_url: "http://localhost:1600",
-      timezone: "Asia/Shanghai"
-    };
-    me = { user_id: "preview_me" };
+    me = { user_id: "preview_me", display_name: "我", avatar_emoji: "🚴" };
     loginOverlay.classList.add("hidden");
     await loadRaceData();
     scheduleDirector();
@@ -478,27 +548,14 @@ async function bootstrap() {
     return;
   }
 
-  config = await jsonFetch("/api/feishu/config");
   try {
     const result = await jsonFetch("/api/me");
     me = result.user;
+    await enterRace();
   } catch (error) {
     if (error.status !== 401) throw error;
-    await loginWithFeishu();
-  }
-
-  loginOverlay.classList.add("hidden");
-  await loadRaceData();
-  if (me?.has_today_sample === false) {
-    showToast("今天还没有上传快照；已绑定设备可回 Codex 说「上传蹬了吗」", 5200);
-  }
-  scheduleDirector();
-  scheduleAmbientDrift();
-  refreshTimer = setInterval(() => loadRaceData().catch(() => {}), 20000);
-
-  if (new URLSearchParams(location.search).get("bind") === "1") {
-    pairingResult.classList.add("hidden");
-    if (!pairDialog.open) pairDialog.showModal();
+    showRegisterPanel();
+    loginOverlay.classList.remove("hidden");
   }
 }
 
@@ -510,6 +567,7 @@ function stopPairingPoll() {
 function clearBindIntentFromUrl() {
   const next = new URL(location.href);
   next.searchParams.delete("bind");
+  next.searchParams.delete("action");
   history.replaceState(null, "", next.pathname + next.search + next.hash);
 }
 
@@ -731,25 +789,19 @@ createPairingButton.addEventListener("click", async () => {
   }
 });
 
-retryButton.addEventListener("click", async () => {
-  retryButton.disabled = true;
-  statusEl.textContent = "重新进入赛场…";
-  try {
-    await loginWithFeishu();
-    await loadRaceData();
-    scheduleDirector();
-    scheduleAmbientDrift();
-  } catch (error) {
-    statusEl.textContent = error.message;
-    retryButton.classList.remove("hidden");
-  } finally {
-    retryButton.disabled = false;
-  }
+showRecoverButton.addEventListener("click", showRecoverPanel);
+showRegisterButton.addEventListener("click", showRegisterPanel);
+registerButton.addEventListener("click", registerIdentity);
+recoverButton.addEventListener("click", recoverIdentity);
+copyRecoveryButton.addEventListener("click", copyRecoveryCode);
+enterAfterRecoveryButton.addEventListener("click", async () => {
+  loginOverlay.classList.add("hidden");
+  await enterRace();
 });
 
 bootstrap().catch((error) => {
   statusEl.textContent = "进场失败：" + error.message;
-  retryButton.classList.remove("hidden");
+  loginOverlay.classList.remove("hidden");
 });
 
 window.addEventListener("beforeunload", () => {

@@ -8,14 +8,45 @@ import {
   authenticateInstallation,
   consumePairingCode,
   createPairingCode,
+  createWebUser,
   readPairingCodeStatus,
   readDenglemaUser,
+  recoverWebUser,
   readUserInstallations,
   readUserTotals,
   revokeUserInstallation,
-  upsertFeishuUser,
   upsertUsageSample,
 } from "../src/denglema-state.js";
+
+test("web identity can be created and recovered without storing the raw recovery code", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-web-user-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const created = await createWebUser({
+    display_name: "Alice",
+    avatar_emoji: "🐱",
+  }, root, {
+    userId: "usr-web",
+    recoveryCode: "DGLM-1234-5678-ABCD",
+    now: () => new Date("2026-09-28T00:00:00Z"),
+  });
+  assert.equal(created.user.id, "usr-web");
+  assert.equal(created.user.display_name, "Alice");
+  assert.equal(created.user.avatar_emoji, "🐱");
+  assert.equal(created.recovery_code, "DGLM-1234-5678-ABCD");
+
+  const userStore = await import("node:fs/promises").then(({ readFile }) =>
+    readFile(join(root, "denglema", "users.json"), "utf8"));
+  assert.equal(userStore.includes("DGLM-1234-5678-ABCD"), false);
+
+  const recovered = await recoverWebUser("dglm 1234 5678 abcd", root, {
+    now: () => new Date("2026-09-28T01:00:00Z"),
+  });
+  assert.equal(recovered.id, "usr-web");
+  assert.equal(recovered.display_name, "Alice");
+  assert.equal(recovered.last_login_at, "2026-09-28T01:00:00.000Z");
+  assert.equal(await recoverWebUser("WRONG-CODE", root), null);
+});
 
 test("pairing binds an installation to the internal user id", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "denglema-pair-"));
@@ -53,7 +84,7 @@ test("pairing binds an installation to the internal user id", async (t) => {
   assert.equal(await consumePairingCode("ABCD-EFGH", "again", root), null);
 });
 
-test("expired pairing code remains observable to its Feishu user", async (t) => {
+test("expired pairing code remains observable to its user", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "denglema-pair-expired-"));
   t.after(() => rm(root, { recursive: true, force: true }));
 
@@ -193,28 +224,4 @@ test("user can revoke only their own installation and the token stops authentica
     await readUserInstallations("user-1", "2026-09-28", root),
     [],
   );
-});
-
-test("Feishu identity keeps a stable internal user id across logins", async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "denglema-users-"));
-  t.after(() => rm(root, { recursive: true, force: true }));
-
-  const first = await upsertFeishuUser({
-    open_id: "ou_123",
-    avatar_url: "https://example.test/a.png",
-  }, root, {
-    userId: "usr-fixed",
-    now: () => new Date("2026-09-24T01:00:00Z"),
-  });
-  const second = await upsertFeishuUser({
-    open_id: "ou_123",
-    avatar_url: "https://example.test/b.png",
-  }, root, {
-    now: () => new Date("2026-09-24T02:00:00Z"),
-  });
-
-  assert.equal(first.id, "usr-fixed");
-  assert.equal(second.id, "usr-fixed");
-  assert.equal(second.avatar_url, "https://example.test/b.png");
-  assert.equal((await readDenglemaUser("usr-fixed", root)).feishu_open_id, "ou_123");
 });

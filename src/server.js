@@ -8,19 +8,19 @@ import {
   authenticateInstallation,
   consumePairingCode,
   createPairingCode,
+  createWebUser,
   readPairingCodeStatus,
   readDenglemaUser,
   readDenglemaUsers,
+  recoverWebUser,
   readUserInstallations,
   readUserTotals,
   revokeUserInstallation,
-  upsertFeishuUser,
   upsertUsageSample,
 } from "./denglema-state.js";
 import {
   clearSessionCookie,
   createWebSession,
-  exchangeFeishuCode,
   parseCookieHeader,
   sessionCookie,
   verifyWebSession,
@@ -34,11 +34,8 @@ const SKILL_BUNDLE_FILE = "skills-bundle.json";
 const TOKEN = process.env.DASHBOARD_TOKEN || null;
 const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || "UTC";
 const DENGLEMA_BASE_URL = (process.env.DENGLEMA_BASE_URL || `http://${BIND}:${PORT}`).replace(/\/+$/, "");
-const FEISHU_APP_ID = process.env.FEISHU_APP_ID || "";
-const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET || "";
-const FEISHU_REDIRECT_URI = process.env.FEISHU_REDIRECT_URI || "";
 const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || "";
-const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 7 * 24 * 60 * 60;
+const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
 
@@ -286,33 +283,26 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const method = req.method;
 
-    // ── GET /api/feishu/config ── public H5 bootstrap config
-    if (method === "GET" && url.pathname === "/api/feishu/config") {
-      sendJson(res, 200, {
-        configured: Boolean(FEISHU_APP_ID && FEISHU_APP_SECRET && DENGLEMA_SESSION_SECRET),
-        app_id: FEISHU_APP_ID || null,
-        base_url: DENGLEMA_BASE_URL,
-        timezone: DENGLEMA_TIMEZONE,
-      });
-      return;
-    }
-
-    // ── POST /api/auth/feishu/login ── exchange H5 auth code for local session
-    if (method === "POST" && url.pathname === "/api/auth/feishu/login") {
+    // ── POST /api/auth/register ── create a lightweight Denglema web identity
+    if (method === "POST" && url.pathname === "/api/auth/register") {
       const body = await readBody(req);
       try {
-        const profile = await exchangeFeishuCode(body?.code, {
-          appId: FEISHU_APP_ID,
-          appSecret: FEISHU_APP_SECRET,
-          redirectUri: FEISHU_REDIRECT_URI || undefined,
-        });
-        const user = await upsertFeishuUser(profile, STATE_DIR);
-        const session = createWebSession(user.id, DENGLEMA_SESSION_SECRET, {
+        const created = await createWebUser({
+          display_name: body?.display_name,
+          avatar_emoji: body?.avatar_emoji,
+        }, STATE_DIR);
+        const session = createWebSession(created.user.id, DENGLEMA_SESSION_SECRET, {
           ttlSeconds: WEB_SESSION_TTL_SECONDS,
         });
-        sendJson(res, 200, {
+        sendJson(res, 201, {
           ok: true,
-          user: { user_id: user.id, avatar_url: user.avatar_url || null },
+          user: {
+            user_id: created.user.id,
+            display_name: created.user.display_name,
+            avatar_emoji: created.user.avatar_emoji,
+            avatar_url: created.user.avatar_url || null,
+          },
+          recovery_code: created.recovery_code,
         }, {
           "set-cookie": sessionCookie(session, {
             secure: requestIsSecure(req),
@@ -320,8 +310,36 @@ const server = createServer(async (req, res) => {
           }),
         });
       } catch (error) {
-        sendJson(res, error?.statusCode || 502, { error: error?.message || "Feishu login failed" });
+        sendError(res, 400, error?.message || "Could not create user");
       }
+      return;
+    }
+
+    // ── POST /api/auth/recover ── restore the same Denglema user on another browser
+    if (method === "POST" && url.pathname === "/api/auth/recover") {
+      const body = await readBody(req);
+      const user = await recoverWebUser(body?.recovery_code, STATE_DIR);
+      if (!user) {
+        sendError(res, 401, "Invalid recovery code");
+        return;
+      }
+      const session = createWebSession(user.id, DENGLEMA_SESSION_SECRET, {
+        ttlSeconds: WEB_SESSION_TTL_SECONDS,
+      });
+      sendJson(res, 200, {
+        ok: true,
+        user: {
+          user_id: user.id,
+          display_name: user.display_name || "骑手",
+          avatar_emoji: user.avatar_emoji || "🚴",
+          avatar_url: user.avatar_url || null,
+        },
+      }, {
+        "set-cookie": sessionCookie(session, {
+          secure: requestIsSecure(req),
+          maxAge: WEB_SESSION_TTL_SECONDS,
+        }),
+      });
       return;
     }
 
@@ -345,6 +363,8 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, {
         user: {
           user_id: user.id,
+          display_name: user.display_name || "骑手",
+          avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
           today_tokens: today?.total_tokens || 0,
           has_today_sample: Boolean(today),
@@ -408,6 +428,8 @@ const server = createServer(async (req, res) => {
         date,
         riders: totals.map((row) => ({
           user_id: row.user_id,
+          display_name: byId.get(row.user_id)?.display_name || "骑手",
+          avatar_emoji: byId.get(row.user_id)?.avatar_emoji || "🚴",
           avatar_url: byId.get(row.user_id)?.avatar_url || null,
           today_tokens: row.total_tokens,
           installations: row.installations,
@@ -425,7 +447,7 @@ const server = createServer(async (req, res) => {
         uptime_seconds: Math.floor((Date.now() - STARTED_AT) / 1000),
         device_count: devices.size,
         auth_enabled: !!TOKEN,
-        denglema_auth_configured: Boolean(FEISHU_APP_ID && FEISHU_APP_SECRET && DENGLEMA_SESSION_SECRET),
+        denglema_auth_configured: Boolean(DENGLEMA_SESSION_SECRET),
       });
       log("info", "health", { status: 200, ms: Date.now() - start });
       return;
@@ -455,7 +477,7 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // ── GET /api/pairing-codes/:code/status ── let the Feishu page observe CLI binding
+    // ── GET /api/pairing-codes/:code/status ── let the web page observe CLI binding
     const pairingStatusMatch = url.pathname.match(/^\/api\/pairing-codes\/([^/]+)\/status$/);
     if (method === "GET" && pairingStatusMatch) {
       const webUser = await webUserFromRequest(req);

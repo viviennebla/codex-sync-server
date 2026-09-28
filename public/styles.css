@@ -328,6 +328,15 @@ button { font: inherit; }
   height: 100%;
   object-fit: cover;
 }
+.emoji-avatar {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #fff3c8;
+  font-size: 34px;
+  line-height: 1;
+}
 .rider.is-sprinting .avatar-ring {
   top: -12px;
   transform: rotate(-9deg) scale(1.08);
@@ -830,6 +839,28 @@ button { font: inherit; }
   background: #f7f2e7;
 }
 .login-card { text-align: center; font-size: 16px; color: #4b5360; }
+.auth-card {
+  width: min(440px, calc(100vw - 30px));
+  padding: 30px;
+  border: 3px solid #27313c;
+  border-radius: 24px;
+  background: #fffaf0;
+  box-shadow: 8px 9px 0 rgba(39,49,60,.16);
+}
+.auth-card h2 { margin: 4px 0 8px; font-size: 28px; color: #27313c; }
+.auth-copy { margin: 0 0 18px; line-height: 1.55; color: #746b63; }
+.auth-panel { display: grid; gap: 12px; text-align: left; }
+.auth-panel label { display: grid; gap: 6px; font-size: 13px; font-weight: 850; color: #4e5761; }
+.auth-panel input {
+  width: 100%; border: 2px solid rgba(39,49,60,.24); border-radius: 12px;
+  background: #fff; padding: 11px 12px; font: inherit; outline: none;
+}
+.auth-panel input:focus { border-color: #5479c6; }
+.auth-link { border: 0; background: transparent; color: #5479c6; font-weight: 850; cursor: pointer; padding: 6px; }
+.recovery-code {
+  display: block; padding: 15px; border-radius: 12px; background: #20252c;
+  color: #f5d45f; text-align: center; font-size: 18px; font-weight: 950; letter-spacing: .08em;
+}
 .mini-bike { font-size: 46px; animation: miniRide .75s ease-in-out infinite; }
 .retry-button {
   margin-top: 16px; border: 1.5px solid #53627a; border-radius: 999px;

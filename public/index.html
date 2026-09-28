@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>蹬了吗</title>
   <link rel="stylesheet" href="/styles.css">
-  <script src="https://lf-scm-cn.feishucdn.com/lark/op/h5-js-sdk-1.5.44.js"></script>
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -63,7 +62,7 @@
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
       <p class="dialog-kicker">绑定一个 Codex 环境</p>
       <h2>让这台设备也来蹬</h2>
-      <p class="dialog-copy">每个 Windows / WSL / macOS Codex 环境分别绑定一次；同一飞书账号最终会自动算到同一个人。</p>
+      <p class="dialog-copy">每个 Windows / WSL / macOS Codex 环境分别绑定一次；同一个蹬了吗身份下的设备会自动聚合到同一个 rider。</p>
       <button id="createPairingButton" type="button" class="dialog-primary">生成 pairing code</button>
       <div id="pairingResult" class="pairing-result hidden">
         <code id="pairingCode"></code>
@@ -95,10 +94,30 @@
   </dialog>
 
   <div id="loginOverlay" class="login-overlay">
-    <div class="login-card">
+    <div class="login-card auth-card">
       <div class="mini-bike">🚲</div>
-      <strong id="status">正在从飞书进入赛场…</strong>
-      <button id="retryButton" class="retry-button hidden" type="button">重新登录</button>
+      <h2>先领一辆车</h2>
+      <p id="status" class="auth-copy">第一次来只需要一个昵称。换浏览器时用恢复码找回同一个 rider。</p>
+
+      <div id="registerPanel" class="auth-panel">
+        <label>昵称<input id="displayNameInput" maxlength="24" placeholder="例如 Alice"></label>
+        <label>头像 emoji<input id="avatarEmojiInput" maxlength="8" value="🚴"></label>
+        <button id="registerButton" class="dialog-primary" type="button">进入赛道</button>
+        <button id="showRecoverButton" class="auth-link" type="button">我来过，用恢复码</button>
+      </div>
+
+      <div id="recoverPanel" class="auth-panel hidden">
+        <label>恢复码<input id="recoveryCodeInput" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"></label>
+        <button id="recoverButton" class="dialog-primary" type="button">恢复身份</button>
+        <button id="showRegisterButton" class="auth-link" type="button">返回创建新身份</button>
+      </div>
+
+      <div id="recoveryCreated" class="auth-panel hidden">
+        <p>这是你的恢复码，只展示这一次：</p>
+        <code id="recoveryCodeCreated" class="recovery-code"></code>
+        <button id="copyRecoveryButton" class="dialog-primary" type="button">复制恢复码</button>
+        <button id="enterAfterRecoveryButton" class="auth-link" type="button">我保存好了，进入赛道 →</button>
+      </div>
     </div>
   </div>
 

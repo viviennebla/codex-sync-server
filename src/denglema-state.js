@@ -33,27 +33,101 @@ function paths(stateDir) {
   };
 }
 
-export async function upsertFeishuUser(profile, stateDir = "state", options = {}) {
-  const openId = String(profile?.open_id || "").trim();
-  if (!openId) throw new Error("feishu open_id is required");
+function normalizeRecoveryCode(value) {
+  return String(value || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+}
+
+function recoveryHash(value) {
+  const normalized = normalizeRecoveryCode(value);
+  return normalized ? sha256(normalized) : null;
+}
+
+function formatRecoveryCode(hex) {
+  return String(hex || "").toUpperCase().match(/.{1,4}/g)?.join("-") || "";
+}
+
+function cleanDisplayName(value) {
+  const name = String(value || "").trim();
+  if (!name || name.length > 24) throw new Error("display_name must be 1-24 characters");
+  return name;
+}
+
+function cleanAvatarEmoji(value) {
+  const emoji = String(value || "").trim();
+  if (!emoji) return "🚴";
+  if ([...emoji].length > 4) throw new Error("avatar_emoji is too long");
+  return emoji;
+}
+
+export async function createWebUser(profile, stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
   const file = paths(stateDir).users;
-  const store = await readJson(file, { version: 1, by_id: {}, by_feishu_open_id: {} });
-  let userId = store.by_feishu_open_id[openId] || null;
-  if (!userId) {
-    userId = options.userId || `usr_${randomUUID()}`;
-    store.by_feishu_open_id[openId] = userId;
-  }
-  const current = store.by_id[userId] || {};
-  store.by_id[userId] = {
+  const store = await readJson(file, {
+    version: 1,
+    by_id: {},
+    by_feishu_open_id: {},
+    by_recovery_hash: {},
+  });
+  store.by_id ||= {};
+  store.by_feishu_open_id ||= {};
+  store.by_recovery_hash ||= {};
+
+  const userId = options.userId || ("usr_" + randomUUID());
+  const recoveryCode = options.recoveryCode || formatRecoveryCode(randomBytes(10).toString("hex"));
+  const hash = recoveryHash(recoveryCode);
+  if (!hash) throw new Error("recovery code generation failed");
+
+  const user = {
     id: userId,
-    feishu_open_id: openId,
-    avatar_url: profile?.avatar_url || current.avatar_url || null,
-    created_at: current.created_at || now.toISOString(),
+    display_name: cleanDisplayName(profile?.display_name),
+    avatar_emoji: cleanAvatarEmoji(profile?.avatar_emoji),
+    avatar_url: null,
+    created_at: now.toISOString(),
     last_login_at: now.toISOString(),
   };
+  store.by_id[userId] = user;
+  store.by_recovery_hash[hash] = userId;
   await writeJson(file, store);
-  return store.by_id[userId];
+  return { user, recovery_code: recoveryCode };
+}
+
+export async function recoverWebUser(recoveryCode, stateDir = "state", options = {}) {
+  const hash = recoveryHash(recoveryCode);
+  if (!hash) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {}, by_recovery_hash: {} });
+  const userId = store.by_recovery_hash?.[hash];
+  const user = userId ? store.by_id?.[userId] : null;
+  if (!user) return null;
+  const now = options.now?.() || new Date();
+  user.last_login_at = now.toISOString();
+  store.by_id[userId] = user;
+  await writeJson(file, store);
+  return user;
+}
+
+export async function provisionRecoveryForUser(userId, profile = {}, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, {
+    version: 1,
+    by_id: {},
+    by_feishu_open_id: {},
+    by_recovery_hash: {},
+  });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+  store.by_recovery_hash ||= {};
+
+  user.display_name = cleanDisplayName(profile.display_name || user.display_name || "骑手");
+  user.avatar_emoji = cleanAvatarEmoji(profile.avatar_emoji || user.avatar_emoji || "🚴");
+  const recoveryCode = options.recoveryCode || formatRecoveryCode(randomBytes(10).toString("hex"));
+  const hash = recoveryHash(recoveryCode);
+  store.by_recovery_hash[hash] = id;
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return { user, recovery_code: recoveryCode };
 }
 
 export async function readDenglemaUser(userId, stateDir = "state") {
