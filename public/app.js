@@ -474,6 +474,11 @@ async function bootstrap() {
   scheduleDirector();
   scheduleAmbientDrift();
   refreshTimer = setInterval(() => loadRaceData().catch(() => {}), 20000);
+
+  if (new URLSearchParams(location.search).get("bind") === "1") {
+    pairingResult.classList.add("hidden");
+    if (!pairDialog.open) pairDialog.showModal();
+  }
 }
 
 pairButton.addEventListener("click", () => {

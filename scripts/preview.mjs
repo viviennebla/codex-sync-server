@@ -16,7 +16,7 @@ const MIME = {
 };
 
 function safePath(pathname) {
-  const requested = pathname === "/" ? "/index.html" : pathname;
+  const requested = pathname === "/" ? "/index.html" : pathname === "/onboarding" ? "/onboarding.html" : pathname;
   const clean = normalize(requested).replace(/^[/\\]+/, "");
   if (clean.startsWith("..")) return null;
   return join(ROOT, clean);
