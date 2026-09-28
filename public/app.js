@@ -487,11 +487,75 @@ function riderMarkup(rider) {
   );
 }
 
-function renderRiders(riders) {
-  for (let lane = 1; lane <= 4; lane += 1) {
-    document.querySelectorAll("#lane" + lane + " .rider").forEach((node) => node.remove());
+const RIDER_STATE_CLASSES = ["is-fast", "is-burning", "is-chill", "is-tired"];
+
+function updateRiderNode(node, rider) {
+  node._riderData = rider;
+
+  RIDER_STATE_CLASSES.forEach((className) => node.classList.remove(className));
+  stateFor(rider).forEach((className) => {
+    if (className !== "effect-heavy") node.classList.add(className);
+  });
+
+  const baselineHeavy = stateFor(rider).includes("effect-heavy");
+  if (baselineHeavy) {
+    node.classList.add("effect-heavy");
+  } else if (!activeMotion.has(rider.user_id)) {
+    node.classList.remove("effect-heavy");
   }
 
+  node.style.setProperty("--x", rider.x + "%");
+  node.style.setProperty("--accent", rider.accent || "#4c8ad9");
+  node.style.setProperty(
+    "--cadence",
+    (rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72) + "s",
+  );
+
+  const name = node.querySelector(".name-chip > span:first-child");
+  const tokens = node.querySelector(".name-chip .tokens");
+  if (name) name.textContent = rider.display_name || "同事";
+  if (tokens) tokens.textContent = formatTokens(rider.today_tokens);
+
+  const ring = node.querySelector(".avatar-ring");
+  const avatarKey = rider.avatar_url
+    ? "url:" + rider.avatar_url
+    : "emoji:" + (rider.avatar_emoji || "🚴");
+  if (ring && node.dataset.avatarKey !== avatarKey) {
+    node.dataset.avatarKey = avatarKey;
+    ring.replaceChildren();
+    if (rider.avatar_url) {
+      const image = document.createElement("img");
+      image.src = rider.avatar_url;
+      image.alt = "";
+      ring.appendChild(image);
+    } else {
+      const emoji = document.createElement("span");
+      emoji.className = "emoji-avatar";
+      emoji.textContent = rider.avatar_emoji || "🚴";
+      ring.appendChild(emoji);
+    }
+  }
+
+  const crown = node.querySelector(".leader-crown");
+  if (rider.is_leader && !crown) {
+    const next = node.querySelector(".rider-motion");
+    const leaderCrown = document.createElement("div");
+    leaderCrown.className = "leader-crown";
+    leaderCrown.setAttribute("aria-label", "第一名");
+    leaderCrown.textContent = "👑";
+    node.insertBefore(leaderCrown, next);
+  } else if (!rider.is_leader && crown) {
+    crown.remove();
+  }
+
+  if (rider.demo) {
+    node.classList.remove("is-clickable");
+  } else {
+    node.classList.add("is-clickable");
+  }
+}
+
+function renderRiders(riders) {
   const realLeader = [...riders]
     .filter((rider) => !rider.demo)
     .sort((a, b) => Number(b.today_tokens || 0) - Number(a.today_tokens || 0))[0];
@@ -501,28 +565,48 @@ function renderRiders(riders) {
     ...rider,
     is_leader: rider.user_id === leaderId,
   }));
+
+  const existing = new Map(
+    [...document.querySelectorAll(".rider")]
+      .map((node) => [node.dataset.riderId, node]),
+  );
+  const liveIds = new Set(visibleRiders.map((rider) => rider.user_id));
+
+  existing.forEach((node, riderId) => {
+    if (!liveIds.has(riderId)) {
+      activeMotion.delete(riderId);
+      node.remove();
+    }
+  });
+
   visibleRiders.forEach((rider) => {
     const lane = $("lane" + rider.lane);
-    lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
+    let node = existing.get(rider.user_id);
+
+    if (!node) {
+      lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
+      node = lane.lastElementChild;
+      const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
+      node.style.setProperty("--scale", String(1.16 + sizeJitter));
+      node.dataset.avatarKey = rider.avatar_url
+        ? "url:" + rider.avatar_url
+        : "emoji:" + (rider.avatar_emoji || "🚴");
+      node.addEventListener("click", () => {
+        if (node._riderData && !node._riderData.demo) {
+          void openRiderDetail(node._riderData);
+        }
+      });
+    } else if (node.parentElement !== lane) {
+      lane.appendChild(node);
+    }
+
+    updateRiderNode(node, rider);
   });
 
   const total = visibleRiders
     .filter((rider) => !rider.demo)
     .reduce((sum, rider) => sum + Number(rider.today_tokens || 0), 0);
   todayTotalEl.textContent = formatTokens(total);
-
-  requestAnimationFrame(() => {
-    document.querySelectorAll(".rider").forEach((node, index) => {
-      const riderId = node.dataset.riderId || String(index);
-      const sizeJitter = (stableHash(riderId + ":size") % 5) * 0.035;
-      node.style.setProperty("--scale", String(1.16 + sizeJitter));
-      const rider = visibleRiders.find((item) => item.user_id === riderId);
-      if (rider && !rider.demo) {
-        node.classList.add("is-clickable");
-        node.addEventListener("click", () => { void openRiderDetail(rider); });
-      }
-    });
-  });
 }
 
 async function loadRaceData() {
@@ -591,6 +675,7 @@ function chooseMotion(rider) {
 function triggerMotion(rider, node, action) {
   if (!node || activeMotion.has(rider.user_id)) return;
   const burst = node.querySelector(".effect-burst");
+  const motion = node.querySelector(".rider-motion");
   const text = action.bursts[Math.floor(Math.random() * action.bursts.length)];
   if (burst) burst.textContent = text;
 
@@ -600,11 +685,26 @@ function triggerMotion(rider, node, action) {
     node.classList.add("effect-heavy");
   }
 
-  window.setTimeout(() => {
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
     node.classList.remove(action.className);
     if (rider.mood !== "burning") node.classList.remove("effect-heavy");
     activeMotion.delete(rider.user_id);
-  }, action.duration);
+  };
+
+  const onEnd = (event) => {
+    if (event.target !== motion) return;
+    motion.removeEventListener("animationend", onEnd);
+    finish();
+  };
+
+  motion?.addEventListener("animationend", onEnd);
+  window.setTimeout(() => {
+    motion?.removeEventListener("animationend", onEnd);
+    finish();
+  }, action.duration + 180);
 }
 
 function scheduleDirector() {

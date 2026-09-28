@@ -440,10 +440,6 @@ button { font: inherit; }
   animation: wheelSpin var(--cadence) linear infinite;
   animation-delay: var(--phase);
 }
-.rider.is-sprinting .wheel { animation-duration: .23s; }
-.rider.is-wheelie .wheel { animation-duration: .5s; }
-.rider.is-bonking .wheel { animation-duration: 1.35s; }
-.rider.is-celebrating .wheel { animation-duration: .42s; }
 .rider.is-chill .wheel { animation-duration: 1.2s; }
 .wheel.front { right: 4px; }
 .wheel.back { left: 4px; }
@@ -482,10 +478,8 @@ button { font: inherit; }
   animation: pedalLeg .72s ease-in-out infinite;
 }
 .leg.leg-b { animation-delay: -.36s; }
-.rider.is-sprinting .leg { animation-duration: .23s; height: 35px; top: 52px; }
-.rider.is-wheelie .leg { animation-duration: .5s; }
-.rider.is-bonking .leg { animation-duration: 1.35s; height: 27px; top: 69px; }
-.rider.is-celebrating .leg { animation-duration: .42s; }
+.rider.is-sprinting .leg { height: 35px; top: 52px; }
+.rider.is-bonking .leg { height: 27px; top: 69px; }
 .rider.is-chill .leg { animation-duration: 1.2s; }
 .name-chip {
   position: absolute;
