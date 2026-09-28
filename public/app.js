@@ -46,10 +46,7 @@ let refreshTimer = null;
 let ambientTimer = null;
 let pairingPollTimer = null;
 let previewMode = false;
-let raceFrameId = null;
-let raceLastFrameAt = null;
 const activeMotion = new Map();
-const raceMotionState = new Map();
 
 function avatarSvg(bg, ink, mood) {
   const eyes = mood === "rage"
@@ -448,92 +445,6 @@ function positionPlan(riders) {
   }));
 }
 
-function baseRaceSpeed(rider, index, riders) {
-  const real = riders.filter((item) => !item.demo);
-  const ranked = [...real].sort(
-    (a, b) => Number(b.today_tokens || 0) - Number(a.today_tokens || 0),
-  );
-  const rank = ranked.findIndex((item) => item.user_id === rider.user_id);
-  const rankBoost = rank >= 0 && ranked.length > 1
-    ? (ranked.length - 1 - rank) / (ranked.length - 1)
-    : 0.5;
-  const rate = Math.max(0, Number(rider.recent_rate_tpm || 0));
-  const rateBoost = Math.min(1, Math.log10(rate + 1) / 5);
-
-  let speed = 0.024 + rankBoost * 0.005 + rateBoost * 0.004;
-  if (rider.mood === "burning") speed += 0.004;
-  if (rider.mood === "chill") speed -= 0.002;
-  if (rider.mood === "tired") speed -= 0.0015;
-
-  const jitter = ((stableHash(rider.user_id + ":race-speed") % 9) - 4) * 0.00035;
-  return Math.max(0.019, Math.min(0.038, speed + jitter + index * 0.00005));
-}
-
-function syncRaceMotionState(riders) {
-  const liveIds = new Set(riders.map((rider) => rider.user_id));
-
-  riders.forEach((rider, index) => {
-    const current = raceMotionState.get(rider.user_id);
-    const speed = baseRaceSpeed(rider, index, riders);
-    if (current) {
-      current.speed = speed;
-      current.rider = rider;
-      return;
-    }
-
-    const initial = Math.max(-0.12, Math.min(1.12, Number(rider.x || 50) / 100));
-    raceMotionState.set(rider.user_id, {
-      progress: initial,
-      speed,
-      rider,
-    });
-  });
-
-  for (const id of raceMotionState.keys()) {
-    if (!liveIds.has(id)) raceMotionState.delete(id);
-  }
-}
-
-function raceSpeedMultiplier(riderId) {
-  const motion = activeMotion.get(riderId);
-  if (motion === MOTION_ACTIONS.sprint.className) return 1.55;
-  if (motion === MOTION_ACTIONS.bonk.className) return 0.52;
-  if (motion === MOTION_ACTIONS.wheelie.className) return 1.12;
-  if (motion === MOTION_ACTIONS.celebrate.className) return 0.92;
-  return 1;
-}
-
-function applyRacePositions() {
-  raceMotionState.forEach((state, riderId) => {
-    const node = document.querySelector('[data-rider-id="' + riderId + '"]');
-    if (!node) return;
-    node.style.left = (state.progress * 100) + "%";
-  });
-}
-
-function startRaceLoop() {
-  if (raceFrameId !== null) cancelAnimationFrame(raceFrameId);
-  raceLastFrameAt = null;
-
-  const frame = (now) => {
-    if (raceLastFrameAt === null) raceLastFrameAt = now;
-    const dt = Math.min(64, Math.max(0, now - raceLastFrameAt)) / 1000;
-    raceLastFrameAt = now;
-
-    raceMotionState.forEach((state, riderId) => {
-      state.progress += state.speed * raceSpeedMultiplier(riderId) * dt;
-      if (state.progress > 1.12) {
-        state.progress = -0.12 + (state.progress - 1.12);
-      }
-    });
-
-    applyRacePositions();
-    raceFrameId = requestAnimationFrame(frame);
-  };
-
-  raceFrameId = requestAnimationFrame(frame);
-}
-
 function riderMarkup(rider) {
   const classes = stateFor(rider).join(" ");
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
@@ -590,12 +501,10 @@ function renderRiders(riders) {
     ...rider,
     is_leader: rider.user_id === leaderId,
   }));
-  syncRaceMotionState(visibleRiders);
   visibleRiders.forEach((rider) => {
     const lane = $("lane" + rider.lane);
     lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
   });
-  applyRacePositions();
 
   const total = visibleRiders
     .filter((rider) => !rider.demo)
@@ -721,6 +630,19 @@ function scheduleDirector() {
   }, delay);
 }
 
+function scheduleAmbientDrift() {
+  clearInterval(ambientTimer);
+  ambientTimer = setInterval(() => {
+    visibleRiders.forEach((rider) => {
+      const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
+      if (!node || activeMotion.has(rider.user_id)) return;
+      const current = Number(node.dataset.drift || 0);
+      const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
+      node.dataset.drift = String(next);
+      node.style.left = Math.max(17, Math.min(84, Number(rider.x || 50) + next)) + "%";
+    });
+  }, 4200);
+}
 async function enterRace() {
   loginOverlay.classList.add("hidden");
   await loadRaceData();
@@ -728,7 +650,7 @@ async function enterRace() {
     showToast("今天还没有上传快照；已绑定设备可说「上传蹬了吗」", 5200);
   }
   scheduleDirector();
-  startRaceLoop();
+  scheduleAmbientDrift();
   clearInterval(refreshTimer);
   refreshTimer = setInterval(() => loadRaceData().catch(() => {}), 20000);
 
@@ -746,7 +668,7 @@ async function bootstrap() {
     loginOverlay.classList.add("hidden");
     await loadRaceData();
     scheduleDirector();
-    startRaceLoop();
+    scheduleAmbientDrift();
     return;
   }
 
