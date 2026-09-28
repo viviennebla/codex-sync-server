@@ -16,7 +16,7 @@ const MIME = {
 };
 
 function safePath(pathname) {
-  const requested = pathname === "/" ? "/index.html" : pathname === "/onboarding" ? "/onboarding.html" : pathname;
+  const requested = pathname === "/" ? "/landing.html" : pathname === "/onboarding" ? "/landing.html" : pathname;
   const clean = normalize(requested).replace(/^[/\\]+/, "");
   if (clean.startsWith("..")) return null;
   return join(ROOT, clean);
@@ -25,8 +25,20 @@ function safePath(pathname) {
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", "http://localhost");
-    if (url.pathname === "/" && !url.searchParams.has("preview")) {
-      res.writeHead(302, { location: "/?preview=1" });
+    if (url.pathname === "/" && url.searchParams.get("preview") === "1") {
+      const path = join(ROOT, "index.html");
+      const body = await readFile(path);
+      res.writeHead(200, {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      res.end(body);
+      return;
+    }
+
+    if (url.pathname === "/onboarding") {
+      const suffix = url.searchParams.toString();
+      res.writeHead(302, { location: "/?action=bind" + (suffix ? "&" + suffix : "") });
       res.end();
       return;
     }
