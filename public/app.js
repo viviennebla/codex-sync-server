@@ -206,31 +206,62 @@ function stableHash(text) {
   return Math.abs(hash);
 }
 function lanePlan(riders) {
-  const sorted = [...riders].sort((a, b) => b.today_tokens - a.today_tokens);
-  const special = new Map();
-  if (sorted[0]) special.set(sorted[0].user_id, 1);
-  if (sorted[1]) special.set(sorted[1].user_id, 2);
-  if (sorted[2]) special.set(sorted[2].user_id, 2);
+  // Stable pseudo-random order, then round-robin across all four lanes.
+  // This keeps the layout playful between identities while preventing the
+  // leaderboard leaders from permanently crowding the top lanes.
+  const ordered = [...riders].sort((a, b) => {
+    const ah = stableHash(a.user_id + ":lane");
+    const bh = stableHash(b.user_id + ":lane");
+    return ah - bh || String(a.user_id).localeCompare(String(b.user_id));
+  });
+  const laneById = new Map();
+  const offset = ordered.length
+    ? stableHash(ordered.map((rider) => rider.user_id).join("|")) % 4
+    : 0;
 
-  return riders.map((rider, index) => ({
+  ordered.forEach((rider, index) => {
+    laneById.set(rider.user_id, ((index + offset) % 4) + 1);
+  });
+
+  return riders.map((rider) => ({
     ...rider,
-    lane: special.get(rider.user_id) || ((stableHash(rider.user_id) + index) % 4) + 1
+    lane: laneById.get(rider.user_id) || 1
   }));
 }
 
 function positionPlan(riders) {
-  const sorted = [...riders].sort((a, b) => b.today_tokens - a.today_tokens);
-  const count = Math.max(sorted.length - 1, 1);
-  const xById = new Map();
+  const ranked = [...riders].sort((a, b) => b.today_tokens - a.today_tokens);
+  const count = Math.max(ranked.length - 1, 1);
+  const targetById = new Map();
 
-  sorted.forEach((rider, index) => {
+  ranked.forEach((rider, index) => {
     const rankRatio = 1 - index / count;
-    const jitter = ((stableHash(rider.user_id) % 9) - 4) * 0.7;
-    const x = 24 + rankRatio * 55 + jitter;
-    xById.set(rider.user_id, Math.max(18, Math.min(83, x)));
+    const jitter = ((stableHash(rider.user_id + ":x") % 17) - 8) * 0.65;
+    const x = 21 + rankRatio * 61 + jitter;
+    targetById.set(rider.user_id, Math.max(14, Math.min(88, x)));
   });
 
-  return riders.map((rider) => ({ ...rider, x: xById.get(rider.user_id) || 45 }));
+  // Resolve near-overlaps inside each lane while keeping ranking visible.
+  for (let lane = 1; lane <= 4; lane += 1) {
+    const laneRiders = riders
+      .filter((rider) => rider.lane === lane)
+      .sort((a, b) => (targetById.get(a.user_id) || 50) - (targetById.get(b.user_id) || 50));
+
+    let previous = 5;
+    laneRiders.forEach((rider, index) => {
+      const raw = targetById.get(rider.user_id) || 50;
+      const stagger = ((stableHash(rider.user_id + ":stagger") % 5) - 2) * 1.2;
+      let x = Math.max(raw + stagger, previous + (index ? 17 : 0));
+      x = Math.min(90, x);
+      targetById.set(rider.user_id, x);
+      previous = x;
+    });
+  }
+
+  return riders.map((rider) => ({
+    ...rider,
+    x: targetById.get(rider.user_id) || 45
+  }));
 }
 
 function riderMarkup(rider) {
@@ -288,7 +319,9 @@ function renderRiders(riders) {
 
   requestAnimationFrame(() => {
     document.querySelectorAll(".rider").forEach((node, index) => {
-      node.style.setProperty("--scale", String(0.94 + (index % 3) * 0.035));
+      const riderId = node.dataset.riderId || String(index);
+      const sizeJitter = (stableHash(riderId + ":size") % 5) * 0.035;
+      node.style.setProperty("--scale", String(1.16 + sizeJitter));
     });
   });
 }
