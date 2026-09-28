@@ -81,6 +81,15 @@ function currentDateKey(date = new Date()) {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+function trailingDateKeys(endDate, days = 7) {
+  const anchor = new Date(`${endDate}T12:00:00Z`);
+  if (!Number.isFinite(anchor.getTime())) return [];
+  return Array.from({ length: days }, (_value, index) => {
+    const date = new Date(anchor.getTime() - (days - 1 - index) * 24 * 60 * 60 * 1000);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
 async function webUserFromRequest(req) {
   if (!DENGLEMA_SESSION_SECRET) return null;
   const cookies = parseCookieHeader(req.headers.cookie || "");
@@ -412,6 +421,60 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── GET /api/riders/:id ── lightweight rider detail for the race UI
+    const riderDetailMatch = url.pathname.match(/^\/api\/riders\/([^/]+)$/);
+    if (method === "GET" && riderDetailMatch) {
+      const viewer = await webUserFromRequest(req);
+      if (!viewer) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const userId = decodeURIComponent(riderDetailMatch[1]);
+      const rider = await readDenglemaUser(userId, STATE_DIR);
+      if (!rider) {
+        sendError(res, 404, "Rider not found");
+        return;
+      }
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+
+      const dates = trailingDateKeys(date, 7);
+      const [todayTotals, installations, ...history] = await Promise.all([
+        readUserTotals(date, STATE_DIR),
+        readUserInstallations(userId, date, STATE_DIR),
+        ...dates.map((key) => readUserTotals(key, STATE_DIR)),
+      ]);
+      const today = todayTotals.find((row) => row.user_id === userId) || null;
+      const trend = dates.map((key, index) => {
+        const row = history[index]?.find((item) => item.user_id === userId) || null;
+        return { date: key, total_tokens: row?.total_tokens || 0 };
+      });
+
+      sendJson(res, 200, {
+        date,
+        user: {
+          user_id: rider.id,
+          display_name: rider.display_name || "骑手",
+          avatar_emoji: rider.avatar_emoji || "🚴",
+          avatar_url: rider.avatar_url || null,
+        },
+        today_tokens: today?.total_tokens || 0,
+        models: today?.models || [],
+        projects: today?.projects || [],
+        installations: installations.map((item) => ({
+          id: item.id,
+          name: item.name,
+          today_tokens: item.today_tokens,
+          last_seen_at: item.last_seen_at,
+        })),
+        trend,
+      });
+      return;
+    }
+
     // ── GET /api/riders ── team projection for the future race UI
     if (method === "GET" && url.pathname === "/api/riders") {
       const date = url.searchParams.get("date") || currentDateKey();
@@ -724,13 +787,25 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // ── Minimal Denglema H5 shell ──
+    // ── Denglema web shell ──
     if (method === "GET" && url.pathname === "/") {
       await sendStatic(res, "index.html", "text/html; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/me") {
+      await sendStatic(res, "profile.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/plugin") {
+      await sendStatic(res, "plugin.html", "text/html; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/app.js") {
       await sendStatic(res, "app.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/profile.js") {
+      await sendStatic(res, "profile.js", "text/javascript; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/styles.css") {

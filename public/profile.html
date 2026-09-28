@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>我的主页 · 蹬了吗</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/profile.js"></script>
+</head>
+<body class="profile-page">
+  <main class="profile-shell">
+    <header class="profile-topbar">
+      <a href="/" class="profile-back">← 回赛道</a>
+      <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
+      <div class="profile-actions">
+        <a class="plugin-info-link" href="/plugin">Plugin 说明</a>
+        <button id="profileUploadButton" class="upload-button" type="button">⬆ 手动上传</button>
+        <button id="profilePairButton" class="bind-button" type="button">🔗 绑定新设备</button>
+      </div>
+    </header>
+
+    <section class="profile-hero-card">
+      <div id="profileAvatar" class="profile-avatar">🚴</div>
+      <div class="profile-identity">
+        <p class="dialog-kicker">我的骑手主页</p>
+        <h1 id="profileName">正在读取…</h1>
+        <p id="profileMeta">你的网页身份 = 赛道里的骑手身份。</p>
+      </div>
+      <div class="profile-total">
+        <span>今日 Token</span>
+        <strong id="profileToday">—</strong>
+      </div>
+    </section>
+
+    <section class="profile-grid">
+      <article class="profile-panel">
+        <div class="profile-panel-head"><h2>Model</h2><span>今日</span></div>
+        <div id="profileModels" class="breakdown-list"></div>
+      </article>
+      <article class="profile-panel">
+        <div class="profile-panel-head"><h2>Project</h2><span>workspace basename</span></div>
+        <div id="profileProjects" class="breakdown-list"></div>
+      </article>
+    </section>
+
+    <section class="profile-panel">
+      <div class="profile-panel-head"><h2>最近 7 天</h2><span>Token 趋势</span></div>
+      <div id="profileTrend" class="profile-trend-bars"></div>
+    </section>
+
+    <section class="profile-panel">
+      <div class="profile-panel-head">
+        <h2>我的设备</h2>
+        <span id="profileDevicesSummary">—</span>
+      </div>
+      <div id="profileDevices" class="profile-devices"></div>
+    </section>
+
+    <section class="profile-panel recovery-panel">
+      <div>
+        <h2>身份恢复</h2>
+        <p>恢复码用于换浏览器、清 cookie 后找回同一个骑手。当前浏览器已登录时不需要输入它。</p>
+      </div>
+      <div class="recovery-note">恢复码只在创建身份时显示一次；服务端只保存 hash。</div>
+    </section>
+  </main>
+
+  <dialog id="profilePairDialog" class="pair-dialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">绑定新设备</p>
+      <h2>让另一台 Codex 也来蹬</h2>
+      <button id="profileCreatePairingButton" type="button" class="dialog-primary">生成 pairing code</button>
+      <div id="profilePairingResult" class="pairing-result hidden">
+        <code id="profilePairingCode"></code>
+        <pre id="profileBindCommand"></pre>
+        <p>5 分钟有效 · 成功绑定后立即失效</p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="profileUploadDialog" class="pair-dialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">手动刷新赛道</p>
+      <h2>把这句发给 Codex</h2>
+      <div class="upload-prompt-box"><code>上传蹬了吗</code></div>
+      <button id="profileCopyUploadButton" type="button" class="dialog-primary">复制 Prompt</button>
+    </form>
+  </dialog>
+
+  <div id="profileToast" class="toast hidden"></div>
+</body>
+</html>

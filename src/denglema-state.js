@@ -142,18 +142,74 @@ export async function readDenglemaUsers(stateDir = "state") {
   return Object.values(store.by_id || {});
 }
 
+function normalizeUsageBreakdown(rows, field) {
+  if (rows == null) return [];
+  if (!Array.isArray(rows)) throw new Error(`Invalid ${field} breakdown`);
+  if (rows.length > 256) throw new Error(`Too many ${field} rows`);
+
+  const totals = new Map();
+  for (const row of rows) {
+    const name = String(row?.name || "").trim();
+    if (!name || name.length > 96) throw new Error(`Invalid ${field} name`);
+    const tokens = Number(row?.total_tokens);
+    if (!Number.isSafeInteger(tokens) || tokens < 0) {
+      throw new Error(`Invalid ${field} total_tokens`);
+    }
+    if (tokens === 0) continue;
+    totals.set(name, (totals.get(name) || 0) + tokens);
+  }
+
+  return [...totals.entries()]
+    .map(([name, total_tokens]) => ({ name, total_tokens }))
+    .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name));
+}
+
+function mergeMaxBreakdown(existing = [], incoming = []) {
+  const totals = new Map();
+  for (const row of Array.isArray(existing) ? existing : []) {
+    const name = String(row?.name || "").trim();
+    const tokens = Number(row?.total_tokens || 0);
+    if (name && Number.isSafeInteger(tokens) && tokens > 0) totals.set(name, tokens);
+  }
+  for (const row of Array.isArray(incoming) ? incoming : []) {
+    const current = totals.get(row.name) || 0;
+    totals.set(row.name, Math.max(current, row.total_tokens));
+  }
+  return [...totals.entries()]
+    .map(([name, total_tokens]) => ({ name, total_tokens }))
+    .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name));
+}
+
+function addBreakdown(target, rows = []) {
+  for (const row of Array.isArray(rows) ? rows : []) {
+    target.set(row.name, (target.get(row.name) || 0) + Number(row.total_tokens || 0));
+  }
+}
+
+function breakdownRows(target) {
+  return [...target.entries()]
+    .map(([name, total_tokens]) => ({ name, total_tokens }))
+    .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name));
+}
+
 export function validateUsageSample(sample) {
-  if (!sample || sample.schema_version !== 1) throw new Error("Unsupported usage sample schema");
+  const version = Number(sample?.schema_version);
+  if (version !== 1 && version !== 2) throw new Error("Unsupported usage sample schema");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(sample.date || ""))) throw new Error("Invalid usage date");
   const observed = Date.parse(sample.observed_at || "");
   if (!Number.isFinite(observed)) throw new Error("Invalid observed_at");
   const total = Number(sample.total_tokens);
   if (!Number.isSafeInteger(total) || total < 0) throw new Error("Invalid total_tokens");
+
   return {
-    schema_version: 1,
+    schema_version: version,
     date: sample.date,
     observed_at: new Date(observed).toISOString(),
     total_tokens: total,
+    ...(version === 2 ? {
+      models: normalizeUsageBreakdown(sample.models, "models"),
+      projects: normalizeUsageBreakdown(sample.projects, "projects"),
+    } : {}),
   };
 }
 
@@ -257,12 +313,17 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
   const existing = day.installations[installation.id] || null;
   const reset = Boolean(existing && sample.total_tokens < existing.max_total_tokens);
   const acceptedTotal = existing ? Math.max(existing.max_total_tokens, sample.total_tokens) : sample.total_tokens;
+  const acceptedModels = mergeMaxBreakdown(existing?.max_models, sample.models);
+  const acceptedProjects = mergeMaxBreakdown(existing?.max_projects, sample.projects);
+  day.version = 2;
   day.installations[installation.id] = {
     installation_id: installation.id,
     user_id: installation.user_id,
     previous: existing?.latest || null,
     latest: sample,
     max_total_tokens: acceptedTotal,
+    max_models: acceptedModels,
+    max_projects: acceptedProjects,
     reset_detected: reset || Boolean(existing?.reset_detected),
   };
   await writeJson(file, day);
@@ -272,7 +333,12 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
     installations.items[installation.id].last_seen_at = sample.observed_at;
     await writeJson(p.installations, installations);
   }
-  return { accepted_total: acceptedTotal, reset_detected: reset };
+  return {
+    accepted_total: acceptedTotal,
+    accepted_models: acceptedModels,
+    accepted_projects: acceptedProjects,
+    reset_detected: reset,
+  };
 }
 
 export async function revokeUserInstallation(userId, installationId, stateDir = "state", options = {}) {
@@ -319,6 +385,8 @@ export async function readUserInstallations(userId, date, stateDir = "state") {
         created_at: installation.created_at || null,
         last_seen_at: installation.last_seen_at || null,
         today_tokens: Number(usage?.max_total_tokens || 0),
+        models: usage?.max_models || [],
+        projects: usage?.max_projects || [],
         has_today_sample: Boolean(usage),
       };
     })
@@ -335,10 +403,26 @@ export async function readUserTotals(date, stateDir = "state") {
   for (const row of Object.values(day.installations || {})) {
     const userId = row.user_id;
     if (!userId) continue;
-    const current = totals.get(userId) || { user_id: userId, total_tokens: 0, installations: 0 };
+    const current = totals.get(userId) || {
+      user_id: userId,
+      total_tokens: 0,
+      installations: 0,
+      modelTotals: new Map(),
+      projectTotals: new Map(),
+    };
     current.total_tokens += Number(row.max_total_tokens || 0);
     current.installations += 1;
+    addBreakdown(current.modelTotals, row.max_models || row.latest?.models);
+    addBreakdown(current.projectTotals, row.max_projects || row.latest?.projects);
     totals.set(userId, current);
   }
-  return [...totals.values()].sort((a, b) => b.total_tokens - a.total_tokens);
+  return [...totals.values()]
+    .map((row) => ({
+      user_id: row.user_id,
+      total_tokens: row.total_tokens,
+      installations: row.installations,
+      models: breakdownRows(row.modelTotals),
+      projects: breakdownRows(row.projectTotals),
+    }))
+    .sort((a, b) => b.total_tokens - a.total_tokens);
 }

@@ -20,6 +20,8 @@
         <span class="tiny-bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
       <div class="top-actions">
+        <a class="plugin-info-link" href="/plugin">Plugin 说明</a>
+        <a class="profile-button" href="/me">👤 我的主页</a>
         <button id="devicesButton" class="devices-button" type="button">💻 我的设备</button>
         <button id="uploadPromptButton" class="upload-button" type="button">⬆ 手动上传</button>
         <button id="pairButton" class="bind-button" type="button">🔗 绑定新设备</button>
@@ -82,6 +84,33 @@
     </form>
   </dialog>
 
+  <dialog id="riderDialog" class="pair-dialog rider-dialog">
+    <form method="dialog" class="dialog-card rider-detail-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">骑手详情</p>
+      <h2 id="riderDetailTitle">正在读取…</h2>
+      <p id="riderDetailSummary" class="dialog-copy"></p>
+      <div class="rider-detail-grid">
+        <section>
+          <h3>Model</h3>
+          <div id="riderModels" class="breakdown-list"></div>
+        </section>
+        <section>
+          <h3>Project</h3>
+          <div id="riderProjects" class="breakdown-list"></div>
+        </section>
+      </div>
+      <section class="trend-section">
+        <h3>最近 7 天</h3>
+        <div id="riderTrend" class="trend-bars"></div>
+      </section>
+      <section class="rider-devices-section">
+        <h3>今天的设备</h3>
+        <div id="riderDevices" class="rider-devices-list"></div>
+      </section>
+    </form>
+  </dialog>
+
   <dialog id="uploadDialog" class="pair-dialog upload-dialog">
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
@@ -98,6 +127,8 @@
       <div class="mini-bike">🚲</div>
       <h2>先领一辆车</h2>
       <p id="status" class="auth-copy">第一次来只需要一个昵称。换浏览器时用恢复码找回同一个 rider。</p>
+
+      <a class="login-plugin-link" href="/plugin">先看看 Plugin 怎么安装和使用 →</a>
 
       <div id="registerPanel" class="auth-panel">
         <label>昵称<input id="displayNameInput" maxlength="24" placeholder="例如 Alice"></label>

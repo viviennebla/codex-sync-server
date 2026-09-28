@@ -128,11 +128,73 @@ test("cumulative samples are idempotent and aggregate multiple installations by 
 
   const totals = await readUserTotals("2026-09-24", root);
   assert.deepEqual(totals, [
-    { user_id: "user-1", total_tokens: 170, installations: 2 },
-    { user_id: "user-2", total_tokens: 60, installations: 1 },
+    { user_id: "user-1", total_tokens: 170, installations: 2, models: [], projects: [] },
+    { user_id: "user-2", total_tokens: 60, installations: 1, models: [], projects: [] },
   ]);
 });
 
+
+test("schema v2 keeps model and project breakdowns cumulative per installation and aggregated per user", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-breakdown-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const installA = { id: "inst-a", user_id: "user-1" };
+  const installB = { id: "inst-b", user_id: "user-1" };
+
+  await upsertUsageSample(installA, {
+    schema_version: 2,
+    date: "2026-09-28",
+    observed_at: "2026-09-28T01:00:00Z",
+    total_tokens: 100,
+    models: [
+      { name: "gpt-5.6-sol", total_tokens: 70 },
+      { name: "gpt-5.6-luna", total_tokens: 30 },
+    ],
+    projects: [
+      { name: "vimo-sop", total_tokens: 60 },
+      { name: "codex-family", total_tokens: 40 },
+    ],
+  }, root);
+
+  await upsertUsageSample(installA, {
+    schema_version: 2,
+    date: "2026-09-28",
+    observed_at: "2026-09-28T02:00:00Z",
+    total_tokens: 130,
+    models: [
+      { name: "gpt-5.6-sol", total_tokens: 90 },
+      { name: "gpt-5.6-luna", total_tokens: 40 },
+    ],
+    projects: [
+      { name: "vimo-sop", total_tokens: 80 },
+      { name: "codex-family", total_tokens: 50 },
+    ],
+  }, root);
+
+  await upsertUsageSample(installB, {
+    schema_version: 2,
+    date: "2026-09-28",
+    observed_at: "2026-09-28T02:05:00Z",
+    total_tokens: 50,
+    models: [{ name: "gpt-5.6-sol", total_tokens: 50 }],
+    projects: [{ name: "vimo-sop", total_tokens: 50 }],
+  }, root);
+
+  const totals = await readUserTotals("2026-09-28", root);
+  assert.deepEqual(totals, [{
+    user_id: "user-1",
+    total_tokens: 180,
+    installations: 2,
+    models: [
+      { name: "gpt-5.6-sol", total_tokens: 140 },
+      { name: "gpt-5.6-luna", total_tokens: 40 },
+    ],
+    projects: [
+      { name: "vimo-sop", total_tokens: 130 },
+      { name: "codex-family", total_tokens: 50 },
+    ],
+  }]);
+});
 
 test("user installations expose today's per-device token totals without credentials", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "denglema-installations-"));
