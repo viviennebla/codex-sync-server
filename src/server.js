@@ -8,6 +8,7 @@ import {
   authenticateInstallation,
   consumePairingCode,
   createPairingCode,
+  readPairingCodeStatus,
   readDenglemaUser,
   readDenglemaUsers,
   readUserTotals,
@@ -337,8 +338,15 @@ const server = createServer(async (req, res) => {
         sendJson(res, 401, { error: "Not logged in" });
         return;
       }
+      const totals = await readUserTotals(currentDateKey(), STATE_DIR);
+      const today = totals.find((row) => row.user_id === user.id) || null;
       sendJson(res, 200, {
-        user: { user_id: user.id, avatar_url: user.avatar_url || null },
+        user: {
+          user_id: user.id,
+          avatar_url: user.avatar_url || null,
+          today_tokens: today?.total_tokens || 0,
+          has_today_sample: Boolean(today),
+        },
       });
       return;
     }
@@ -403,6 +411,24 @@ const server = createServer(async (req, res) => {
 
       const pairing = await createPairingCode(userId, STATE_DIR);
       sendJson(res, 200, pairing);
+      return;
+    }
+
+    // ── GET /api/pairing-codes/:code/status ── let the Feishu page observe CLI binding
+    const pairingStatusMatch = url.pathname.match(/^\/api\/pairing-codes\/([^/]+)\/status$/);
+    if (method === "GET" && pairingStatusMatch) {
+      const webUser = await webUserFromRequest(req);
+      if (!webUser) {
+        sendError(res, 401, "Login required");
+        return;
+      }
+      const code = decodeURIComponent(pairingStatusMatch[1]);
+      const status = await readPairingCodeStatus(code, webUser.id, STATE_DIR);
+      if (!status) {
+        sendError(res, 404, "Pairing code not found");
+        return;
+      }
+      sendJson(res, 200, status);
       return;
     }
 

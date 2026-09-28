@@ -8,6 +8,7 @@ import {
   authenticateInstallation,
   consumePairingCode,
   createPairingCode,
+  readPairingCodeStatus,
   readDenglemaUser,
   readUserTotals,
   upsertFeishuUser,
@@ -23,6 +24,14 @@ test("pairing binds an installation to the internal user id", async (t) => {
     now: () => new Date("2026-09-24T00:00:00Z"),
   });
   assert.equal(pair.user_id, "user-1");
+  assert.equal(pair.status, "pending");
+  assert.deepEqual(
+    await readPairingCodeStatus("ABCD-EFGH", "user-1", root, {
+      now: () => new Date("2026-09-24T00:00:30Z"),
+    }),
+    { status: "pending", expires_at: pair.expires_at },
+  );
+  assert.equal(await readPairingCodeStatus("ABCD-EFGH", "user-2", root), null);
 
   const install = await consumePairingCode("ABCD-EFGH", "gpu-a", root, {
     token: "secret-a",
@@ -31,7 +40,33 @@ test("pairing binds an installation to the internal user id", async (t) => {
   });
   assert.equal(install.user_id, "user-1");
   assert.equal((await authenticateInstallation("secret-a", root)).id, "inst-a");
+  assert.deepEqual(
+    await readPairingCodeStatus("ABCD-EFGH", "user-1", root),
+    {
+      status: "consumed",
+      installation_id: "inst-a",
+      consumed_at: "2026-09-24T00:01:00.000Z",
+    },
+  );
   assert.equal(await consumePairingCode("ABCD-EFGH", "again", root), null);
+});
+
+test("expired pairing code remains observable to its Feishu user", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-pair-expired-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const pair = await createPairingCode("user-1", root, {
+    code: "OLD-CODE",
+    ttlMs: 60_000,
+    now: () => new Date("2026-09-24T00:00:00Z"),
+  });
+
+  assert.deepEqual(
+    await readPairingCodeStatus("OLD-CODE", "user-1", root, {
+      now: () => new Date("2026-09-24T00:02:00Z"),
+    }),
+    { status: "expired", expires_at: pair.expires_at },
+  );
 });
 
 test("cumulative samples are idempotent and aggregate multiple installations by user", async (t) => {

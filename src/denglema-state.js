@@ -92,9 +92,40 @@ export async function createPairingCode(userId, stateDir = "state", options = {}
   const file = paths(stateDir).pairingCodes;
   const current = await readJson(file, {});
   const expiresAt = new Date(now.getTime() + ttlMs).toISOString();
-  current[code] = { user_id: user, created_at: now.toISOString(), expires_at: expiresAt };
+  current[code] = {
+    user_id: user,
+    created_at: now.toISOString(),
+    expires_at: expiresAt,
+    status: "pending",
+  };
   await writeJson(file, current);
-  return { code, user_id: user, expires_at: expiresAt };
+  return { code, user_id: user, expires_at: expiresAt, status: "pending" };
+}
+
+export async function readPairingCodeStatus(code, userId, stateDir = "state", options = {}) {
+  const key = String(code || "").trim().toUpperCase();
+  const user = String(userId || "").trim();
+  if (!key || !user) return null;
+
+  const current = await readJson(paths(stateDir).pairingCodes, {});
+  const pairing = current[key];
+  if (!pairing || pairing.user_id !== user) return null;
+
+  if (pairing.status === "consumed") {
+    return {
+      status: "consumed",
+      installation_id: pairing.installation_id || null,
+      consumed_at: pairing.consumed_at || null,
+    };
+  }
+
+  const now = options.now?.() || new Date();
+  const expiresAt = Date.parse(pairing.expires_at || "");
+  if (!Number.isFinite(expiresAt) || expiresAt <= now.getTime()) {
+    return { status: "expired", expires_at: pairing.expires_at || null };
+  }
+
+  return { status: "pending", expires_at: pairing.expires_at };
 }
 
 export async function consumePairingCode(code, installationName, stateDir = "state", options = {}) {
@@ -103,15 +134,15 @@ export async function consumePairingCode(code, installationName, stateDir = "sta
   const p = paths(stateDir);
   const codes = await readJson(p.pairingCodes, {});
   const pairing = codes[key];
-  if (!pairing) return null;
+  if (!pairing || pairing.status === "consumed") return null;
   const now = options.now?.() || new Date();
   if (!Number.isFinite(Date.parse(pairing.expires_at)) || Date.parse(pairing.expires_at) <= now.getTime()) {
-    delete codes[key];
+    pairing.status = "expired";
+    pairing.expired_at = now.toISOString();
+    codes[key] = pairing;
     await writeJson(p.pairingCodes, codes);
     return null;
   }
-  delete codes[key];
-  await writeJson(p.pairingCodes, codes);
 
   const rawToken = options.token || randomBytes(32).toString("base64url");
   const installationId = options.installationId || `inst_${randomUUID()}`;
@@ -126,6 +157,13 @@ export async function consumePairingCode(code, installationName, stateDir = "sta
     revoked_at: null,
   };
   await writeJson(p.installations, installations);
+
+  pairing.status = "consumed";
+  pairing.consumed_at = now.toISOString();
+  pairing.installation_id = installationId;
+  codes[key] = pairing;
+  await writeJson(p.pairingCodes, codes);
+
   return { installation_id: installationId, user_id: pairing.user_id, token: rawToken };
 }
 

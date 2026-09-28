@@ -18,6 +18,7 @@ let visibleRiders = [];
 let directorTimer = null;
 let refreshTimer = null;
 let ambientTimer = null;
+let pairingPollTimer = null;
 let previewMode = false;
 const activeMotion = new Map();
 
@@ -471,6 +472,9 @@ async function bootstrap() {
 
   loginOverlay.classList.add("hidden");
   await loadRaceData();
+  if (me?.has_today_sample === false) {
+    showToast("今天还没有上传快照；已绑定设备可回 Codex 说「上传蹬了吗」", 5200);
+  }
   scheduleDirector();
   scheduleAmbientDrift();
   refreshTimer = setInterval(() => loadRaceData().catch(() => {}), 20000);
@@ -481,10 +485,70 @@ async function bootstrap() {
   }
 }
 
+function stopPairingPoll() {
+  if (pairingPollTimer !== null) clearInterval(pairingPollTimer);
+  pairingPollTimer = null;
+}
+
+function clearBindIntentFromUrl() {
+  const next = new URL(location.href);
+  next.searchParams.delete("bind");
+  history.replaceState(null, "", next.pathname + next.search + next.hash);
+}
+
+function startPairingPoll(code) {
+  stopPairingPoll();
+
+  const check = async () => {
+    try {
+      const result = await jsonFetch(
+        "/api/pairing-codes/" + encodeURIComponent(code) + "/status"
+      );
+
+      if (result.status === "consumed") {
+        stopPairingPoll();
+        pairingCodeEl.textContent = "绑定成功 ✓";
+        bindCommandEl.textContent = "回到 Codex 说：上传蹬了吗";
+        clearBindIntentFromUrl();
+
+        window.setTimeout(async () => {
+          if (pairDialog.open) pairDialog.close();
+          try {
+            const meResult = await jsonFetch("/api/me");
+            me = meResult.user;
+            await loadRaceData();
+          } catch {}
+
+          if (me?.has_today_sample) {
+            showToast("设备绑定成功，今日数据已刷新", 4200);
+          } else {
+            showToast("设备已绑定；今天还没上传快照。回 Codex 说「上传蹬了吗」即可上赛道", 6500);
+          }
+        }, 650);
+        return;
+      }
+
+      if (result.status === "expired") {
+        stopPairingPoll();
+        pairingCodeEl.textContent = "已过期";
+        bindCommandEl.textContent = "请重新生成 pairing code";
+      }
+    } catch (error) {
+      if (error.status === 401 || error.status === 404) stopPairingPoll();
+    }
+  };
+
+  void check();
+  pairingPollTimer = setInterval(() => { void check(); }, 1200);
+}
+
 pairButton.addEventListener("click", () => {
+  stopPairingPoll();
   pairingResult.classList.add("hidden");
   pairDialog.showModal();
 });
+
+pairDialog.addEventListener("close", stopPairingPoll);
 
 createPairingButton.addEventListener("click", async () => {
   createPairingButton.disabled = true;
@@ -506,6 +570,7 @@ createPairingButton.addEventListener("click", async () => {
     pairingCodeEl.textContent = result.code;
     bindCommandEl.textContent =
       "在当前 Codex 中说：绑定蹬了吗 " + result.code;
+    startPairingPoll(result.code);
   } catch (error) {
     showToast("生成失败：" + error.message);
   } finally {
@@ -538,4 +603,5 @@ window.addEventListener("beforeunload", () => {
   clearTimeout(directorTimer);
   clearInterval(refreshTimer);
   clearInterval(ambientTimer);
+  stopPairingPoll();
 });
