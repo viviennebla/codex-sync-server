@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>蹬了吗</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #27313c; background: #e76543; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 28px; display: grid; place-items: center; background: radial-gradient(circle at 18% 10%, rgba(255,255,255,.22), transparent 26%), #e76543; }
+    .shell { width: min(760px, 100%); }
+    .card { padding: 36px; border: 4px solid #27313c; border-radius: 30px; background: #fff8e8; box-shadow: 12px 14px 0 rgba(39,49,60,.2); transform: rotate(-.25deg); }
+    .tag { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 7px 11px; border: 2px solid #27313c; border-radius: 999px; background: #f5d45f; font-weight: 900; }
+    h1 { margin: 0; font-size: clamp(46px, 10vw, 78px); line-height: .92; letter-spacing: -.06em; }
+    .lead { margin: 20px 0 28px; max-width: 620px; font-size: 18px; line-height: 1.65; color: #625b55; }
+    .actions { display: grid; gap: 12px; }
+    .action { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; width: 100%; padding: 16px 18px; border: 3px solid #27313c; border-radius: 17px; background: #fffdf7; color: #27313c; text-decoration: none; cursor: pointer; text-align: left; box-shadow: 4px 5px 0 rgba(39,49,60,.12); }
+    .action:hover { transform: translateY(-1px); }
+    .action strong { display: block; font-size: 18px; }
+    .action span { display: block; margin-top: 3px; color: #746b63; font-size: 13px; line-height: 1.45; }
+    .action .arrow { font-size: 25px; color: #e76543; }
+    .primary { background: #27313c; color: #fff; box-shadow: 4px 5px 0 #f0b43d; }
+    .primary span { color: #d9e2eb; }
+    .primary .arrow { color: #f5d45f; }
+    .install { background: #fff4bd; }
+    .footer { margin-top: 20px; color: rgba(255,255,255,.92); font-size: 13px; line-height: 1.55; text-align: center; }
+    dialog { width: min(620px, calc(100vw - 28px)); border: 0; padding: 0; background: transparent; }
+    dialog::backdrop { background: rgba(39,49,60,.35); backdrop-filter: blur(4px); }
+    .dialog-card { position: relative; padding: 28px; border: 3px solid #27313c; border-radius: 22px; background: #fff8e8; box-shadow: 8px 8px 0 rgba(39,49,60,.18); }
+    .close { position: absolute; right: 14px; top: 10px; border: 0; background: transparent; font-size: 28px; cursor: pointer; }
+    .dialog-card h2 { margin: 0 0 10px; font-size: 28px; }
+    .copy-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: stretch; margin-top: 16px; }
+    pre { margin: 0; padding: 14px; overflow-x: auto; border: 2px solid #27313c; border-radius: 12px; background: #20252c; color: #f5d45f; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; }
+    .copy { border: 2px solid #27313c; border-radius: 12px; padding: 0 14px; background: #f5d45f; font-weight: 900; cursor: pointer; }
+    @media (max-width: 620px) { body { padding: 18px; } .card { padding: 26px 22px; } .copy-row { grid-template-columns: 1fr; } .copy { min-height: 44px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="tag">🚲 公司内网 · Vibe Coding 赛道</div>
+      <h1>蹬了吗</h1>
+      <p class="lead">把 Codex token 蹬进一条有点离谱的办公室赛道。排行榜只统计 token 数，不上传 prompt、代码或对话内容。</p>
+      <div class="actions">
+        <a id="enterRace" class="action primary" href="#">
+          <div><strong>进入赛道</strong><span>打开飞书「蹬了吗」，查看今天谁蹬得最远。</span></div>
+          <div class="arrow">→</div>
+        </a>
+        <a id="bindDevice" class="action" href="#">
+          <div><strong>绑定新设备</strong><span>打开飞书并直接进入 pairing 流程，把新的 Codex 环境绑到你的账号。</span></div>
+          <div class="arrow">→</div>
+        </a>
+        <button id="installPlugin" class="action install" type="button">
+          <div><strong>安装 Codex Plugin</strong><span>从 GitHub marketplace 安装正式版 Denglema Plugin。</span></div>
+          <div class="arrow">＋</div>
+        </button>
+      </div>
+    </section>
+    <p class="footer">浏览器本身不保存你的飞书身份；个人数据只在飞书 H5 里通过飞书免登读取。</p>
+  </main>
+  <dialog id="installDialog">
+    <div class="dialog-card">
+      <button id="closeInstall" class="close" type="button" aria-label="关闭">×</button>
+      <h2>安装 Codex Plugin</h2>
+      <p>在终端执行下面两条命令，然后重新启动 Codex。首次未绑定时，Plugin 会自动打开这个入口页并带你去飞书绑定。</p>
+      <div class="copy-row">
+        <pre id="installCommand">codex plugin marketplace add viviennebla/codex-usage-dashboard
+codex plugin add denglema@denglema</pre>
+        <button id="copyInstall" class="copy" type="button">复制</button>
+      </div>
+    </div>
+  </dialog>
+  <script>
+    const appId = "cli_aa15ccc6faf8dbdb";
+    const feishu = (path) =>
+      "https://applink.feishu.cn/client/web_app/open?appId=" + appId +
+      "&path=" + encodeURIComponent(path) + "&mode=window";
+    const enterUrl = feishu("/");
+    const bindUrl = feishu("/?bind=1");
+
+    document.getElementById("enterRace").href = enterUrl;
+    document.getElementById("bindDevice").href = bindUrl;
+
+    const dialog = document.getElementById("installDialog");
+    document.getElementById("installPlugin").addEventListener("click", () => dialog.showModal());
+    document.getElementById("closeInstall").addEventListener("click", () => dialog.close());
+    document.getElementById("copyInstall").addEventListener("click", async () => {
+      const text = document.getElementById("installCommand").textContent.trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        document.getElementById("copyInstall").textContent = "已复制 ✓";
+      } catch {
+        window.getSelection().selectAllChildren(document.getElementById("installCommand"));
+      }
+      setTimeout(() => { document.getElementById("copyInstall").textContent = "复制"; }, 1600);
+    });
+
+    const action = new URLSearchParams(location.search).get("action");
+    if (action === "bind") {
+      setTimeout(() => { location.href = bindUrl; }, 700);
+    } else if (action === "race") {
+      setTimeout(() => { location.href = enterUrl; }, 700);
+    }
+  </script>
+</body>
+</html>

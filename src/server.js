@@ -2,7 +2,29 @@ import { createServer } from "node:http";
 import { createHash } from "node:crypto";
 import { readFile, readdir, mkdir, writeFile, rm } from "node:fs/promises";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { readDeviceStates, writeDeviceState, removeDeviceState } from "./state.js";
+import {
+  authenticateInstallation,
+  consumePairingCode,
+  createPairingCode,
+  createWebUser,
+  readPairingCodeStatus,
+  readDenglemaUser,
+  readDenglemaUsers,
+  recoverWebUser,
+  readUserInstallations,
+  readUserTotals,
+  revokeUserInstallation,
+  upsertUsageSample,
+} from "./denglema-state.js";
+import {
+  clearSessionCookie,
+  createWebSession,
+  parseCookieHeader,
+  sessionCookie,
+  verifyWebSession,
+} from "./denglema-auth.js";
 
 const PORT = Number(process.env.PORT) || 34777;
 const BIND = process.env.BIND || "0.0.0.0";
@@ -10,6 +32,11 @@ const STATE_DIR = process.env.STATE_DIR || "state";
 const SKILLS_DIR = process.env.SKILLS_DIR || "skills-store";
 const SKILL_BUNDLE_FILE = "skills-bundle.json";
 const TOKEN = process.env.DASHBOARD_TOKEN || null;
+const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || "UTC";
+const DENGLEMA_BASE_URL = (process.env.DENGLEMA_BASE_URL || `http://${BIND}:${PORT}`).replace(/\/+$/, "");
+const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || "";
+const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
+const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
 
 /* ── Logging ─────────────────────────────── */
@@ -28,11 +55,47 @@ function log(level, msg, extra = {}) {
 
 /* ── Auth ─────────────────────────────────── */
 
+function bearerToken(req) {
+  const header = req.headers.authorization || "";
+  return header.replace(/^Bearer\s+/i, "").trim();
+}
+
 function checkAuth(req) {
   if (!TOKEN) return true; // auth disabled if no token configured
-  const header = req.headers.authorization || "";
-  const bearer = header.replace(/^Bearer\s+/i, "").trim();
-  return bearer === TOKEN;
+  return bearerToken(req) === TOKEN;
+}
+
+function requestIsSecure(req) {
+  return DENGLEMA_BASE_URL.startsWith("https://")
+    || String(req.headers["x-forwarded-proto"] || "").toLowerCase() === "https";
+}
+
+function currentDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DENGLEMA_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function trailingDateKeys(endDate, days = 7) {
+  const anchor = new Date(`${endDate}T12:00:00Z`);
+  if (!Number.isFinite(anchor.getTime())) return [];
+  return Array.from({ length: days }, (_value, index) => {
+    const date = new Date(anchor.getTime() - (days - 1 - index) * 24 * 60 * 60 * 1000);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
+async function webUserFromRequest(req) {
+  if (!DENGLEMA_SESSION_SECRET) return null;
+  const cookies = parseCookieHeader(req.headers.cookie || "");
+  const session = verifyWebSession(cookies.denglema_session, DENGLEMA_SESSION_SECRET);
+  if (!session?.user_id) return null;
+  return readDenglemaUser(session.user_id, STATE_DIR);
 }
 
 /* ── Helpers ──────────────────────────────── */
@@ -49,11 +112,12 @@ function readBody(req) {
   });
 }
 
-function sendJson(res, status, data) {
+function sendJson(res, status, data, headers = {}) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
+    ...headers,
   });
   res.end(body);
 }
@@ -61,6 +125,15 @@ function sendJson(res, status, data) {
 function sendError(res, status, message) {
   res.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   res.end(message);
+}
+
+async function sendStatic(res, filename, contentType) {
+  const body = await readFile(join(PUBLIC_DIR, filename));
+  res.writeHead(200, {
+    "content-type": contentType,
+    "cache-control": "no-store",
+  });
+  res.end(body);
 }
 
 async function readJson(path) {
@@ -219,6 +292,216 @@ const server = createServer(async (req, res) => {
     const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
     const method = req.method;
 
+    // ── POST /api/auth/register ── create a lightweight Denglema web identity
+    if (method === "POST" && url.pathname === "/api/auth/register") {
+      const body = await readBody(req);
+      try {
+        const created = await createWebUser({
+          display_name: body?.display_name,
+          avatar_emoji: body?.avatar_emoji,
+        }, STATE_DIR);
+        const session = createWebSession(created.user.id, DENGLEMA_SESSION_SECRET, {
+          ttlSeconds: WEB_SESSION_TTL_SECONDS,
+        });
+        sendJson(res, 201, {
+          ok: true,
+          user: {
+            user_id: created.user.id,
+            display_name: created.user.display_name,
+            avatar_emoji: created.user.avatar_emoji,
+            avatar_url: created.user.avatar_url || null,
+          },
+          recovery_code: created.recovery_code,
+        }, {
+          "set-cookie": sessionCookie(session, {
+            secure: requestIsSecure(req),
+            maxAge: WEB_SESSION_TTL_SECONDS,
+          }),
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Could not create user");
+      }
+      return;
+    }
+
+    // ── POST /api/auth/recover ── restore the same Denglema user on another browser
+    if (method === "POST" && url.pathname === "/api/auth/recover") {
+      const body = await readBody(req);
+      const user = await recoverWebUser(body?.recovery_code, STATE_DIR);
+      if (!user) {
+        sendError(res, 401, "Invalid recovery code");
+        return;
+      }
+      const session = createWebSession(user.id, DENGLEMA_SESSION_SECRET, {
+        ttlSeconds: WEB_SESSION_TTL_SECONDS,
+      });
+      sendJson(res, 200, {
+        ok: true,
+        user: {
+          user_id: user.id,
+          display_name: user.display_name || "骑手",
+          avatar_emoji: user.avatar_emoji || "🚴",
+          avatar_url: user.avatar_url || null,
+        },
+      }, {
+        "set-cookie": sessionCookie(session, {
+          secure: requestIsSecure(req),
+          maxAge: WEB_SESSION_TTL_SECONDS,
+        }),
+      });
+      return;
+    }
+
+    // ── POST /api/auth/logout ── clear local session
+    if (method === "POST" && url.pathname === "/api/auth/logout") {
+      sendJson(res, 200, { ok: true }, {
+        "set-cookie": clearSessionCookie({ secure: requestIsSecure(req) }),
+      });
+      return;
+    }
+
+    // ── GET /api/me ── current Denglema user
+    if (method === "GET" && url.pathname === "/api/me") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const totals = await readUserTotals(currentDateKey(), STATE_DIR);
+      const today = totals.find((row) => row.user_id === user.id) || null;
+      sendJson(res, 200, {
+        user: {
+          user_id: user.id,
+          display_name: user.display_name || "骑手",
+          avatar_emoji: user.avatar_emoji || "🚴",
+          avatar_url: user.avatar_url || null,
+          today_tokens: today?.total_tokens || 0,
+          has_today_sample: Boolean(today),
+        },
+      });
+      return;
+    }
+
+    // ── GET /api/me/installations ── current user's bound native Codex environments
+    if (method === "GET" && url.pathname === "/api/me/installations") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      const installations = await readUserInstallations(user.id, date, STATE_DIR);
+      sendJson(res, 200, {
+        date,
+        total_tokens: installations.reduce((sum, item) => sum + item.today_tokens, 0),
+        installations,
+      });
+      return;
+    }
+
+    // ── DELETE /api/me/installations/:id ── revoke one of the current user's installations
+    const revokeInstallationMatch = url.pathname.match(/^\/api\/me\/installations\/([^/]+)$/);
+    if (method === "DELETE" && revokeInstallationMatch) {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const installationId = decodeURIComponent(revokeInstallationMatch[1]);
+      const revoked = await revokeUserInstallation(user.id, installationId, STATE_DIR);
+      if (!revoked) {
+        sendError(res, 404, "Installation not found");
+        return;
+      }
+      sendJson(res, 200, { ok: true, installation: revoked });
+      return;
+    }
+
+    // ── GET /api/riders/:id ── lightweight rider detail for the race UI
+    const riderDetailMatch = url.pathname.match(/^\/api\/riders\/([^/]+)$/);
+    if (method === "GET" && riderDetailMatch) {
+      const viewer = await webUserFromRequest(req);
+      if (!viewer) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const userId = decodeURIComponent(riderDetailMatch[1]);
+      const rider = await readDenglemaUser(userId, STATE_DIR);
+      if (!rider) {
+        sendError(res, 404, "Rider not found");
+        return;
+      }
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+
+      const dates = trailingDateKeys(date, 7);
+      const [todayTotals, installations, ...history] = await Promise.all([
+        readUserTotals(date, STATE_DIR),
+        readUserInstallations(userId, date, STATE_DIR),
+        ...dates.map((key) => readUserTotals(key, STATE_DIR)),
+      ]);
+      const today = todayTotals.find((row) => row.user_id === userId) || null;
+      const trend = dates.map((key, index) => {
+        const row = history[index]?.find((item) => item.user_id === userId) || null;
+        return { date: key, total_tokens: row?.total_tokens || 0 };
+      });
+
+      sendJson(res, 200, {
+        date,
+        user: {
+          user_id: rider.id,
+          display_name: rider.display_name || "骑手",
+          avatar_emoji: rider.avatar_emoji || "🚴",
+          avatar_url: rider.avatar_url || null,
+        },
+        today_tokens: today?.total_tokens || 0,
+        models: today?.models || [],
+        projects: today?.projects || [],
+        installations: installations.map((item) => ({
+          id: item.id,
+          name: item.name,
+          today_tokens: item.today_tokens,
+          last_seen_at: item.last_seen_at,
+        })),
+        trend,
+      });
+      return;
+    }
+
+    // ── GET /api/riders ── team projection for the future race UI
+    if (method === "GET" && url.pathname === "/api/riders") {
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      const [totals, users] = await Promise.all([
+        readUserTotals(date, STATE_DIR),
+        readDenglemaUsers(STATE_DIR),
+      ]);
+      const byId = new Map(users.map((user) => [user.id, user]));
+      sendJson(res, 200, {
+        date,
+        riders: totals.map((row) => ({
+          user_id: row.user_id,
+          display_name: byId.get(row.user_id)?.display_name || "骑手",
+          avatar_emoji: byId.get(row.user_id)?.avatar_emoji || "🚴",
+          avatar_url: byId.get(row.user_id)?.avatar_url || null,
+          today_tokens: row.total_tokens,
+          installations: row.installations,
+          recent_rate_tpm: null,
+        })),
+      });
+      return;
+    }
+
     // ── GET /health ──
     if (method === "GET" && url.pathname === "/health") {
       const devices = await readDeviceStates(STATE_DIR);
@@ -227,8 +510,89 @@ const server = createServer(async (req, res) => {
         uptime_seconds: Math.floor((Date.now() - STARTED_AT) / 1000),
         device_count: devices.size,
         auth_enabled: !!TOKEN,
+        denglema_auth_configured: Boolean(DENGLEMA_SESSION_SECRET),
       });
       log("info", "health", { status: 200, ms: Date.now() - start });
+      return;
+    }
+
+    // ── POST /api/pairing-codes ── logged-in user creates own pairing code
+    if (method === "POST" && url.pathname === "/api/pairing-codes") {
+      const webUser = await webUserFromRequest(req);
+      let userId = webUser?.id || null;
+
+      // Keep bearer-admin compatibility for development/bootstrap only.
+      if (!userId) {
+        if (!TOKEN || !checkAuth(req)) {
+          sendError(res, 401, "Login required");
+          return;
+        }
+        const body = await readBody(req);
+        userId = String(body?.user_id || "").trim();
+        if (!userId) {
+          sendError(res, 400, "Missing user_id");
+          return;
+        }
+      }
+
+      const pairing = await createPairingCode(userId, STATE_DIR);
+      sendJson(res, 200, pairing);
+      return;
+    }
+
+    // ── GET /api/pairing-codes/:code/status ── let the web page observe CLI binding
+    const pairingStatusMatch = url.pathname.match(/^\/api\/pairing-codes\/([^/]+)\/status$/);
+    if (method === "GET" && pairingStatusMatch) {
+      const webUser = await webUserFromRequest(req);
+      if (!webUser) {
+        sendError(res, 401, "Login required");
+        return;
+      }
+      const code = decodeURIComponent(pairingStatusMatch[1]);
+      const status = await readPairingCodeStatus(code, webUser.id, STATE_DIR);
+      if (!status) {
+        sendError(res, 404, "Pairing code not found");
+        return;
+      }
+      sendJson(res, 200, status);
+      return;
+    }
+
+    // ── POST /api/installations/pair ── exchange one-time code for installation credentials
+    if (method === "POST" && url.pathname === "/api/installations/pair") {
+      const body = await readBody(req);
+      if (!body?.code) {
+        sendError(res, 400, "Missing pairing code");
+        return;
+      }
+      const result = await consumePairingCode(body.code, body.installation_name, STATE_DIR);
+      if (!result) {
+        sendError(res, 401, "Invalid or expired pairing code");
+        return;
+      }
+      sendJson(res, 200, { ...result, timezone: DENGLEMA_TIMEZONE });
+      return;
+    }
+
+    // ── POST /api/usage/sample ── cumulative daily usage for one installation
+    if (method === "POST" && url.pathname === "/api/usage/sample") {
+      const installation = await authenticateInstallation(bearerToken(req), STATE_DIR);
+      if (!installation) {
+        sendError(res, 401, "Unauthorized installation");
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const result = await upsertUsageSample(installation, body, STATE_DIR);
+        sendJson(res, 200, {
+          ok: true,
+          installation_id: installation.id,
+          user_id: installation.user_id,
+          ...result,
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Invalid usage sample");
+      }
       return;
     }
 
@@ -420,6 +784,32 @@ const server = createServer(async (req, res) => {
         log("info", "skill removed", { name });
         sendJson(res, 200, { ok: true, removed: name });
       } catch { sendError(res, 404, `Skill "${name}" not found`); }
+      return;
+    }
+
+    // ── Denglema web shell ──
+    if (method === "GET" && url.pathname === "/") {
+      await sendStatic(res, "index.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/me") {
+      await sendStatic(res, "profile.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/plugin") {
+      await sendStatic(res, "plugin.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/app.js") {
+      await sendStatic(res, "app.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/profile.js") {
+      await sendStatic(res, "profile.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/styles.css") {
+      await sendStatic(res, "styles.css", "text/css; charset=utf-8");
       return;
     }
 
