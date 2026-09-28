@@ -1207,6 +1207,99 @@ button { font: inherit; }
 }
 
 
+
+.plugin-info-link {
+  color: #5e6570;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+  padding: 9px 8px;
+  white-space: nowrap;
+}
+.plugin-info-link:hover { color: #27313c; text-decoration: underline; }
+.login-plugin-link {
+  display: inline-block;
+  margin: -4px 0 16px;
+  color: #5479c6;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+}
+.login-plugin-link:hover { text-decoration: underline; }
+
+.plugin-doc-shell { max-width: 980px; }
+.plugin-doc-version {
+  justify-self: end;
+  color: #7d746d;
+  font-size: 12px;
+  font-weight: 850;
+}
+.plugin-doc-hero {
+  grid-template-columns: auto 1fr;
+}
+.plugin-doc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.plugin-doc-grid .profile-panel { margin-top: 0; }
+.plugin-doc-copy {
+  margin: 8px 0 0;
+  color: #756d66;
+  line-height: 1.65;
+  font-size: 13px;
+}
+.plugin-command {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 13px;
+  background: #20252c;
+  color: #dce6f6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.plugin-doc-steps {
+  margin: 0;
+  padding-left: 20px;
+  color: #625c57;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.plugin-doc-steps code,
+.plugin-doc-copy code {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: #f0ebe3;
+  color: #4d4a47;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.plugin-privacy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.plugin-privacy-grid > div {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fffdf7;
+  border: 1.5px solid rgba(39,49,60,.1);
+}
+.plugin-privacy-grid strong {
+  font-size: 14px;
+  color: #343b45;
+}
+.plugin-privacy-grid ul {
+  margin: 9px 0 0;
+  padding-left: 18px;
+  color: #746c65;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.plugin-doc-cta { display: inline-block; }
+
+
 @media (max-width: 900px) {
   body { overflow: auto; }
   .app-shell { min-height: 780px; grid-template-rows: 72px 92px 480px 100px; }
@@ -1229,7 +1322,9 @@ button { font: inherit; }
     min-width: 0;
     text-align: left;
   }
-  .profile-grid { grid-template-columns: 1fr; }
+  .profile-grid,
+  .plugin-doc-grid,
+  .plugin-privacy-grid { grid-template-columns: 1fr; }
   .recovery-panel { align-items: start; flex-direction: column; }
   .recovery-note { max-width: none; }
   .profile-trend-bars { gap: 7px; }

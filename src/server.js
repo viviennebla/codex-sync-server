@@ -796,6 +796,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "profile.html", "text/html; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/plugin") {
+      await sendStatic(res, "plugin.html", "text/html; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/app.js") {
       await sendStatic(res, "app.js", "text/javascript; charset=utf-8");
       return;
