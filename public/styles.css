@@ -207,7 +207,8 @@ button { font: inherit; }
   min-height: 420px;
   display: grid;
   grid-template-rows: repeat(4, 1fr);
-  overflow: visible;
+  overflow-x: clip;
+  overflow-y: visible;
   isolation: isolate;
   background:
     linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.03)),
@@ -294,7 +295,8 @@ button { font: inherit; }
   height: 126px;
   transform: translate(-50%, -55%) scale(var(--scale));
   transform-origin: 50% 70%;
-  transition: left 6.4s cubic-bezier(.22,.68,.28,1), filter .3s ease;
+  transition: filter .3s ease;
+  will-change: left;
   z-index: 6;
 }
 
