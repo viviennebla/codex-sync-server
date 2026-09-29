@@ -11,16 +11,127 @@
   --line: rgba(255, 248, 229, .92);
   --blue: #5479c6;
   --yellow: #f4c949;
+
+  --page-glow: rgba(255,255,255,.8);
+  --page-top: #f9f5ec;
+  --page-bottom: #f1eadb;
+  --topbar-bg: rgba(255,251,243,.94);
+  --office-bg: #f8f1e3;
+  --office-dot: #9e927e;
+  --window-frame: #637b95;
+  --window-sky: #bfdbef;
+  --cloud: rgba(255,255,255,.78);
+  --building: rgba(74,96,119,.34);
+  --track-light: rgba(255,255,255,.03);
+  --track-shade: rgba(0,0,0,.03);
+  --track-shadow-top: rgba(139,63,41,.12);
+  --track-shadow-bottom: rgba(126,49,30,.09);
+  --desk-bg: #f5eee0;
+  --event-zone-bg: rgba(255,250,240,.28);
 }
 
 html, body { margin: 0; min-height: 100%; }
+
+/* Time-of-day lighting: 06 morning / 12 day / 18 evening / 00 night */
+body.time-morning {
+  --page-glow: rgba(255,250,228,.78);
+  --page-top: #f8f2e7;
+  --page-bottom: #eee8dc;
+  --topbar-bg: rgba(255,250,240,.94);
+  --office-bg: #f4eee1;
+  --office-dot: #a0927e;
+  --window-frame: #74879d;
+  --window-sky: #c7dff0;
+  --cloud: rgba(255,255,255,.82);
+  --building: rgba(89,108,128,.31);
+  --track: #e86f4f;
+  --track-dark: #d15b3f;
+  --track-light: rgba(255,242,214,.055);
+  --track-shade: rgba(88,47,31,.025);
+  --track-shadow-top: rgba(150,80,49,.11);
+  --track-shadow-bottom: rgba(120,58,38,.08);
+  --desk-bg: #f3ecdf;
+  --event-zone-bg: rgba(255,250,240,.30);
+}
+
+body.time-day {
+  --page-glow: rgba(255,255,255,.92);
+  --page-top: #fbf7ef;
+  --page-bottom: #f3ecdf;
+  --topbar-bg: rgba(255,252,246,.96);
+  --office-bg: #faf4e8;
+  --office-dot: #a79b88;
+  --window-frame: #607c9a;
+  --window-sky: #b9dcf4;
+  --cloud: rgba(255,255,255,.90);
+  --building: rgba(65,91,118,.34);
+  --track: #e76543;
+  --track-dark: #cd5136;
+  --track-light: rgba(255,255,255,.055);
+  --track-shade: rgba(0,0,0,.022);
+  --track-shadow-top: rgba(139,63,41,.10);
+  --track-shadow-bottom: rgba(126,49,30,.07);
+  --desk-bg: #f7efe1;
+  --event-zone-bg: rgba(255,252,246,.28);
+}
+
+body.time-evening {
+  --page-glow: rgba(255,221,188,.40);
+  --page-top: #f4e8df;
+  --page-bottom: #e8ddd7;
+  --topbar-bg: rgba(250,240,232,.94);
+  --office-bg: #eee4dc;
+  --office-dot: #9c8b87;
+  --window-frame: #6f718c;
+  --window-sky: #c9a7ba;
+  --cloud: rgba(255,234,222,.67);
+  --building: rgba(82,71,96,.43);
+  --track: #d96549;
+  --track-dark: #bd503d;
+  --track-light: rgba(255,202,162,.055);
+  --track-shade: rgba(68,39,49,.045);
+  --track-shadow-top: rgba(103,48,47,.16);
+  --track-shadow-bottom: rgba(87,41,45,.12);
+  --desk-bg: #eadfd7;
+  --event-zone-bg: rgba(248,237,230,.30);
+}
+
+body.time-night {
+  --page-glow: rgba(113,139,182,.16);
+  --page-top: #cbd1dd;
+  --page-bottom: #bbc2d0;
+  --topbar-bg: rgba(223,226,233,.94);
+  --office-bg: #d1d3dc;
+  --office-dot: #7e8290;
+  --window-frame: #565f78;
+  --window-sky: #667795;
+  --cloud: rgba(202,214,231,.38);
+  --building: rgba(45,51,70,.56);
+  --track: #b85346;
+  --track-dark: #93443d;
+  --track-light: rgba(124,153,195,.055);
+  --track-shade: rgba(28,31,45,.10);
+  --track-shadow-top: rgba(45,34,45,.20);
+  --track-shadow-bottom: rgba(36,29,42,.17);
+  --desk-bg: #c7c7cf;
+  --event-zone-bg: rgba(224,225,231,.27);
+}
+
+body.time-night .sticky-note { filter: saturate(.72) brightness(.94); }
+body.time-night .plant,
+body.time-night .sleepy-cat,
+body.time-night .desk-cat { filter: saturate(.55) brightness(.86); }
+body.time-evening .plant,
+body.time-evening .sleepy-cat,
+body.time-evening .desk-cat { filter: saturate(.68) brightness(.96); }
+
 
 body {
   min-height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 13% 6%, rgba(255,255,255,.8), transparent 24%),
-    linear-gradient(#f9f5ec, #f1eadb);
+    radial-gradient(circle at 13% 6%, var(--page-glow), transparent 24%),
+    linear-gradient(var(--page-top), var(--page-bottom));
 }
 
 button { font: inherit; }
@@ -39,7 +150,7 @@ button { font: inherit; }
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 14px 36px 10px;
-  background: rgba(255, 251, 243, .94);
+  background: var(--topbar-bg);
   border-bottom: 1px solid rgba(51, 61, 74, .08);
 }
 
@@ -137,7 +248,7 @@ button { font: inherit; }
 .office-strip {
   position: relative;
   overflow: hidden;
-  background: #f8f1e3;
+  background: var(--office-bg);
   border-bottom: 2px solid rgba(40,49,60,.12);
 }
 .office-strip::before {
@@ -145,7 +256,7 @@ button { font: inherit; }
   position: absolute;
   inset: 0;
   opacity: .25;
-  background-image: radial-gradient(#9e927e 0.7px, transparent 0.7px);
+  background-image: radial-gradient(var(--office-dot) 0.7px, transparent 0.7px);
   background-size: 9px 9px;
 }
 .window {
@@ -154,16 +265,16 @@ button { font: inherit; }
   top: 14px;
   width: 34%;
   height: 100px;
-  border: 5px solid #637b95;
+  border: 5px solid var(--window-frame);
   border-bottom: 0;
-  background: #bfdbef;
+  background: var(--window-sky);
   overflow: hidden;
 }
 .cloud {
   position: absolute;
   width: 54px;
   height: 16px;
-  background: rgba(255,255,255,.78);
+  background: var(--cloud);
   border-radius: 999px;
 }
 .cloud::before, .cloud::after {
@@ -176,7 +287,7 @@ button { font: inherit; }
 .cloud::after { width: 28px; height: 28px; left: 24px; bottom: 2px; }
 .cloud-a { top: 18px; left: 30px; }
 .cloud-b { top: 30px; right: 34px; transform: scale(.7); }
-.building { position: absolute; bottom: 0; background: rgba(74,96,119,.34); }
+.building { position: absolute; bottom: 0; background: var(--building); }
 .b1 { left: 18%; width: 34px; height: 44px; }
 .b2 { left: 38%; width: 48px; height: 70px; }
 .b3 { left: 62%; width: 42px; height: 50px; }
@@ -212,11 +323,11 @@ button { font: inherit; }
   overflow: visible;
   isolation: isolate;
   background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.03)),
+    linear-gradient(180deg, var(--track-light), var(--track-shade)),
     var(--track);
   box-shadow:
-    inset 0 9px 18px rgba(139,63,41,.12),
-    inset 0 -8px 12px rgba(126,49,30,.09);
+    inset 0 9px 18px var(--track-shadow-top),
+    inset 0 -8px 12px var(--track-shadow-bottom);
 }
 
 .race-stage::after {
@@ -664,7 +775,7 @@ button { font: inherit; }
 .desk-edge {
   position: relative;
   z-index: 12;
-  background: #f5eee0;
+  background: var(--desk-bg);
   border-top: 2px solid rgba(63,68,73,.08);
   overflow: hidden;
 }
@@ -1692,7 +1803,7 @@ button { font: inherit; }
   padding: 12px;
   border: 0;
   border-radius: 28px;
-  background: rgba(255, 250, 240, .28);
+  background: var(--event-zone-bg);
   box-shadow: none;
   backdrop-filter: blur(2px);
   overflow: visible;
