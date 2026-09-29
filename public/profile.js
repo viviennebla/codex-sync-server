@@ -202,22 +202,23 @@ function renderTrend(rows) {
 function renderDevices(devices) {
   profileDevices.replaceChildren();
   const values = Array.isArray(devices) ? devices : [];
-  profileDevicesSummary.textContent = values.length + " 台设备";
+  profileDevicesSummary.textContent = values.length + " 个 Agent 环境";
   if (!values.length) {
-    profileDevices.textContent = "还没有绑定设备";
+    profileDevices.textContent = "还没有接入 Agent";
     return;
   }
   values.forEach((device) => {
     const card = document.createElement("div");
     card.className = "profile-device-card";
     const name = document.createElement("strong");
-    name.textContent = device.name || "Codex 设备";
+    name.textContent = device.name || "Agent 环境";
     const tokens = document.createElement("span");
     tokens.textContent = formatTokens(device.today_tokens || 0);
     const meta = document.createElement("small");
-    meta.textContent = device.last_seen_at
+    const harness = device.harness ? String(device.harness) + " · " : "";
+    meta.textContent = harness + (device.last_seen_at
       ? "最近上传 " + new Date(device.last_seen_at).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
-      : "今天还没上传";
+      : "今天还没上传");
     card.append(name, tokens, meta);
     profileDevices.appendChild(card);
   });
@@ -249,7 +250,7 @@ async function loadProfile() {
     ? new Date(latestSeen).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
     : "还没上传";
   profileMeta.textContent =
-    (detail.installations || []).length + " 台 Codex · 最近上传 " + latestLabel;
+    (detail.installations || []).length + " 个 Agent 环境 · 最近上传 " + latestLabel;
   profileToday.textContent = formatTokens(detail.today_tokens || 0);
   renderBreakdown(profileModels, detail.models);
   renderBreakdown(profileProjects, detail.projects);
