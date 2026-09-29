@@ -152,6 +152,37 @@ export async function updateWebUserAvatar(userId, avatarUrl, stateDir = "state",
   return user;
 }
 
+export async function updateWebUserEmoji(userId, avatarEmoji, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.avatar_emoji = cleanAvatarEmoji(avatarEmoji);
+  user.avatar_url = null;
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
+export async function updateWebUserEquippedAchievement(userId, achievementId, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.equipped_achievement_id = achievementId ? String(achievementId) : null;
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
 export async function readDenglemaUsers(stateDir = "state") {
   const store = await readJson(paths(stateDir).users, { by_id: {} });
   return Object.values(store.by_id || {});

@@ -19,9 +19,12 @@ import {
   revokeUserInstallation,
   upsertUsageSample,
   updateWebUserAvatar,
+  updateWebUserEmoji,
+  updateWebUserEquippedAchievement,
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
 import {
+  DENGLEMA_ACHIEVEMENTS,
   addDenglemaComment,
   appendDenglemaEvent,
   readDenglemaEvents,
@@ -338,6 +341,17 @@ async function buildLegacySkillBundle() {
   }, "legacy-skills-store");
 }
 
+function publicEquippedAchievement(user) {
+  const id = user?.equipped_achievement_id || null;
+  if (!id) return null;
+  const achievement = DENGLEMA_ACHIEVEMENTS.find((item) => item.id === id);
+  return achievement ? {
+    id: achievement.id,
+    emoji: achievement.emoji,
+    name: achievement.name,
+  } : null;
+}
+
 /* ── Routes ───────────────────────────────── */
 
 const server = createServer(async (req, res) => {
@@ -411,6 +425,32 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, { ok: true }, {
         "set-cookie": clearSessionCookie({ secure: requestIsSecure(req) }),
       });
+      return;
+    }
+
+    // ── PUT /api/me/avatar/emoji ── switch rider avatar to an emoji
+    if (method === "PUT" && url.pathname === "/api/me/avatar/emoji") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const updated = await updateWebUserEmoji(user.id, body?.avatar_emoji, STATE_DIR);
+        await rm(join(AVATAR_DIR, user.id + ".jpg"), { force: true });
+        sendJson(res, 200, {
+          ok: true,
+          user: {
+            user_id: updated.id,
+            display_name: updated.display_name || "骑手",
+            avatar_emoji: updated.avatar_emoji || "🚴",
+            avatar_url: null,
+          },
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Could not update emoji");
+      }
       return;
     }
 
@@ -501,6 +541,7 @@ const server = createServer(async (req, res) => {
           display_name: user.display_name || "骑手",
           avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
+          equipped_achievement: publicEquippedAchievement(user),
           today_tokens: today?.total_tokens || 0,
           has_today_sample: Boolean(today),
           installation_count: installations.length,
@@ -593,6 +634,7 @@ const server = createServer(async (req, res) => {
           display_name: rider.display_name || "骑手",
           avatar_emoji: rider.avatar_emoji || "🚴",
           avatar_url: rider.avatar_url || null,
+          equipped_achievement: publicEquippedAchievement(rider),
         },
         today_tokens: today?.total_tokens || 0,
         models: today?.models || [],
@@ -622,14 +664,47 @@ const server = createServer(async (req, res) => {
         return;
       }
       const achievements = await syncUserAchievements(user.id, date, STATE_DIR);
-      sendJson(res, 200, { date, achievements });
+      sendJson(res, 200, {
+        date,
+        equipped_achievement_id: user.equipped_achievement_id || null,
+        achievements: achievements.filter((item) => item.unlocked).map((item) => ({
+          id: item.id,
+          emoji: item.emoji,
+          name: item.name,
+          description: item.description,
+          unlocked_at: item.unlocked_at,
+        })),
+      });
+      return;
+    }
+
+    // ── PUT /api/me/achievement ── wear one unlocked achievement or none
+    if (method === "PUT" && url.pathname === "/api/me/achievement") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      const achievementId = body?.achievement_id ? String(body.achievement_id) : null;
+      const achievements = await syncUserAchievements(user.id, currentDateKey(), STATE_DIR);
+      if (achievementId && !achievements.some((item) => item.id === achievementId && item.unlocked)) {
+        sendError(res, 400, "Achievement is not unlocked");
+        return;
+      }
+      const updated = await updateWebUserEquippedAchievement(user.id, achievementId, STATE_DIR);
+      sendJson(res, 200, {
+        ok: true,
+        equipped_achievement: publicEquippedAchievement(updated),
+      });
       return;
     }
 
     // ── GET/POST /api/events ── 24h social event feed
     if (url.pathname === "/api/events" && (method === "GET" || method === "POST")) {
+      const viewer = await webUserFromRequest(req);
       if (method === "POST") {
-        const user = await webUserFromRequest(req);
+        const user = viewer;
         if (!user) {
           sendJson(res, 401, { error: "Not logged in" });
           return;
@@ -644,7 +719,10 @@ const server = createServer(async (req, res) => {
       }
       sendJson(res, 200, {
         window_hours: 24,
-        events: await readDenglemaEvents(STATE_DIR, { limit: 20 }),
+        events: await readDenglemaEvents(STATE_DIR, {
+          limit: 20,
+          viewerUserId: viewer?.id || null,
+        }),
       });
       return;
     }
@@ -712,6 +790,7 @@ const server = createServer(async (req, res) => {
             display_name: user.display_name || "骑手",
             avatar_emoji: user.avatar_emoji || "🚴",
             avatar_url: user.avatar_url || null,
+            equipped_achievement: publicEquippedAchievement(user),
             today_tokens: row?.total_tokens || 0,
             installations: row?.installations || 0,
             recent_rate_tpm: null,

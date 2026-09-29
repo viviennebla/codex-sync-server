@@ -669,6 +669,12 @@ function riderMarkup(rider) {
           '</div>' +
         '</div>' +
       '</div>' +
+      (rider.equipped_achievement
+        ? '<div class="rider-achievement">' +
+            escapeHtml(rider.equipped_achievement.emoji || "🏅") + " " +
+            escapeHtml(rider.equipped_achievement.name || "") +
+          '</div>'
+        : '') +
       '<div class="name-chip">' +
         '<span>' + escapeHtml(rider.display_name || "同事") + '</span>' +
         '<span class="tokens">' + formatTokens(rider.today_tokens) + '</span>' +
@@ -705,6 +711,20 @@ function updateRiderNode(node, rider) {
   const tokens = node.querySelector(".name-chip .tokens");
   if (name) name.textContent = rider.display_name || "同事";
   if (tokens) tokens.textContent = formatTokens(rider.today_tokens);
+
+  const equipped = rider.equipped_achievement || null;
+  let achievement = node.querySelector(".rider-achievement");
+  if (equipped) {
+    if (!achievement) {
+      achievement = document.createElement("div");
+      achievement.className = "rider-achievement";
+      const chip = node.querySelector(".name-chip");
+      node.insertBefore(achievement, chip);
+    }
+    achievement.textContent = (equipped.emoji || "🏅") + " " + (equipped.name || "");
+  } else if (achievement) {
+    achievement.remove();
+  }
 
   const ring = node.querySelector(".avatar-ring");
   const avatarKey = rider.avatar_url

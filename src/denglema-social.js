@@ -185,14 +185,16 @@ export async function readDenglemaEvents(stateDir = "state", options = {}) {
   const items = pruneEvents(store.items, now);
   const users = await readDenglemaUsers(stateDir);
   const byId = new Map(users.map((user) => [user.id, user]));
+  const viewerUserId = String(options.viewerUserId || "").trim() || null;
   return items.slice(-limit).reverse().map((item) => {
     const user = item.user_id ? byId.get(item.user_id) : null;
+    const hiddenAchievement = item.kind === "achievement" && item.user_id !== viewerUserId;
     return {
       id: item.id,
       kind: item.kind,
-      message: item.message,
+      message: hiddenAchievement ? "发现了一个隐藏成就" : item.message,
       created_at: item.created_at,
-      meta: item.meta || null,
+      meta: hiddenAchievement ? null : (item.meta || null),
       user: user ? {
         user_id: user.id,
         display_name: user.display_name || "骑手",
