@@ -1935,6 +1935,8 @@ button { font: inherit; }
   left: 102px;
   top: -9px;
   max-width: 166px;
+  overflow: visible;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1957,22 +1959,26 @@ button { font: inherit; }
 .rider-achievement::after {
   position: absolute;
   pointer-events: none;
-  content: "✦";
-  color: #f2c84b;
-  text-shadow: 0 0 5px rgba(242, 200, 75, .42);
+  color: #ffd84d;
+  text-shadow:
+    0 0 3px rgba(255,255,255,.95),
+    0 0 7px rgba(255,216,77,.72);
   opacity: 0;
+  z-index: 3;
 }
 .rider-achievement::before {
-  left: -8px;
-  top: -7px;
-  font-size: 9px;
-  animation: achievementSparkA 2.8s ease-in-out infinite;
+  content: "✦";
+  left: -10px;
+  top: -9px;
+  font-size: 12px;
+  animation: achievementSparkA 2.5s ease-in-out infinite;
 }
 .rider-achievement::after {
-  right: -8px;
-  bottom: -6px;
-  font-size: 7px;
-  animation: achievementSparkB 3.1s .65s ease-in-out infinite;
+  content: "✧";
+  right: -10px;
+  bottom: -8px;
+  font-size: 10px;
+  animation: achievementSparkB 2.9s .7s ease-in-out infinite;
 }
 
 .rider.is-near-right .name-chip {
@@ -1989,16 +1995,16 @@ button { font: inherit; }
 }
 
 @keyframes achievementSparkA {
-  0%, 22%, 100% { opacity: 0; transform: translate(0, 2px) scale(.55) rotate(0deg); }
-  38% { opacity: .95; transform: translate(-2px, -3px) scale(1.14) rotate(18deg); }
-  56% { opacity: .5; transform: translate(1px, -6px) scale(.82) rotate(42deg); }
-  72% { opacity: 0; transform: translate(3px, -8px) scale(.65) rotate(58deg); }
+  0%, 18%, 100% { opacity: 0; transform: translate(2px, 3px) scale(.45) rotate(0deg); }
+  32% { opacity: 1; transform: translate(-2px, -3px) scale(1.2) rotate(20deg); }
+  52% { opacity: .9; transform: translate(-5px, -8px) scale(.95) rotate(42deg); }
+  72% { opacity: 0; transform: translate(-8px, -14px) scale(.62) rotate(70deg); }
 }
 @keyframes achievementSparkB {
-  0%, 35%, 100% { opacity: 0; transform: translate(0, 0) scale(.5) rotate(0deg); }
-  50% { opacity: .9; transform: translate(2px, -2px) scale(1.08) rotate(-18deg); }
-  66% { opacity: .42; transform: translate(5px, -5px) scale(.78) rotate(-38deg); }
-  80% { opacity: 0; transform: translate(7px, -7px) scale(.62) rotate(-55deg); }
+  0%, 30%, 100% { opacity: 0; transform: translate(-2px, 1px) scale(.45) rotate(0deg); }
+  44% { opacity: 1; transform: translate(3px, -2px) scale(1.18) rotate(-18deg); }
+  62% { opacity: .85; transform: translate(7px, -7px) scale(.9) rotate(-38deg); }
+  80% { opacity: 0; transform: translate(11px, -12px) scale(.6) rotate(-62deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
