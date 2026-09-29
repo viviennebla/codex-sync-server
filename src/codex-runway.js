@@ -60,18 +60,14 @@ export function createCodexRunwayReader(options = {}) {
   }
 
   async function refresh() {
-    const [signal, completed] = await Promise.all([
-      fetchLatest(),
-      fetchLatest("reset_completed"),
-    ]);
+    const signal = await fetchLatest();
     const value = {
       ok: true,
       source: "CodexRunway",
       site_url: siteUrl,
       fetched_at: new Date(now()).toISOString(),
-      generated_at: signal.meta?.generatedAt || completed.meta?.generatedAt || null,
+      generated_at: signal.meta?.generatedAt || null,
       latest_signal: signal.record,
-      latest_completed: completed.record,
     };
     cached = value;
     expiresAt = now() + cacheMs;

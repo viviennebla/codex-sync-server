@@ -28,15 +28,9 @@ const useShellCommandButton = $("useShellCommandButton");
 const usePowerShellCommandButton = $("usePowerShellCommandButton");
 const todayTotalEl = $("todayTotal");
 const todayFreshnessEl = $("todayFreshness");
-const runwaySiteLink = $("runwaySiteLink");
-const runwaySignalBadge = $("runwaySignalBadge");
-const runwaySignalConfidence = $("runwaySignalConfidence");
-const runwaySignalTitle = $("runwaySignalTitle");
-const runwaySignalMeta = $("runwaySignalMeta");
-const runwaySignalSource = $("runwaySignalSource");
-const runwayCompletedTitle = $("runwayCompletedTitle");
-const runwayCompletedMeta = $("runwayCompletedMeta");
-const runwayCompletedSource = $("runwayCompletedSource");
+const resetNotchStatus = $("resetNotchStatus");
+const resetBegButton = $("resetBegButton");
+const resetBegCount = $("resetBegCount");
 const toastEl = $("toast");
 const registerPanel = $("registerPanel");
 const recoverPanel = $("recoverPanel");
@@ -269,98 +263,54 @@ function renderFreshness() {
   todayFreshnessEl.textContent = formatFreshness(me?.latest_seen_at);
 }
 
-function resetTypeLabel(value) {
-  if (value === "global") return "全局重置";
-  if (value === "banked") return "重置卡";
-  if (value === "global_and_banked") return "全局 + 重置卡";
-  return "Codex 重置";
+function resetNotchLabel(record) {
+  if (!record) return "🙏 Reset · 暂无排期";
+  const confidence = Number.isFinite(Number(record.confidence))
+    ? Math.round(Number(record.confidence) * 100) + "%"
+    : "";
+  const end = record?.schedule_window?.end_at ? Date.parse(record.schedule_window.end_at) : NaN;
+  const now = Date.now();
+  const soon = Number.isFinite(end) && end >= now && end - now <= 7 * 24 * 60 * 60 * 1000;
+  const when = soon
+    ? "本周"
+    : (record?.schedule_window?.end_at
+      ? new Date(record.schedule_window.end_at).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })
+      : "待定");
+  return ["🙏 Reset", confidence, when].filter(Boolean).join(" · ");
 }
 
-function formatRunwayTime(value) {
-  if (!value) return "时间未明确";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "时间未明确";
-  return date.toLocaleString("zh-CN", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function formatRunwayWindow(record) {
-  const start = record?.schedule_window?.start_at;
-  const end = record?.schedule_window?.end_at;
-  if (!start) return formatRunwayTime(record?.effective_at || record?.announced_at);
-  if (!end || end === start) return formatRunwayTime(start);
-  return formatRunwayTime(start) + " ～ " + formatRunwayTime(end);
-}
-
-function planLabel(plans) {
-  const values = Array.isArray(plans) ? plans : [];
-  if (!values.length || values.includes("unknown")) return "套餐未明确";
-  if (values.includes("all")) return "全部套餐";
-  return values.join(" · ");
-}
-
-function setRunwayLink(node, href) {
-  if (!node) return;
-  if (href) {
-    node.href = href;
-    node.classList.remove("hidden");
-  } else {
-    node.removeAttribute("href");
-    node.classList.add("hidden");
-  }
-}
-
-function renderRunwayRadar(payload) {
-  if (!runwaySignalTitle) return;
-  const signal = payload?.latest_signal || null;
-  const completed = payload?.latest_completed || null;
-  if (runwaySiteLink && payload?.site_url) runwaySiteLink.href = payload.site_url;
-
-  if (signal) {
-    const scheduled = signal.kind === "reset_scheduled";
-    runwaySignalBadge.textContent = scheduled ? "有重置排期" : "最新重置信号";
-    runwaySignalTitle.textContent = resetTypeLabel(signal.reset_type) + " · " +
-      (scheduled ? formatRunwayWindow(signal) : formatRunwayTime(signal.effective_at || signal.announced_at));
-    const details = [planLabel(signal.scope?.plans)];
-    if (signal.text) details.push(signal.text);
-    runwaySignalMeta.textContent = details.join(" · ");
-    runwaySignalConfidence.textContent = signal.confidence == null
-      ? ""
-      : Math.round(signal.confidence * 100) + "% 置信度";
-    setRunwayLink(runwaySignalSource, signal.source_url);
-  } else {
-    runwaySignalBadge.textContent = "暂无排期";
-    runwaySignalTitle.textContent = "目前没有公开的重置排期";
-    runwaySignalMeta.textContent = "赛道照常蹬，雷达会继续看着";
-    runwaySignalConfidence.textContent = "";
-    setRunwayLink(runwaySignalSource, null);
-  }
-
-  if (completed) {
-    runwayCompletedTitle.textContent = resetTypeLabel(completed.reset_type) + " · " +
-      formatRunwayTime(completed.effective_at || completed.completed_at || completed.announced_at);
-    runwayCompletedMeta.textContent = completed.text || planLabel(completed.scope?.plans);
-    setRunwayLink(runwayCompletedSource, completed.source_url);
-  } else {
-    runwayCompletedTitle.textContent = "还没有已确认的重置记录";
-    runwayCompletedMeta.textContent = "—";
-    setRunwayLink(runwayCompletedSource, null);
-  }
-}
-
-async function loadRunwayRadar() {
-  if (!runwaySignalTitle) return;
+async function loadResetNotch() {
   try {
-    renderRunwayRadar(await jsonFetch("/api/codex-runway"));
+    const [runway, beg] = await Promise.all([
+      jsonFetch("/api/codex-runway"),
+      jsonFetch("/api/reset-beg"),
+    ]);
+    if (resetNotchStatus) {
+      resetNotchStatus.textContent = resetNotchLabel(runway?.latest_signal || null);
+      if (runway?.site_url) resetNotchStatus.href = runway.site_url;
+    }
+    if (resetBegCount) resetBegCount.textContent = Number(beg?.count || 0).toLocaleString("en-US");
   } catch {
-    runwaySignalBadge.textContent = "雷达暂时离线";
-    runwaySignalTitle.textContent = "CodexRunway 数据暂时不可用";
-    runwaySignalMeta.textContent = "不影响赛道和上传";
-    runwaySignalConfidence.textContent = "";
+    if (resetNotchStatus) resetNotchStatus.textContent = "🙏 Reset · 雷达离线";
+  }
+}
+
+async function begForReset() {
+  if (!resetBegButton || resetBegButton.disabled) return;
+  resetBegButton.disabled = true;
+  resetBegButton.classList.remove("is-begging");
+  void resetBegButton.offsetWidth;
+  resetBegButton.classList.add("is-begging");
+  try {
+    const result = await jsonFetch("/api/reset-beg", { method: "POST", body: "{}" });
+    if (resetBegCount) resetBegCount.textContent = Number(result?.count || 0).toLocaleString("en-US");
+  } catch {
+    showToast("求重置失败，再戳一次试试", 2400);
+  } finally {
+    window.setTimeout(() => {
+      resetBegButton.disabled = false;
+      resetBegButton.classList.remove("is-begging");
+    }, 550);
   }
 }
 
@@ -882,7 +832,7 @@ async function enterRace() {
 
   renderFreshness();
   await loadRaceData();
-  void loadRunwayRadar();
+  void loadResetNotch();
   if (me?.has_today_sample === false && !me?.needs_onboarding) {
     showToast("今天还没刷新赛道；对 Codex 说「上传蹬了吗」即可", 5200);
   }
@@ -1211,6 +1161,8 @@ copyBindCommandButton.addEventListener("click", async () => {
   }, 1800);
 });
 
+resetBegButton?.addEventListener("click", () => { void begForReset(); });
+
 document.addEventListener("visibilitychange", () => {
   document.body.classList.toggle("is-background-paused", document.hidden);
   if (document.hidden) {
@@ -1228,7 +1180,7 @@ document.addEventListener("visibilitychange", () => {
       } catch {}
     }
     try { await loadRaceData(); } catch {}
-    void loadRunwayRadar();
+    void loadResetNotch();
     startRaceRuntime();
   })();
 });

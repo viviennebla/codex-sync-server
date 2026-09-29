@@ -40,6 +40,7 @@ const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || 
 const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
+const RESET_BEG_FILE = join(STATE_DIR, "denglema", "reset-beg.json");
 const readCodexRunwayStatus = createCodexRunwayReader();
 
 /* ── Logging ─────────────────────────────── */
@@ -146,6 +147,35 @@ async function readJson(path) {
 async function writeJson(path, data) {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(data, null, 2), "utf8");
+}
+
+let resetBegWriteQueue = Promise.resolve();
+
+async function readResetBeg(epochId) {
+  const value = await readJson(RESET_BEG_FILE);
+  if (!value || value.epoch_id !== epochId) {
+    return { epoch_id: epochId, count: 0, updated_at: null };
+  }
+  return {
+    epoch_id: epochId,
+    count: Math.max(0, Number(value.count || 0)),
+    updated_at: value.updated_at || null,
+  };
+}
+
+async function incrementResetBeg(epochId) {
+  const run = resetBegWriteQueue.then(async () => {
+    const current = await readResetBeg(epochId);
+    const next = {
+      epoch_id: epochId,
+      count: current.count + 1,
+      updated_at: new Date().toISOString(),
+    };
+    await writeJson(RESET_BEG_FILE, next);
+    return next;
+  });
+  resetBegWriteQueue = run.catch(() => {});
+  return run;
 }
 
 function sha256(content) {
@@ -486,6 +516,26 @@ const server = createServer(async (req, res) => {
         })),
         trend,
       });
+      return;
+    }
+
+    // ── GET/POST /api/reset-beg ── playful Denglema-wide reset begging counter
+    if (url.pathname === "/api/reset-beg" && (method === "GET" || method === "POST")) {
+      let epochId = "no-signal";
+      try {
+        const runway = await readCodexRunwayStatus();
+        epochId = runway?.latest_signal?.id || "no-signal";
+      } catch {}
+      if (method === "POST") {
+        const user = await webUserFromRequest(req);
+        if (!user) {
+          sendJson(res, 401, { error: "Not logged in" });
+          return;
+        }
+        sendJson(res, 200, { ok: true, ...(await incrementResetBeg(epochId)) });
+        return;
+      }
+      sendJson(res, 200, { ok: true, ...(await readResetBeg(epochId)) });
       return;
     }
 

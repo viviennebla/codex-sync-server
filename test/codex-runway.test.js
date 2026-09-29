@@ -12,22 +12,11 @@ function response(data, meta = {}) {
   };
 }
 
-test("CodexRunway reader caches two upstream lookups and normalizes records", async () => {
+test("CodexRunway reader caches one upstream lookup and normalizes records", async () => {
   let calls = 0;
   let now = Date.parse("2026-09-29T02:00:00Z");
-  const fetch = async (url) => {
+  const fetch = async () => {
     calls += 1;
-    if (String(url).includes("kind=reset_completed")) {
-      return response({
-        id: "done-1",
-        kind: "reset_completed",
-        resetType: "global",
-        announcedAt: "2026-09-28T00:00:00Z",
-        text: "Reset completed",
-        scope: { plans: ["all"], windows: ["unknown"] },
-        source: { handle: "thsottiaux", url: "https://x.com/example" },
-      }, { generatedAt: "2026-09-29T01:59:00Z" });
-    }
     return response({
       id: "schedule-1",
       kind: "reset_scheduled",
@@ -51,12 +40,11 @@ test("CodexRunway reader caches two upstream lookups and normalizes records", as
 
   const first = await read();
   const second = await read();
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   assert.equal(first.cache, "refresh");
   assert.equal(second.cache, "hit");
   assert.equal(first.latest_signal.reset_type, "banked");
   assert.equal(first.latest_signal.schedule_window.start_at, "2026-09-30T07:00:00Z");
-  assert.equal(first.latest_completed.source_url, "https://x.com/example");
 });
 
 test("CodexRunway reader serves stale cache when refresh fails", async () => {
@@ -87,5 +75,5 @@ test("CodexRunway reader serves stale cache when refresh fails", async () => {
   const stale = await read();
   assert.equal(stale.cache, "stale");
   assert.match(stale.warning, /upstream offline/);
-  assert.equal(calls, 4);
+  assert.equal(calls, 2);
 });
