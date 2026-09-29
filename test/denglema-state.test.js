@@ -111,6 +111,33 @@ test("rider can change emoji and persist an equipped achievement preference", as
   assert.equal(cleared.equipped_achievement_id, null);
 });
 
+test("pairing marks only the rider's first installation as first", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-first-install-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const pairA = await createPairingCode("user-first", root, {
+    code: "FIRST-A",
+    now: () => new Date("2026-09-29T00:00:00Z"),
+  });
+  const first = await consumePairingCode(pairA.code, "Cursor", root, {
+    token: "first-a",
+    installationId: "inst-first-a",
+    now: () => new Date("2026-09-29T00:01:00Z"),
+  });
+  assert.equal(first.first_user_installation, true);
+
+  const pairB = await createPairingCode("user-first", root, {
+    code: "FIRST-B",
+    now: () => new Date("2026-09-29T00:02:00Z"),
+  });
+  const second = await consumePairingCode(pairB.code, "Codex", root, {
+    token: "first-b",
+    installationId: "inst-first-b",
+    now: () => new Date("2026-09-29T00:03:00Z"),
+  });
+  assert.equal(second.first_user_installation, false);
+});
+
 test("schema v2 accepts bounded harness metadata", () => {
   const sample = validateUsageSample({
     schema_version: 2,

@@ -286,6 +286,7 @@ function eventKindIcon(event) {
   if (event.kind === "comment") return "💬";
   if (event.kind === "achievement") return event.meta?.emoji || "🏆";
   if (event.kind === "join") return "🏁";
+  if (event.kind === "leader") return "👑";
   if (event.kind === "upload") return "⚡";
   return "•";
 }
@@ -337,7 +338,7 @@ async function loadEvents() {
   if (previewMode) {
     renderEvents([
       { kind: "join", message: "加入了赛道", created_at: new Date().toISOString(), meta: { harness: "cursor" }, user: { display_name: "Alice" } },
-      { kind: "upload", message: "刷新了 cursor usage · 960,000 token", created_at: new Date(Date.now() - 5 * 60000).toISOString(), user: { display_name: "Bob" } },
+      { kind: "leader", message: "超车成为第一名", created_at: new Date(Date.now() - 5 * 60000).toISOString(), user: { display_name: "Bob" } },
       { kind: "comment", message: "今天谁先把额度蹬没？", created_at: new Date(Date.now() - 12 * 60000).toISOString(), user: { display_name: "摸鱼中" } },
     ]);
     return;

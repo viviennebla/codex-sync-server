@@ -28,6 +28,7 @@ import {
   addDenglemaComment,
   appendDenglemaEvent,
   readDenglemaEvents,
+  syncLeaderboardLeader,
   syncUserAchievements,
 } from "./denglema-social.js";
 import {
@@ -719,10 +720,7 @@ const server = createServer(async (req, res) => {
       }
       sendJson(res, 200, {
         window_hours: 24,
-        events: await readDenglemaEvents(STATE_DIR, {
-          limit: 20,
-          viewerUserId: viewer?.id || null,
-        }),
+        events: await readDenglemaEvents(STATE_DIR, { limit: 20 }),
       });
       return;
     }
@@ -868,6 +866,25 @@ const server = createServer(async (req, res) => {
         sendError(res, 401, "Invalid or expired pairing code");
         return;
       }
+      if (result.first_user_installation) {
+        try {
+          await appendDenglemaEvent({
+            kind: "join",
+            user_id: result.user_id,
+            message: "加入了赛道",
+            meta: { installation_id: result.installation_id },
+            coalesce_key: "join:user:" + result.user_id,
+            coalesce_window_ms: 24 * 60 * 60 * 1000,
+          }, STATE_DIR, {
+            now: () => new Date(result.created_at),
+          });
+        } catch (socialError) {
+          log("warn", "join_event_failed", {
+            error: socialError?.message || String(socialError),
+            installation_id: result.installation_id,
+          });
+        }
+      }
       sendJson(res, 200, { ...result, timezone: DENGLEMA_TIMEZONE });
       return;
     }
@@ -887,20 +904,19 @@ const server = createServer(async (req, res) => {
             const harness = String(body?.harness || "agent").trim().toLowerCase() || "agent";
             const total = Number(result.accepted_total || 0).toLocaleString("en-US");
             await appendDenglemaEvent({
-              kind: result.first_sample ? "join" : "upload",
+              kind: "upload",
               user_id: installation.user_id,
-              message: result.first_sample
-                ? "加入了赛道"
-                : "刷新了 " + harness + " usage · " + total + " token",
+              message: "更新了 " + harness + " usage · " + total + " token",
               meta: {
                 harness,
                 total_tokens: result.accepted_total,
                 installation_id: installation.id,
               },
-              coalesce_key: (result.first_sample ? "join:" : "upload:") + installation.id,
+              coalesce_key: "upload:" + installation.id,
               coalesce_window_ms: 10 * 60 * 1000,
             }, STATE_DIR);
             await syncUserAchievements(installation.user_id, body.date, STATE_DIR);
+            await syncLeaderboardLeader(body.date, STATE_DIR);
           } catch (socialError) {
             log("warn", "social_event_failed", {
               error: socialError?.message || String(socialError),
