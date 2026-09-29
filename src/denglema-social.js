@@ -21,6 +21,10 @@ export const DENGLEMA_ACHIEVEMENTS = [
   { id: "project_hopper", emoji: "🛠️", name: "项目穿梭机", description: "一天蹬过 3 个项目" },
   { id: "multi_harness", emoji: "🤹", name: "多 Agent 骑手", description: "同一天用过 2 种 Agent Harness" },
   { id: "took_the_crown", emoji: "👑", name: "戴过皇冠", description: "拿过一次今日第一" },
+  { id: "lean_builder", emoji: "🎯", name: "精准骑手", description: "一天覆盖 2 个项目，平均每项目不超过 500k token，且当天至少使用 200k token" },
+  { id: "light_pack", emoji: "🧳", name: "轻装多面手", description: "一天覆盖 3 个项目，总量不超过 2M token" },
+  { id: "full_stack_day", emoji: "🧭", name: "全能路线", description: "同一天用过 2 个模型、2 个项目和 2 种 Agent Harness" },
+  { id: "three_day_streak", emoji: "🗓️", name: "三日连蹬", description: "连续 3 天都有 usage" },
 ];
 
 function paths(stateDir) {
@@ -242,6 +246,22 @@ export async function syncLeaderboardLeader(date, stateDir = "state", options = 
   return { changed: true, current, previous };
 }
 
+function previousDateKey(date, daysAgo) {
+  const value = new Date(date + "T00:00:00Z");
+  if (!Number.isFinite(value.getTime())) return null;
+  value.setUTCDate(value.getUTCDate() - daysAgo);
+  return value.toISOString().slice(0, 10);
+}
+
+async function hasUsageStreak(userId, date, days, stateDir) {
+  const dates = Array.from({ length: days }, (_, index) => previousDateKey(date, index));
+  if (dates.some((item) => !item)) return false;
+  const totalsByDay = await Promise.all(dates.map((key) => readUserTotals(key, stateDir)));
+  return totalsByDay.every((totals) => (
+    totals.some((item) => item.user_id === userId && item.total_tokens > 0)
+  ));
+}
+
 function achievementMap(store, userId) {
   store.by_user ||= {};
   store.by_user[userId] ||= {};
@@ -268,14 +288,34 @@ export async function syncUserAchievements(userId, date, stateDir = "state", opt
     installations.map((item) => item.harness).filter(Boolean),
   );
   const leader = totals.length > 0 && totals[0].user_id === id && totals[0].total_tokens > 0;
+  const projectCount = (row.projects || []).length;
+  const modelCount = (row.models || []).length;
+  const avgTokensPerProject = projectCount > 0 ? row.total_tokens / projectCount : Infinity;
+  const threeDayStreak = await hasUsageStreak(id, date, 3, stateDir);
   const conditions = {
     first_ride: row.total_tokens > 0,
     million_day: row.total_tokens >= 1_000_000,
     ten_million_day: row.total_tokens >= 10_000_000,
-    model_explorer: (row.models || []).length >= 3,
-    project_hopper: (row.projects || []).length >= 3,
+    model_explorer: modelCount >= 3,
+    project_hopper: projectCount >= 3,
     multi_harness: harnesses.size >= 2,
     took_the_crown: leader,
+    lean_builder: (
+      row.total_tokens >= 200_000
+      && projectCount >= 2
+      && avgTokensPerProject <= 500_000
+    ),
+    light_pack: (
+      row.total_tokens >= 300_000
+      && projectCount >= 3
+      && row.total_tokens <= 2_000_000
+    ),
+    full_stack_day: (
+      modelCount >= 2
+      && projectCount >= 2
+      && harnesses.size >= 2
+    ),
+    three_day_streak: threeDayStreak,
   };
 
   const file = paths(stateDir).achievements;
