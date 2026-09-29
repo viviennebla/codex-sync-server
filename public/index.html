@@ -14,6 +14,15 @@
         <span class="brand-title">蹬了吗</span>
         <span class="brand-spark">〽</span>
       </div>
+      <div class="reset-notch" aria-label="Codex 重置状态">
+        <a id="resetNotchStatus" class="reset-notch-status" href="https://didcodexreset.com/zh/" target="_blank" rel="noopener noreferrer">
+          🙏 Reset · …
+        </a>
+        <span class="reset-notch-sep" aria-hidden="true"></span>
+        <button id="resetBegButton" class="reset-beg-button" type="button">
+          求重置 <strong id="resetBegCount">0</strong>
+        </button>
+      </div>
       <div class="today-total">
         <span>今日</span>
         <strong id="todayTotal">—</strong>
@@ -51,31 +60,6 @@
       <div id="lane3" class="lane" data-lane="3"><span class="lane-number">3</span></div>
       <div id="lane4" class="lane" data-lane="4"><span class="lane-number">4</span></div>
       <div class="finish-mark" aria-hidden="true"></div>
-    </section>
-
-    <section class="runway-radar" aria-labelledby="runwayTitle">
-      <div class="runway-brand">
-        <span class="runway-kicker">CODEX RUNWAY</span>
-        <h2 id="runwayTitle">重置雷达</h2>
-        <a id="runwaySiteLink" href="https://didcodexreset.com/zh/" target="_blank" rel="noopener noreferrer">看完整记录 ↗</a>
-      </div>
-      <article id="runwaySignalCard" class="runway-card">
-        <div class="runway-card-top">
-          <span id="runwaySignalBadge" class="runway-badge">正在侦测</span>
-          <span id="runwaySignalConfidence" class="runway-confidence"></span>
-        </div>
-        <strong id="runwaySignalTitle">读取最新重置信号…</strong>
-        <p id="runwaySignalMeta">CodexRunway 公共数据</p>
-        <a id="runwaySignalSource" class="runway-source hidden" target="_blank" rel="noopener noreferrer">来源 ↗</a>
-      </article>
-      <article id="runwayCompletedCard" class="runway-card runway-card-muted">
-        <div class="runway-card-top">
-          <span class="runway-badge runway-badge-done">上次已完成</span>
-        </div>
-        <strong id="runwayCompletedTitle">读取历史记录…</strong>
-        <p id="runwayCompletedMeta">—</p>
-        <a id="runwayCompletedSource" class="runway-source hidden" target="_blank" rel="noopener noreferrer">来源 ↗</a>
-      </article>
     </section>
 
     <section class="desk-edge" aria-hidden="true">
