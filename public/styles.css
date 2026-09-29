@@ -1618,3 +1618,289 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .beg-particle-layer { display: none; }
 }
+
+/* Social layer: achievements + 24h event rail */
+.achievement-dock {
+  position: fixed;
+  z-index: 16;
+  left: 16px;
+  bottom: 132px;
+  width: 230px;
+  padding: 12px;
+  border: 2px solid rgba(39,49,60,.14);
+  border-radius: 18px;
+  background: rgba(255,250,240,.94);
+  box-shadow: 5px 6px 0 rgba(39,49,60,.08);
+  backdrop-filter: blur(8px);
+}
+.social-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.social-panel-head strong {
+  font-size: 13px;
+  letter-spacing: -.01em;
+}
+.social-panel-head span {
+  color: #8d8177;
+  font-size: 10px;
+  font-weight: 900;
+}
+.achievement-list {
+  display: grid;
+  gap: 7px;
+}
+.achievement-chip {
+  display: grid;
+  grid-template-columns: 32px minmax(0,1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 12px;
+  background: #fffdf8;
+}
+.achievement-chip.is-unlocked {
+  border: 1px solid rgba(218,168,45,.34);
+  background: #fff8d8;
+}
+.achievement-chip.is-locked {
+  border: 1px dashed rgba(39,49,60,.13);
+  opacity: .48;
+  filter: grayscale(.7);
+}
+.achievement-emoji {
+  font-size: 24px;
+  line-height: 1;
+  text-align: center;
+}
+.achievement-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.achievement-copy strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.achievement-copy small {
+  overflow: hidden;
+  color: #8c8178;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-rail {
+  position: fixed;
+  z-index: 24;
+  top: 112px;
+  right: 14px;
+  width: 292px;
+  max-height: min(68vh, 620px);
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr) auto;
+  border: 2px solid rgba(39,49,60,.16);
+  border-radius: 20px;
+  background: rgba(255,250,240,.96);
+  box-shadow: 6px 7px 0 rgba(39,49,60,.10);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: width .18s ease, border-radius .18s ease;
+}
+.event-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 9px;
+  border-bottom: 1px solid rgba(39,49,60,.08);
+}
+.event-rail-head > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+.event-rail-head strong {
+  font-size: 13px;
+}
+.event-rail-head span {
+  color: #958a82;
+  font-size: 9px;
+  font-weight: 800;
+}
+.event-rail-head button {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: #f0eadf;
+  color: #555e6c;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+}
+.event-list {
+  min-height: 72px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 9px 7px;
+}
+.event-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0,1fr);
+  gap: 7px;
+  padding: 8px 4px;
+  border-bottom: 1px dashed rgba(39,49,60,.08);
+}
+.event-item:last-child { border-bottom: 0; }
+.event-icon {
+  padding-top: 1px;
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+}
+.event-body {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.event-line {
+  min-width: 0;
+  color: #59616b;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.event-line strong {
+  margin-right: 5px;
+  color: #303842;
+  font-weight: 900;
+}
+.event-body small {
+  color: #a0968e;
+  font-size: 9px;
+  font-weight: 800;
+}
+.event-comment .event-line {
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #f4efe5;
+}
+.event-achievement .event-line { color: #765f20; }
+.event-upload .event-line { color: #516b58; }
+.event-empty {
+  padding: 24px 8px;
+  color: #9c9289;
+  font-size: 10px;
+  text-align: center;
+}
+.event-composer {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 7px;
+  padding: 9px;
+  border-top: 1px solid rgba(39,49,60,.08);
+  background: #f8f2e7;
+}
+.event-composer input {
+  min-width: 0;
+  border: 1.5px solid rgba(39,49,60,.16);
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: #fffdf8;
+  color: #303842;
+  font: inherit;
+  font-size: 10px;
+  outline: none;
+}
+.event-composer input:focus { border-color: #8aa4d6; }
+.event-composer button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #27313c;
+  color: #fffaf0;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 900;
+}
+.event-composer button:disabled { opacity: .5; cursor: wait; }
+
+.event-rail.is-collapsed {
+  width: 46px;
+  border-radius: 16px 0 0 16px;
+}
+.event-rail.is-collapsed .event-rail-head {
+  height: 118px;
+  padding: 8px;
+  flex-direction: column;
+  justify-content: space-between;
+  border-bottom: 0;
+}
+.event-rail.is-collapsed .event-rail-head > div {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  align-items: center;
+  gap: 5px;
+}
+.event-rail.is-collapsed .event-rail-head span,
+.event-rail.is-collapsed .event-list,
+.event-rail.is-collapsed .event-composer {
+  display: none;
+}
+.event-rail.is-collapsed .event-rail-head strong {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .achievement-dock {
+    left: 8px;
+    bottom: 108px;
+    width: 198px;
+  }
+  .achievement-chip:nth-child(n+4) { display: none; }
+  .event-rail {
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    width: min(286px, calc(100vw - 16px));
+    max-height: 44vh;
+  }
+  .event-rail.is-collapsed {
+    width: 44px;
+    bottom: 8px;
+  }
+}
+
+@media (max-width: 720px) {
+  .achievement-dock {
+    left: 8px;
+    bottom: 8px;
+    width: 168px;
+    padding: 9px;
+  }
+  .achievement-copy small { display: none; }
+  .achievement-chip {
+    grid-template-columns: 26px minmax(0,1fr);
+    padding: 5px 6px;
+  }
+  .achievement-emoji { font-size: 19px; }
+  .event-rail:not(.is-collapsed) {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    max-height: 42vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-rail { transition: none; }
+}

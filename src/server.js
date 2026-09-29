@@ -22,6 +22,12 @@ import {
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
 import {
+  addDenglemaComment,
+  appendDenglemaEvent,
+  readDenglemaEvents,
+  syncUserAchievements,
+} from "./denglema-social.js";
+import {
   clearSessionCookie,
   createWebSession,
   parseCookieHeader,
@@ -603,6 +609,46 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── GET /api/achievements ── current rider's persistent achievements
+    if (method === "GET" && url.pathname === "/api/achievements") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      const achievements = await syncUserAchievements(user.id, date, STATE_DIR);
+      sendJson(res, 200, { date, achievements });
+      return;
+    }
+
+    // ── GET/POST /api/events ── 24h social event feed
+    if (url.pathname === "/api/events" && (method === "GET" || method === "POST")) {
+      if (method === "POST") {
+        const user = await webUserFromRequest(req);
+        if (!user) {
+          sendJson(res, 401, { error: "Not logged in" });
+          return;
+        }
+        const body = await readBody(req);
+        try {
+          await addDenglemaComment(user.id, body?.message, STATE_DIR);
+        } catch (error) {
+          sendError(res, 400, error?.message || "Could not post message");
+          return;
+        }
+      }
+      sendJson(res, 200, {
+        window_hours: 24,
+        events: await readDenglemaEvents(STATE_DIR, { limit: 20 }),
+      });
+      return;
+    }
+
     // ── GET/POST /api/reset-beg ── playful Denglema-wide reset begging counter
     if (url.pathname === "/api/reset-beg" && (method === "GET" || method === "POST")) {
       let epochId = "no-signal";
@@ -757,6 +803,32 @@ const server = createServer(async (req, res) => {
       const body = await readBody(req);
       try {
         const result = await upsertUsageSample(installation, body, STATE_DIR);
+        if (result.accepted_delta > 0) {
+          try {
+            const harness = String(body?.harness || "agent").trim().toLowerCase() || "agent";
+            const total = Number(result.accepted_total || 0).toLocaleString("en-US");
+            await appendDenglemaEvent({
+              kind: "upload",
+              user_id: installation.user_id,
+              message: result.first_sample
+                ? "让 " + harness + " 加入了赛道"
+                : "刷新了 " + harness + " usage · " + total + " token",
+              meta: {
+                harness,
+                total_tokens: result.accepted_total,
+                installation_id: installation.id,
+              },
+              coalesce_key: "upload:" + installation.id,
+              coalesce_window_ms: 10 * 60 * 1000,
+            }, STATE_DIR);
+            await syncUserAchievements(installation.user_id, body.date, STATE_DIR);
+          } catch (socialError) {
+            log("warn", "social_event_failed", {
+              error: socialError?.message || String(socialError),
+              installation_id: installation.id,
+            });
+          }
+        }
         sendJson(res, 200, {
           ok: true,
           installation_id: installation.id,
