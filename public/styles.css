@@ -1417,6 +1417,12 @@ button { font: inherit; }
   line-height: 1.7;
 }
 .plugin-doc-cta { display: inline-block; }
+.plugin-open-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 10px;
+}
 
 
 @media (max-width: 900px) {
