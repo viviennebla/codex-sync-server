@@ -137,6 +137,21 @@ export async function readDenglemaUser(userId, stateDir = "state") {
   return store.by_id?.[id] || null;
 }
 
+export async function updateWebUserAvatar(userId, avatarUrl, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.avatar_url = avatarUrl ? String(avatarUrl) : null;
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
 export async function readDenglemaUsers(stateDir = "state") {
   const store = await readJson(paths(stateDir).users, { by_id: {} });
   return Object.values(store.by_id || {});

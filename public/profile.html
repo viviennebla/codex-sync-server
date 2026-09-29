@@ -21,7 +21,14 @@
     </header>
 
     <section class="profile-hero-card">
-      <div id="profileAvatar" class="profile-avatar">🚴</div>
+      <div class="profile-avatar-wrap">
+        <button id="profileAvatarButton" class="profile-avatar-button" type="button" aria-label="更换头像">
+          <span id="profileAvatar" class="profile-avatar">🚴</span>
+          <span class="profile-avatar-edit">换图</span>
+        </button>
+        <input id="profileAvatarInput" type="file" accept="image/*" hidden>
+        <button id="profileAvatarReset" class="avatar-reset-button hidden" type="button">恢复 Emoji</button>
+      </div>
       <div class="profile-identity">
         <p class="dialog-kicker">我的骑手主页</p>
         <h1 id="profileName">正在读取…</h1>

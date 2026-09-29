@@ -18,6 +18,7 @@ import {
   readUserTotals,
   revokeUserInstallation,
   upsertUsageSample,
+  updateWebUserAvatar,
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
 import {
@@ -41,6 +42,7 @@ const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS)
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
 const RESET_BEG_FILE = join(STATE_DIR, "denglema", "reset-beg.json");
+const AVATAR_DIR = join(STATE_DIR, "denglema", "avatars");
 const readCodexRunwayStatus = createCodexRunwayReader();
 
 /* ── Logging ─────────────────────────────── */
@@ -129,6 +131,19 @@ function sendJson(res, status, data, headers = {}) {
 function sendError(res, status, message) {
   res.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   res.end(message);
+}
+
+function decodeAvatarDataUrl(value) {
+  const match = String(value || "").match(/^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) throw new Error("Avatar must be a JPEG data URL");
+  const bytes = Buffer.from(match[1], "base64");
+  if (bytes.length < 4 || bytes.length > 300 * 1024) {
+    throw new Error("Avatar must be smaller than 300 KB");
+  }
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[bytes.length - 2] !== 0xff || bytes[bytes.length - 1] !== 0xd9) {
+    throw new Error("Invalid JPEG avatar");
+  }
+  return bytes;
 }
 
 async function sendStatic(res, filename, contentType) {
@@ -390,6 +405,74 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, { ok: true }, {
         "set-cookie": clearSessionCookie({ secure: requestIsSecure(req) }),
       });
+      return;
+    }
+
+    // ── PUT/DELETE /api/me/avatar ── update rider profile image
+    if (url.pathname === "/api/me/avatar" && (method === "PUT" || method === "DELETE")) {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const avatarPath = join(AVATAR_DIR, user.id + ".jpg");
+
+      if (method === "DELETE") {
+        await rm(avatarPath, { force: true });
+        const updated = await updateWebUserAvatar(user.id, null, STATE_DIR);
+        sendJson(res, 200, {
+          ok: true,
+          user: {
+            user_id: updated.id,
+            display_name: updated.display_name || "骑手",
+            avatar_emoji: updated.avatar_emoji || "🚴",
+            avatar_url: null,
+          },
+        });
+        return;
+      }
+
+      const contentLength = Number(req.headers["content-length"] || 0);
+      if (contentLength > 420 * 1024) {
+        sendError(res, 413, "Avatar payload is too large");
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const bytes = decodeAvatarDataUrl(body?.image_data_url);
+        await mkdir(AVATAR_DIR, { recursive: true });
+        await writeFile(avatarPath, bytes, { mode: 0o600 });
+        const avatarUrl = "/api/avatars/" + encodeURIComponent(user.id) + ".jpg?v=" + Date.now();
+        const updated = await updateWebUserAvatar(user.id, avatarUrl, STATE_DIR);
+        sendJson(res, 200, {
+          ok: true,
+          user: {
+            user_id: updated.id,
+            display_name: updated.display_name || "骑手",
+            avatar_emoji: updated.avatar_emoji || "🚴",
+            avatar_url: updated.avatar_url,
+          },
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Could not update avatar");
+      }
+      return;
+    }
+
+    // ── GET /api/avatars/:id.jpg ── public rider avatar asset
+    const avatarMatch = url.pathname.match(/^\/api\/avatars\/([A-Za-z0-9_-]+)\.jpg$/);
+    if (method === "GET" && avatarMatch) {
+      try {
+        const body = await readFile(join(AVATAR_DIR, avatarMatch[1] + ".jpg"));
+        res.writeHead(200, {
+          "content-type": "image/jpeg",
+          "cache-control": "public, max-age=86400, immutable",
+          "x-content-type-options": "nosniff",
+        });
+        res.end(body);
+      } catch {
+        sendError(res, 404, "Avatar not found");
+      }
       return;
     }
 

@@ -295,6 +295,33 @@ async function loadResetNotch() {
   }
 }
 
+function burstBegParticles(button) {
+  if (!button || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const rect = button.getBoundingClientRect();
+  const layer = document.createElement("div");
+  layer.className = "beg-particle-layer";
+  layer.setAttribute("aria-hidden", "true");
+  const emojis = ["🙏", "🙏", "🙏", "✨", "✨", "🥺"];
+
+  for (let index = 0; index < 9; index += 1) {
+    const particle = document.createElement("span");
+    particle.className = "beg-particle";
+    particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    const angle = (25 + Math.random() * 130) * Math.PI / 180;
+    const distance = 34 + Math.random() * 48;
+    particle.style.left = (rect.left + rect.width * (0.25 + Math.random() * 0.5)) + "px";
+    particle.style.top = (rect.bottom - 2) + "px";
+    particle.style.setProperty("--dx", Math.cos(angle) * distance + "px");
+    particle.style.setProperty("--dy", Math.sin(angle) * distance + 16 + "px");
+    particle.style.setProperty("--spin", (-35 + Math.random() * 70) + "deg");
+    particle.style.setProperty("--delay", (Math.random() * 80) + "ms");
+    layer.appendChild(particle);
+  }
+
+  document.body.appendChild(layer);
+  window.setTimeout(() => layer.remove(), 1000);
+}
+
 async function begForReset() {
   if (!resetBegButton || resetBegButton.disabled) return;
   resetBegButton.disabled = true;
@@ -304,6 +331,7 @@ async function begForReset() {
   try {
     const result = await jsonFetch("/api/reset-beg", { method: "POST", body: "{}" });
     if (resetBegCount) resetBegCount.textContent = Number(result?.count || 0).toLocaleString("en-US");
+    burstBegParticles(resetBegButton);
   } catch {
     showToast("求重置失败，再戳一次试试", 2400);
   } finally {
