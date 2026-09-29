@@ -19,6 +19,7 @@ import {
   revokeUserInstallation,
   upsertUsageSample,
 } from "./denglema-state.js";
+import { createCodexRunwayReader } from "./codex-runway.js";
 import {
   clearSessionCookie,
   createWebSession,
@@ -39,6 +40,7 @@ const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || 
 const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
+const readCodexRunwayStatus = createCodexRunwayReader();
 
 /* ── Logging ─────────────────────────────── */
 
@@ -484,6 +486,17 @@ const server = createServer(async (req, res) => {
         })),
         trend,
       });
+      return;
+    }
+
+    // ── GET /api/codex-runway ── cached public reset signal
+    if (method === "GET" && url.pathname === "/api/codex-runway") {
+      try {
+        sendJson(res, 200, await readCodexRunwayStatus());
+      } catch (error) {
+        log("error", "codex_runway_failed", { error: error?.message || String(error) });
+        sendJson(res, 503, { ok: false, error: "codex_runway_unavailable" });
+      }
       return;
     }
 

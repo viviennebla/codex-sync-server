@@ -28,6 +28,15 @@ const useShellCommandButton = $("useShellCommandButton");
 const usePowerShellCommandButton = $("usePowerShellCommandButton");
 const todayTotalEl = $("todayTotal");
 const todayFreshnessEl = $("todayFreshness");
+const runwaySiteLink = $("runwaySiteLink");
+const runwaySignalBadge = $("runwaySignalBadge");
+const runwaySignalConfidence = $("runwaySignalConfidence");
+const runwaySignalTitle = $("runwaySignalTitle");
+const runwaySignalMeta = $("runwaySignalMeta");
+const runwaySignalSource = $("runwaySignalSource");
+const runwayCompletedTitle = $("runwayCompletedTitle");
+const runwayCompletedMeta = $("runwayCompletedMeta");
+const runwayCompletedSource = $("runwayCompletedSource");
 const toastEl = $("toast");
 const registerPanel = $("registerPanel");
 const recoverPanel = $("recoverPanel");
@@ -258,6 +267,101 @@ function formatFreshness(value) {
 function renderFreshness() {
   if (!todayFreshnessEl) return;
   todayFreshnessEl.textContent = formatFreshness(me?.latest_seen_at);
+}
+
+function resetTypeLabel(value) {
+  if (value === "global") return "全局重置";
+  if (value === "banked") return "重置卡";
+  if (value === "global_and_banked") return "全局 + 重置卡";
+  return "Codex 重置";
+}
+
+function formatRunwayTime(value) {
+  if (!value) return "时间未明确";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "时间未明确";
+  return date.toLocaleString("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function formatRunwayWindow(record) {
+  const start = record?.schedule_window?.start_at;
+  const end = record?.schedule_window?.end_at;
+  if (!start) return formatRunwayTime(record?.effective_at || record?.announced_at);
+  if (!end || end === start) return formatRunwayTime(start);
+  return formatRunwayTime(start) + " ～ " + formatRunwayTime(end);
+}
+
+function planLabel(plans) {
+  const values = Array.isArray(plans) ? plans : [];
+  if (!values.length || values.includes("unknown")) return "套餐未明确";
+  if (values.includes("all")) return "全部套餐";
+  return values.join(" · ");
+}
+
+function setRunwayLink(node, href) {
+  if (!node) return;
+  if (href) {
+    node.href = href;
+    node.classList.remove("hidden");
+  } else {
+    node.removeAttribute("href");
+    node.classList.add("hidden");
+  }
+}
+
+function renderRunwayRadar(payload) {
+  if (!runwaySignalTitle) return;
+  const signal = payload?.latest_signal || null;
+  const completed = payload?.latest_completed || null;
+  if (runwaySiteLink && payload?.site_url) runwaySiteLink.href = payload.site_url;
+
+  if (signal) {
+    const scheduled = signal.kind === "reset_scheduled";
+    runwaySignalBadge.textContent = scheduled ? "有重置排期" : "最新重置信号";
+    runwaySignalTitle.textContent = resetTypeLabel(signal.reset_type) + " · " +
+      (scheduled ? formatRunwayWindow(signal) : formatRunwayTime(signal.effective_at || signal.announced_at));
+    const details = [planLabel(signal.scope?.plans)];
+    if (signal.text) details.push(signal.text);
+    runwaySignalMeta.textContent = details.join(" · ");
+    runwaySignalConfidence.textContent = signal.confidence == null
+      ? ""
+      : Math.round(signal.confidence * 100) + "% 置信度";
+    setRunwayLink(runwaySignalSource, signal.source_url);
+  } else {
+    runwaySignalBadge.textContent = "暂无排期";
+    runwaySignalTitle.textContent = "目前没有公开的重置排期";
+    runwaySignalMeta.textContent = "赛道照常蹬，雷达会继续看着";
+    runwaySignalConfidence.textContent = "";
+    setRunwayLink(runwaySignalSource, null);
+  }
+
+  if (completed) {
+    runwayCompletedTitle.textContent = resetTypeLabel(completed.reset_type) + " · " +
+      formatRunwayTime(completed.effective_at || completed.completed_at || completed.announced_at);
+    runwayCompletedMeta.textContent = completed.text || planLabel(completed.scope?.plans);
+    setRunwayLink(runwayCompletedSource, completed.source_url);
+  } else {
+    runwayCompletedTitle.textContent = "还没有已确认的重置记录";
+    runwayCompletedMeta.textContent = "—";
+    setRunwayLink(runwayCompletedSource, null);
+  }
+}
+
+async function loadRunwayRadar() {
+  if (!runwaySignalTitle) return;
+  try {
+    renderRunwayRadar(await jsonFetch("/api/codex-runway"));
+  } catch {
+    runwaySignalBadge.textContent = "雷达暂时离线";
+    runwaySignalTitle.textContent = "CodexRunway 数据暂时不可用";
+    runwaySignalMeta.textContent = "不影响赛道和上传";
+    runwaySignalConfidence.textContent = "";
+  }
 }
 
 function renderBreakdown(container, rows) {
@@ -778,6 +882,7 @@ async function enterRace() {
 
   renderFreshness();
   await loadRaceData();
+  void loadRunwayRadar();
   if (me?.has_today_sample === false && !me?.needs_onboarding) {
     showToast("今天还没刷新赛道；对 Codex 说「上传蹬了吗」即可", 5200);
   }
@@ -1123,6 +1228,7 @@ document.addEventListener("visibilitychange", () => {
       } catch {}
     }
     try { await loadRaceData(); } catch {}
+    void loadRunwayRadar();
     startRaceRuntime();
   })();
 });
