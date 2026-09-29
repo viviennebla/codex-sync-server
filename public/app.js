@@ -26,6 +26,8 @@ const bindCommandEl = $("bindCommand");
 const copyBindCommandButton = $("copyBindCommandButton");
 const useShellCommandButton = $("useShellCommandButton");
 const usePowerShellCommandButton = $("usePowerShellCommandButton");
+const useAgentPromptButton = $("useAgentPromptButton");
+const bindHelpText = $("bindHelpText");
 const todayTotalEl = $("todayTotal");
 const todayFreshnessEl = $("todayFreshness");
 const resetNotchStatus = $("resetNotchStatus");
@@ -59,6 +61,8 @@ const activeMotion = new Map();
 
 const DENGLEMA_SERVER = "https://vimo-dev-server.taila62aff.ts.net";
 const DENGLEMA_MARKETPLACE = "viviennebla/codex-usage-dashboard";
+const DENGLEMA_CONTRACT_URL =
+  "https://github.com/viviennebla/codex-sync-server/blob/main/docs/denglema-usage-contract.md";
 
 function avatarSvg(bg, ink, mood) {
   const eyes = mood === "rage"
@@ -405,7 +409,7 @@ function renderRiderDevices(items) {
   devices.forEach((device) => {
     const item = document.createElement("div");
     item.className = "rider-device-chip";
-    item.textContent = (device.name || "Codex 设备") + " · " + formatTokens(device.today_tokens || 0);
+    item.textContent = (device.name || "Agent 设备") + " · " + formatTokens(device.today_tokens || 0);
     riderDevices.appendChild(item);
   });
 }
@@ -899,8 +903,31 @@ async function bootstrap() {
   }
 }
 
+function buildAgentConnectPrompt(code) {
+  if (!code) return "";
+  return [
+    "接入蹬了吗。请把当前 Agent Harness 作为一个独立 installation 绑定并上传第一次 usage。",
+    "",
+    "Denglema server: " + DENGLEMA_SERVER,
+    "Pairing code: " + code,
+    "Usage Contract: " + DENGLEMA_CONTRACT_URL,
+    "",
+    "要求：",
+    "1. 识别当前 harness（例如 cursor / claude-code / other），不要假装成 Codex。",
+    "2. 优先使用当前 harness 自己可信的 usage API、日志或状态文件；不要读取/上传 prompt、代码、tool 内容、完整路径、chat/thread 名或 transcript。",
+    "3. POST /api/installations/pair，body 包含 code 和一个友好的 installation_name；必须拿到 installation_id + token 才算绑定成功。",
+    "4. 将 server / installation_id / token / timezone / harness 保存在本机私有状态中（建议 ~/.denglema/connection.json，权限尽量 0600）。绝对不要把 token 打印给我。",
+    "5. 收集当前日期的累计 usage，不是只统计当前会话。生成 schema v2：schema_version=2、harness、date、observed_at、total_tokens、models[]、projects[]。projects 只用 workspace basename；拿不到 breakdown 就传 []，不要猜。",
+    "6. 用 Authorization: Bearer <token> POST /api/usage/sample 上传第一次快照。",
+    "7. 完成后只告诉我 harness、installation_id、日期和 total_tokens；不要回显 token。",
+    "",
+    "以后我说「上传蹬了吗」时，复用同一 connection，并按同一 Usage Contract 上传当前 harness 的累计 usage。"
+  ].join("\n");
+}
+
 function buildOneStepCommand(code, mode = pairingCommandMode) {
   if (!code) return "";
+  if (mode === "agent") return buildAgentConnectPrompt(code);
   if (mode === "powershell") {
     return [
       "codex plugin marketplace add " + DENGLEMA_MARKETPLACE + " 2>$null | Out-Null",
@@ -921,9 +948,17 @@ function buildOneStepCommand(code, mode = pairingCommandMode) {
 }
 
 function renderOneStepCommand() {
+  const isAgent = pairingCommandMode === "agent";
   bindCommandEl.textContent = buildOneStepCommand(pairingCodeCurrent);
   useShellCommandButton.classList.toggle("is-selected", pairingCommandMode === "shell");
   usePowerShellCommandButton.classList.toggle("is-selected", pairingCommandMode === "powershell");
+  useAgentPromptButton?.classList.toggle("is-selected", isAgent);
+  copyBindCommandButton.textContent = isAgent ? "复制 Agent Prompt" : "复制命令";
+  if (bindHelpText) {
+    bindHelpText.textContent = isAgent
+      ? "把 Prompt 发给当前 Agent；它会自己识别 harness、绑定并上传第一份 usage。"
+      : "执行完后不用再操作网页；Agent 会自动出现，第一次快照也会自动上传。";
+  }
 }
 
 function stopPairingPoll() {
@@ -972,9 +1007,9 @@ function startPairingPoll(code) {
         try { await loadRaceData(); } catch {}
 
         if (uploaded) {
-          showToast("设备绑定成功，latest snapshot 已自动上传并刷新赛道", 4800);
+          showToast("Agent 接入成功，usage 已上传并刷新赛道", 4800);
         } else {
-          showToast("设备已绑定，但自动上传还没完成。可点「手动上传」复制 Prompt", 6500);
+          showToast("Agent 已绑定，但第一次 usage 还没上传完成。可点「刷新赛道」复制 Prompt", 6500);
         }
         return;
       }
@@ -982,7 +1017,7 @@ function startPairingPoll(code) {
       if (result.status === "expired") {
         stopPairingPoll();
         pairingCodeEl.textContent = "命令已过期";
-        bindCommandEl.textContent = "请重新生成一键接入命令";
+        bindCommandEl.textContent = "请重新生成接入内容";
       }
     } catch (error) {
       if (error.status === 401 || error.status === 404) stopPairingPoll();
@@ -1026,7 +1061,7 @@ function renderDevices(payload) {
     const left = document.createElement("div");
     const name = document.createElement("div");
     name.className = "device-name";
-    name.textContent = device.name || "Codex 设备";
+    name.textContent = device.name || "Agent 设备";
     const meta = document.createElement("div");
     meta.className = "device-meta";
     meta.textContent = device.has_today_sample
@@ -1137,7 +1172,7 @@ createPairingButton.addEventListener("click", async () => {
     if (previewMode) {
       pairingCodeCurrent = "DEMO1600";
       pairingResult.classList.remove("hidden");
-      pairingCodeEl.textContent = "演示接入命令";
+      pairingCodeEl.textContent = "演示接入内容";
       renderOneStepCommand();
       showToast("预览模式：命令不会真的绑定设备");
       return;
@@ -1169,23 +1204,39 @@ usePowerShellCommandButton.addEventListener("click", () => {
   renderOneStepCommand();
 });
 
+useAgentPromptButton?.addEventListener("click", () => {
+  pairingCommandMode = "agent";
+  renderOneStepCommand();
+});
+
 copyBindCommandButton.addEventListener("click", async () => {
   const command = bindCommandEl.textContent.trim();
   if (!command) return;
   try {
     await navigator.clipboard.writeText(command);
     copyBindCommandButton.textContent = "已复制 ✓";
-    showToast("命令已复制，去 Codex 所在终端执行即可", 3200);
+    showToast(
+      pairingCommandMode === "agent"
+        ? "Agent Prompt 已复制，发给当前 Agent 即可"
+        : "命令已复制，去 Codex 所在终端执行即可",
+      3200
+    );
   } catch {
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(bindCommandEl);
     selection.removeAllRanges();
     selection.addRange(range);
-    showToast("命令已选中，请复制到 Codex 所在终端执行", 3200);
+    showToast(
+      pairingCommandMode === "agent"
+        ? "Prompt 已选中，请复制给当前 Agent"
+        : "命令已选中，请复制到 Codex 所在终端执行",
+      3200
+    );
   }
   window.setTimeout(() => {
-    copyBindCommandButton.textContent = "复制命令";
+    copyBindCommandButton.textContent =
+      pairingCommandMode === "agent" ? "复制 Agent Prompt" : "复制命令";
   }, 1800);
 });
 
