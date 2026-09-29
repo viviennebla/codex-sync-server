@@ -34,7 +34,6 @@ const resetNotchStatus = $("resetNotchStatus");
 const resetBegButton = $("resetBegButton");
 const resetBegCount = $("resetBegCount");
 const eventRail = $("eventRail");
-const eventRailToggle = $("eventRailToggle");
 const eventList = $("eventList");
 const eventComposer = $("eventComposer");
 const eventMessageInput = $("eventMessageInput");
@@ -367,13 +366,6 @@ async function postEventMessage() {
   }
 }
 
-function setEventRailCollapsed(collapsed) {
-  if (!eventRail) return;
-  eventRail.classList.toggle("is-collapsed", collapsed);
-  eventRailToggle.textContent = collapsed ? "›" : "‹";
-  eventRailToggle.setAttribute("aria-label", collapsed ? "展开动态栏" : "收起动态栏");
-  try { localStorage.setItem("denglema-event-rail-collapsed", collapsed ? "1" : "0"); } catch {}
-}
 
 function resetNotchLabel(record) {
   if (!record) return "🙏 Reset · 暂无排期";
@@ -1355,20 +1347,10 @@ copyBindCommandButton.addEventListener("click", async () => {
 
 resetBegButton?.addEventListener("click", () => { void begForReset(); });
 
-eventRailToggle?.addEventListener("click", () => {
-  setEventRailCollapsed(!eventRail.classList.contains("is-collapsed"));
-});
-
 eventComposer?.addEventListener("submit", (event) => {
   event.preventDefault();
   void postEventMessage();
 });
-
-try {
-  setEventRailCollapsed(localStorage.getItem("denglema-event-rail-collapsed") === "1");
-} catch {
-  setEventRailCollapsed(false);
-}
 
 document.addEventListener("visibilitychange", () => {
   document.body.classList.toggle("is-background-paused", document.hidden);

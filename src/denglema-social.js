@@ -123,8 +123,62 @@ export async function addDenglemaComment(userId, message, stateDir = "state", op
   return appendDenglemaEvent({ kind: "comment", user_id: id, message }, stateDir, { now: () => now });
 }
 
+export async function backfillHistoricalJoinEvents(stateDir = "state", options = {}) {
+  const now = options.now?.() || new Date();
+  const run = eventQueue.then(async () => {
+    const eventFile = paths(stateDir).events;
+    const installationFile = join(stateDir, "denglema", "installations.json");
+    const [eventStore, installationStore] = await Promise.all([
+      readJson(eventFile, { version: 1, items: [] }),
+      readJson(installationFile, { version: 1, items: {} }),
+    ]);
+    const items = pruneEvents(eventStore.items, now);
+    const existingUsers = new Set(
+      items.filter((item) => item.kind === "join" && item.user_id).map((item) => item.user_id),
+    );
+    const earliest = new Map();
+
+    for (const installation of Object.values(installationStore.items || {})) {
+      const userId = String(installation?.user_id || "").trim();
+      const createdAt = installation?.created_at || null;
+      const createdMs = Date.parse(createdAt || "");
+      if (!userId || !Number.isFinite(createdMs)) continue;
+      const previous = earliest.get(userId);
+      if (!previous || createdMs < previous.ms) {
+        earliest.set(userId, { ms: createdMs, created_at: new Date(createdMs).toISOString() });
+      }
+    }
+
+    const cutoff = now.getTime() - EVENT_WINDOW_MS;
+    let added = 0;
+    for (const [userId, value] of earliest) {
+      if (existingUsers.has(userId)) continue;
+      if (value.ms < cutoff || value.ms > now.getTime()) continue;
+      items.push({
+        id: "evt_" + randomUUID(),
+        kind: "join",
+        user_id: userId,
+        message: "加入了赛道",
+        created_at: value.created_at,
+        meta: { historical: true },
+        coalesce_key: "join:user:" + userId,
+      });
+      added += 1;
+    }
+
+    if (added) {
+      items.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+      await writeJson(eventFile, { version: 1, items: pruneEvents(items, now) });
+    }
+    return added;
+  });
+  eventQueue = run.catch(() => {});
+  return run;
+}
+
 export async function readDenglemaEvents(stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
+  await backfillHistoricalJoinEvents(stateDir, { now: () => now });
   const limit = Math.min(50, Math.max(1, Number(options.limit || 20)));
   const file = paths(stateDir).events;
   const store = await readJson(file, { version: 1, items: [] });

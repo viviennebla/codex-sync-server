@@ -13,6 +13,7 @@ import {
 import {
   addDenglemaComment,
   appendDenglemaEvent,
+  backfillHistoricalJoinEvents,
   readDenglemaEvents,
   syncUserAchievements,
 } from "../src/denglema-social.js";
@@ -61,6 +62,59 @@ test("24h event feed prunes old events, enriches users, and rate-limits comments
   assert.equal(events[0].kind, "comment");
   assert.equal(events[0].message, "今天谁先把额度蹬没？");
   assert.equal(events[0].user.display_name, "Alice");
+});
+
+test("historical join events backfill from the earliest binding within 24h", async (t) => {
+  const root = await withRoot(t, "denglema-social-backfill-");
+  await createWebUser({ display_name: "Recent", avatar_emoji: "🚲" }, root, {
+    userId: "user-recent",
+    recoveryCode: "RECENT-USER",
+    now: () => new Date("2026-09-29T00:00:00Z"),
+  });
+  await createWebUser({ display_name: "Old", avatar_emoji: "🐢" }, root, {
+    userId: "user-old",
+    recoveryCode: "OLD-USER",
+    now: () => new Date("2026-09-27T00:00:00Z"),
+  });
+
+  const recentPair = await createPairingCode("user-recent", root, {
+    code: "RECENT-A",
+    now: () => new Date("2026-09-29T01:00:00Z"),
+  });
+  await consumePairingCode(recentPair.code, "Cursor", root, {
+    token: "recent-a",
+    installationId: "recent-a",
+    now: () => new Date("2026-09-29T01:01:00Z"),
+  });
+  const recentPair2 = await createPairingCode("user-recent", root, {
+    code: "RECENT-B",
+    now: () => new Date("2026-09-29T02:00:00Z"),
+  });
+  await consumePairingCode(recentPair2.code, "Codex", root, {
+    token: "recent-b",
+    installationId: "recent-b",
+    now: () => new Date("2026-09-29T02:01:00Z"),
+  });
+
+  const oldPair = await createPairingCode("user-old", root, {
+    code: "OLD-A",
+    now: () => new Date("2026-09-27T01:00:00Z"),
+  });
+  await consumePairingCode(oldPair.code, "Old", root, {
+    token: "old-a",
+    installationId: "old-a",
+    now: () => new Date("2026-09-27T01:01:00Z"),
+  });
+
+  const now = new Date("2026-09-29T03:00:00Z");
+  assert.equal(await backfillHistoricalJoinEvents(root, { now: () => now }), 1);
+  assert.equal(await backfillHistoricalJoinEvents(root, { now: () => now }), 0);
+
+  const events = await readDenglemaEvents(root, { now: () => now });
+  const joins = events.filter((item) => item.kind === "join");
+  assert.equal(joins.length, 1);
+  assert.equal(joins[0].user.display_name, "Recent");
+  assert.equal(joins[0].created_at, "2026-09-29T01:01:00.000Z");
 });
 
 test("upload events coalesce within the configured window", async (t) => {
