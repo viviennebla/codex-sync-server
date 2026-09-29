@@ -74,29 +74,6 @@ function avatarSvg(bg, ink, mood) {
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 
-const DEMO_RIDERS = [
-  {
-    user_id: "demo_cruise",
-    display_name: "Demo A",
-    avatar_url: avatarSvg("#ffd46a", "#493829", "smile"),
-    today_tokens: 1800000,
-    recent_rate_tpm: 4200,
-    demo: true,
-    mood: "chill",
-    accent: "#47a875"
-  },
-  {
-    user_id: "demo_burning",
-    display_name: "Demo B",
-    avatar_url: avatarSvg("#ff8b69", "#312b2b", "rage"),
-    today_tokens: 4200000,
-    recent_rate_tpm: 48000,
-    demo: true,
-    mood: "burning",
-    accent: "#f0793e"
-  }
-];
-
 const PREVIEW_RIDERS = [
   {
     user_id: "preview_me",
@@ -637,7 +614,7 @@ function renderRiders(riders) {
 
 async function loadRaceData() {
   if (previewMode) {
-    renderRiders([...PREVIEW_RIDERS, ...DEMO_RIDERS]);
+    renderRiders(PREVIEW_RIDERS);
     return;
   }
   const payload = await jsonFetch("/api/riders");
@@ -649,7 +626,7 @@ async function loadRaceData() {
     accent: rider.user_id === (me && me.user_id) ? "#4c8ad9" : "#5eaa7d"
   }));
 
-  renderRiders([...real, ...DEMO_RIDERS]);
+  renderRiders(real);
 }
 
 const MOTION_ACTIONS = {

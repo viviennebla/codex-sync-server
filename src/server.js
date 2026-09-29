@@ -509,18 +509,21 @@ const server = createServer(async (req, res) => {
         readUserTotals(date, STATE_DIR),
         readDenglemaUsers(STATE_DIR),
       ]);
-      const byId = new Map(users.map((user) => [user.id, user]));
+      const totalsByUser = new Map(totals.map((row) => [row.user_id, row]));
       sendJson(res, 200, {
         date,
-        riders: totals.map((row) => ({
-          user_id: row.user_id,
-          display_name: byId.get(row.user_id)?.display_name || "骑手",
-          avatar_emoji: byId.get(row.user_id)?.avatar_emoji || "🚴",
-          avatar_url: byId.get(row.user_id)?.avatar_url || null,
-          today_tokens: row.total_tokens,
-          installations: row.installations,
-          recent_rate_tpm: null,
-        })),
+        riders: users.map((user) => {
+          const row = totalsByUser.get(user.id) || null;
+          return {
+            user_id: user.id,
+            display_name: user.display_name || "骑手",
+            avatar_emoji: user.avatar_emoji || "🚴",
+            avatar_url: user.avatar_url || null,
+            today_tokens: row?.total_tokens || 0,
+            installations: row?.installations || 0,
+            recent_rate_tpm: null,
+          };
+        }),
       });
       return;
     }
