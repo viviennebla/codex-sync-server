@@ -640,8 +640,9 @@ function riderMarkup(rider) {
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
   const cadence = rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72;
   const burst = rider.mood === "burning" ? "冲啊!!" : "蹬!";
+  const edgeClass = Number(rider.x || 0) >= 80 ? " is-near-right" : "";
   return (
-    '<div class="rider ' + classes + '" data-rider-id="' + rider.user_id + '"' +
+    '<div class="rider ' + classes + edgeClass + '" data-rider-id="' + rider.user_id + '"' +
       ' style="--x:' + rider.x + '%;--accent:' + (rider.accent || "#4c8ad9") +
       ';--phase:' + phase + 's;--cadence:' + cadence + 's">' +
       '<div class="effect-speed"></div>' +
@@ -701,6 +702,7 @@ function updateRiderNode(node, rider) {
   }
 
   node.style.setProperty("--x", rider.x + "%");
+  node.classList.toggle("is-near-right", Number(rider.x || 0) >= 80);
   node.style.setProperty("--accent", rider.accent || "#4c8ad9");
   node.style.setProperty(
     "--cadence",

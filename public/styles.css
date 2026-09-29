@@ -1914,3 +1914,98 @@ button { font: inherit; }
     -1px 0 0 rgba(255,250,240,.8);
   white-space: nowrap;
 }
+
+
+/* Rider achievement badge + right-edge overflow protection */
+.name-chip {
+  max-width: 194px;
+}
+.name-chip > span:first-child {
+  min-width: 0;
+  max-width: 104px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.name-chip .tokens {
+  flex: 0 0 auto;
+}
+
+.rider-achievement {
+  left: 102px;
+  top: -9px;
+  max-width: 166px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 4px 7px;
+  border: 1.5px solid rgba(154, 106, 8, .42);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255,248,203,.97), rgba(246,214,95,.93));
+  color: #6c4a00;
+  box-shadow:
+    0 2px 0 rgba(104, 68, 0, .12),
+    0 0 0 2px rgba(255,250,240,.72);
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1.15;
+  letter-spacing: .01em;
+  text-shadow: 0 1px rgba(255,255,255,.7);
+  animation: achievementGlow 2.3s ease-in-out infinite;
+}
+
+.rider-achievement::before,
+.rider-achievement::after {
+  position: absolute;
+  pointer-events: none;
+  content: "✦";
+  color: #f0b521;
+  font-size: 8px;
+  opacity: 0;
+}
+.rider-achievement::before {
+  left: -7px;
+  top: -5px;
+  animation: achievementSpark 2.3s ease-in-out infinite;
+}
+.rider-achievement::after {
+  right: -6px;
+  bottom: -5px;
+  animation: achievementSpark 2.3s .75s ease-in-out infinite;
+}
+
+.rider.is-near-right .name-chip {
+  left: auto;
+  right: 104px;
+}
+.rider.is-near-right .rider-achievement {
+  left: auto;
+  right: 104px;
+}
+.rider.is-near-right .leader-crown {
+  left: auto;
+  right: 48px;
+}
+
+@keyframes achievementGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 rgba(240,181,33,0));
+    transform: translateY(0);
+  }
+  50% {
+    filter: drop-shadow(0 0 5px rgba(240,181,33,.34));
+    transform: translateY(-1px);
+  }
+}
+@keyframes achievementSpark {
+  0%, 58%, 100% { opacity: 0; transform: scale(.55) rotate(0deg); }
+  68% { opacity: .95; transform: scale(1.18) rotate(28deg); }
+  82% { opacity: .45; transform: scale(.82) rotate(62deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rider-achievement { animation: none; }
+  .rider-achievement::before,
+  .rider-achievement::after { animation: none; display: none; }
+}
