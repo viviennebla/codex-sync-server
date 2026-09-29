@@ -808,17 +808,17 @@ const server = createServer(async (req, res) => {
             const harness = String(body?.harness || "agent").trim().toLowerCase() || "agent";
             const total = Number(result.accepted_total || 0).toLocaleString("en-US");
             await appendDenglemaEvent({
-              kind: "upload",
+              kind: result.first_sample ? "join" : "upload",
               user_id: installation.user_id,
               message: result.first_sample
-                ? "让 " + harness + " 加入了赛道"
+                ? "加入了赛道"
                 : "刷新了 " + harness + " usage · " + total + " token",
               meta: {
                 harness,
                 total_tokens: result.accepted_total,
                 installation_id: installation.id,
               },
-              coalesce_key: "upload:" + installation.id,
+              coalesce_key: (result.first_sample ? "join:" : "upload:") + installation.id,
               coalesce_window_ms: 10 * 60 * 1000,
             }, STATE_DIR);
             await syncUserAchievements(installation.user_id, body.date, STATE_DIR);

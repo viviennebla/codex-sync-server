@@ -4,6 +4,8 @@ const profileAvatar = $("profileAvatar");
 const profileAvatarButton = $("profileAvatarButton");
 const profileAvatarInput = $("profileAvatarInput");
 const profileAvatarReset = $("profileAvatarReset");
+const profileAchievementCount = $("profileAchievementCount");
+const profileAchievementList = $("profileAchievementList");
 const profileName = $("profileName");
 const profileMeta = $("profileMeta");
 const profileToday = $("profileToday");
@@ -154,6 +156,52 @@ function formatTokens(value) {
   return n.toLocaleString("en-US");
 }
 
+function formatAchievementTime(value) {
+  if (!value) return "";
+  const ms = Date.now() - Date.parse(value);
+  if (!Number.isFinite(ms) || ms < 0) return "刚刚";
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return minutes + " 分钟前";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + " 小时前";
+  return Math.floor(hours / 24) + " 天前";
+}
+
+function renderProfileAchievements(rows) {
+  const values = Array.isArray(rows) ? rows : [];
+  const unlocked = values.filter((item) => item.unlocked).length;
+  profileAchievementCount.textContent = unlocked + "/" + values.length;
+  profileAchievementList.replaceChildren();
+
+  values.forEach((achievement) => {
+    const item = document.createElement("div");
+    item.className = "profile-achievement-card " + (achievement.unlocked ? "is-unlocked" : "is-locked");
+
+    const emoji = document.createElement("div");
+    emoji.className = "profile-achievement-emoji";
+    emoji.textContent = achievement.emoji || "🏅";
+
+    const copy = document.createElement("div");
+    copy.className = "profile-achievement-copy";
+    const name = document.createElement("strong");
+    name.textContent = achievement.name || "成就";
+    const description = document.createElement("span");
+    description.textContent = achievement.description || "";
+    const status = document.createElement("small");
+    if (achievement.unlocked) {
+      const age = formatAchievementTime(achievement.unlocked_at);
+      status.textContent = age === "刚刚" ? "刚刚解锁" : (age ? age + "解锁" : "已解锁");
+    } else {
+      status.textContent = "未解锁";
+    }
+
+    copy.append(name, description, status);
+    item.append(emoji, copy);
+    profileAchievementList.appendChild(item);
+  });
+}
+
 function renderBreakdown(container, rows) {
   container.replaceChildren();
   const values = Array.isArray(rows) ? rows.slice(0, 8) : [];
@@ -240,7 +288,11 @@ async function loadProfile() {
   renderProfileAvatar(user);
   profileName.textContent = user.display_name || "骑手";
 
-  const detail = await jsonFetch("/api/riders/" + encodeURIComponent(user.user_id));
+  const [detail, achievementPayload] = await Promise.all([
+    jsonFetch("/api/riders/" + encodeURIComponent(user.user_id)),
+    jsonFetch("/api/achievements"),
+  ]);
+  renderProfileAchievements(achievementPayload.achievements || []);
   const latestSeen = (detail.installations || [])
     .map((item) => item.last_seen_at)
     .filter(Boolean)

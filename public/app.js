@@ -33,9 +33,6 @@ const todayFreshnessEl = $("todayFreshness");
 const resetNotchStatus = $("resetNotchStatus");
 const resetBegButton = $("resetBegButton");
 const resetBegCount = $("resetBegCount");
-const achievementDock = $("achievementDock");
-const achievementCount = $("achievementCount");
-const achievementList = $("achievementList");
 const eventRail = $("eventRail");
 const eventRailToggle = $("eventRailToggle");
 const eventList = $("eventList");
@@ -286,61 +283,10 @@ function formatSocialTime(value) {
   return hours + "h";
 }
 
-function renderAchievements(rows) {
-  if (!achievementList) return;
-  const values = Array.isArray(rows) ? rows : [];
-  const unlocked = values.filter((item) => item.unlocked).length;
-  achievementCount.textContent = unlocked + "/" + values.length;
-  achievementList.replaceChildren();
-
-  values.slice(0, 4).forEach((achievement) => {
-    const item = document.createElement("div");
-    item.className = "achievement-chip" + (achievement.unlocked ? " is-unlocked" : " is-locked");
-    item.title = achievement.description || "";
-
-    const emoji = document.createElement("span");
-    emoji.className = "achievement-emoji";
-    emoji.textContent = achievement.emoji || "🏅";
-
-    const copy = document.createElement("span");
-    copy.className = "achievement-copy";
-    const name = document.createElement("strong");
-    name.textContent = achievement.name || "成就";
-    const detail = document.createElement("small");
-    if (achievement.unlocked) {
-      const age = achievement.unlocked_at ? formatSocialTime(achievement.unlocked_at) : "";
-      detail.textContent = age === "刚刚" ? "刚刚解锁" : (age ? age + " 前解锁" : "已解锁");
-    } else {
-      detail.textContent = achievement.description || "未解锁";
-    }
-    copy.append(name, detail);
-    item.append(emoji, copy);
-    achievementList.appendChild(item);
-  });
-
-  achievementDock.classList.remove("hidden");
-}
-
-async function loadAchievements() {
-  if (!achievementDock) return;
-  if (previewMode) {
-    renderAchievements([
-      { emoji: "🚲", name: "第一脚", description: "第一次把 usage 蹬进赛道", unlocked: true, unlocked_at: new Date().toISOString() },
-      { emoji: "🔥", name: "百万燃料", description: "单日累计 1M token", unlocked: true, unlocked_at: new Date().toISOString() },
-      { emoji: "🤹", name: "多 Agent 骑手", description: "同一天用过 2 种 Agent Harness", unlocked: false },
-      { emoji: "👑", name: "戴过皇冠", description: "拿过一次今日第一", unlocked: false },
-    ]);
-    return;
-  }
-  try {
-    const payload = await jsonFetch("/api/achievements");
-    renderAchievements(payload.achievements || []);
-  } catch {}
-}
-
 function eventKindIcon(event) {
   if (event.kind === "comment") return "💬";
   if (event.kind === "achievement") return event.meta?.emoji || "🏆";
+  if (event.kind === "join") return "🏁";
   if (event.kind === "upload") return "⚡";
   return "•";
 }
@@ -391,7 +337,7 @@ async function loadEvents() {
   if (!eventRail) return;
   if (previewMode) {
     renderEvents([
-      { kind: "achievement", message: "解锁成就「百万燃料」", created_at: new Date().toISOString(), meta: { emoji: "🔥" }, user: { display_name: "Alice" } },
+      { kind: "join", message: "加入了赛道", created_at: new Date().toISOString(), meta: { harness: "cursor" }, user: { display_name: "Alice" } },
       { kind: "upload", message: "刷新了 cursor usage · 960,000 token", created_at: new Date(Date.now() - 5 * 60000).toISOString(), user: { display_name: "Bob" } },
       { kind: "comment", message: "今天谁先把额度蹬没？", created_at: new Date(Date.now() - 12 * 60000).toISOString(), user: { display_name: "摸鱼中" } },
     ]);
@@ -424,7 +370,7 @@ async function postEventMessage() {
 function setEventRailCollapsed(collapsed) {
   if (!eventRail) return;
   eventRail.classList.toggle("is-collapsed", collapsed);
-  eventRailToggle.textContent = collapsed ? "‹" : "›";
+  eventRailToggle.textContent = collapsed ? "›" : "‹";
   eventRailToggle.setAttribute("aria-label", collapsed ? "展开动态栏" : "收起动态栏");
   try { localStorage.setItem("denglema-event-rail-collapsed", collapsed ? "1" : "0"); } catch {}
 }
@@ -1014,7 +960,6 @@ function startRaceRuntime() {
     if (document.hidden) return;
     loadRaceData().catch(() => {});
     loadEvents().catch(() => {});
-    loadAchievements().catch(() => {});
   }, 20000);
 }
 
@@ -1031,7 +976,6 @@ async function enterRace() {
   renderFreshness();
   await loadRaceData();
   void loadResetNotch();
-  void loadAchievements();
   void loadEvents();
   if (me?.has_today_sample === false && !me?.needs_onboarding) {
     showToast("今天还没刷新赛道；对当前 Agent 说「上传蹬了吗」即可", 5200);
@@ -1056,7 +1000,6 @@ async function bootstrap() {
     me = { user_id: "preview_me", display_name: "我", avatar_emoji: "🚴" };
     loginOverlay.classList.add("hidden");
     await loadRaceData();
-    await loadAchievements();
     await loadEvents();
     startRaceRuntime();
     return;
@@ -1445,8 +1388,7 @@ document.addEventListener("visibilitychange", () => {
     }
     try { await loadRaceData(); } catch {}
     void loadResetNotch();
-    void loadAchievements();
-    void loadEvents();
+      void loadEvents();
     startRaceRuntime();
   })();
 });
