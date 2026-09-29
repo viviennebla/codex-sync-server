@@ -142,6 +142,61 @@ https://vimo-dev-server.taila62aff.ts.net/
 
 当前线上服务由 `denglema-dev.service` 运行；部署工作区与个人开发 worktree 分开。
 
+### Pull-based 自动部署
+
+不依赖 GitHub Actions / Runner。部署机自己用 systemd user timer 检查 GitHub `main`，默认每分钟一次；SHA 没变化时什么都不做。
+
+发现新 commit 后：
+
+```text
+fetch main
+  ↓
+切到新 commit
+  ↓
+依赖变化时 npm ci / npm install
+  ↓
+npm test
+  ↓
+restart denglema-dev.service
+  ↓
+GET /health
+```
+
+部署 worktree 必须保持干净。测试、restart 或健康检查失败时，会切回上一个 commit，并重新启动旧版本。
+
+首次在部署机安装 timer：
+
+```bash
+cd /home/feiyan/workspace/codex-sync-server-denglema-feishu
+bash scripts/install-auto-deploy.sh
+```
+
+安装后可手动触发一次检查：
+
+```bash
+systemctl --user start denglema-auto-deploy.service
+journalctl --user -u denglema-auto-deploy.service -n 100 --no-pager
+```
+
+查看 timer：
+
+```bash
+systemctl --user list-timers denglema-auto-deploy.timer --no-pager
+```
+
+默认配置：
+
+| 变量 | 默认值 |
+| --- | --- |
+| `DENGLEMA_DEPLOY_REMOTE_URL` | `https://github.com/viviennebla/codex-sync-server.git` |
+| `DENGLEMA_DEPLOY_BRANCH` | `main` |
+| `DENGLEMA_DEPLOY_SERVICE` | `denglema-dev.service` |
+| `DENGLEMA_DEPLOY_HEALTH_URL` | `http://127.0.0.1:1600/health` |
+| `DENGLEMA_DEPLOY_HEALTH_TIMEOUT_SECONDS` | `20` |
+| `DENGLEMA_DEPLOY_INTERVAL` | `1min`（安装 timer 时读取） |
+
+首次启用自动部署时，仍建议人工完成一次当前版本的 fetch / checkout / service restart / health check；之后 main 的更新由 timer 接管。
+
 ## 项目结构
 
 ```text
