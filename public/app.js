@@ -69,6 +69,29 @@ const DENGLEMA_MARKETPLACE = "viviennebla/codex-usage-dashboard";
 const DENGLEMA_CONTRACT_URL =
   "https://github.com/viviennebla/codex-sync-server/blob/main/docs/denglema-usage-contract.md";
 
+const TIME_THEME_CLASSES = ["time-morning", "time-day", "time-evening", "time-night"];
+
+function themeForHour(hour) {
+  if (hour >= 6 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 18) return "day";
+  if (hour >= 18 && hour < 24) return "evening";
+  return "night";
+}
+
+function applyTimeTheme() {
+  const forced = new URLSearchParams(location.search).get("theme");
+  const theme = ["morning", "day", "evening", "night"].includes(forced)
+    ? forced
+    : themeForHour(new Date().getHours());
+  TIME_THEME_CLASSES.forEach((className) => document.body.classList.remove(className));
+  document.body.classList.add("time-" + theme);
+  document.body.dataset.timeTheme = theme;
+  return theme;
+}
+
+applyTimeTheme();
+setInterval(applyTimeTheme, 60 * 1000);
+
 function avatarSvg(bg, ink, mood) {
   const eyes = mood === "rage"
     ? '<path d="M40 55 L50 50 M70 50 L80 55" stroke="' + ink + '" stroke-width="5" stroke-linecap="round"/>'
