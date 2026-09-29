@@ -16,8 +16,6 @@ AUTO_SERVICE="$USER_UNIT_DIR/denglema-auto-deploy.service"
 AUTO_TIMER="$USER_UNIT_DIR/denglema-auto-deploy.timer"
 
 mkdir -p "$USER_UNIT_DIR"
-chmod +x "$REPO_DIR/scripts/pull-deploy.sh"
-
 cat >"$AUTO_SERVICE" <<EOF
 [Unit]
 Description=Denglema pull-based auto deploy
@@ -30,7 +28,7 @@ WorkingDirectory=$REPO_DIR
 Environment=DENGLEMA_DEPLOY_REPO=$REPO_DIR
 Environment=DENGLEMA_DEPLOY_SERVICE=$SERVICE_NAME
 Environment=DENGLEMA_DEPLOY_HEALTH_URL=$HEALTH_URL
-ExecStart=$REPO_DIR/scripts/pull-deploy.sh
+ExecStart=/usr/bin/env bash $REPO_DIR/scripts/pull-deploy.sh
 EOF
 
 cat >"$AUTO_TIMER" <<EOF
