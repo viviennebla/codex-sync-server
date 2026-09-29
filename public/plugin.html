@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Plugin 说明 · 蹬了吗</title>
+  <title>使用教程 · 蹬了吗</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="profile-page">
@@ -11,41 +11,43 @@
     <header class="profile-topbar">
       <a href="/" class="profile-back">← 回赛道</a>
       <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
-      <div class="plugin-doc-version">Codex Plugin</div>
+      <div class="profile-actions">
+        <a href="/leaderboards" class="profile-button">🔥 燃烧榜</a>
+        <a href="/me" class="profile-button">👤 我的主页</a>
+      </div>
     </header>
 
     <section class="profile-hero-card plugin-doc-hero">
       <div class="profile-avatar">🚲</div>
       <div class="profile-identity">
-        <p class="dialog-kicker">Denglema Codex Plugin</p>
-        <h1>把 Codex token 蹬进赛道</h1>
-        <p>首次接入会自动上传一份快照；之后只在你明确说「上传蹬了吗」时上传。</p>
+        <p class="dialog-kicker">使用教程</p>
+        <h1>两步开始蹬 🚲</h1>
+        <p>第一次接入执行一条命令，以后只需要对 Codex 说「上传蹬了吗」。</p>
       </div>
     </section>
 
     <section class="plugin-doc-grid">
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>1. 接入</h2><span>一次完成</span></div>
-        <p class="plugin-doc-copy">在蹬了吗网页点击「接入这台 Codex」，复制页面生成的一条命令到 Codex 所在终端执行。</p>
-        <p class="plugin-doc-copy">命令会自动安装/更新 Plugin、绑定当前骑手、fresh collect，并上传第一份 schema v2 快照。</p>
+        <div class="profile-panel-head"><h2>1. 第一次接入</h2><span>只做一次</span></div>
+        <p class="plugin-doc-copy">先在网页创建或恢复你的骑手身份，然后点击「接入这台 Codex」。</p>
+        <p class="plugin-doc-copy">复制页面生成的一键命令到 Codex 所在终端执行。命令会自动安装/更新 Plugin、绑定当前骑手，并立即上传第一份快照。</p>
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>2. 开蹬</h2><span>之后只说一句</span></div>
+        <div class="profile-panel-head"><h2>2. 日常刷新</h2><span>只说一句</span></div>
         <pre class="plugin-command">上传蹬了吗</pre>
-        <p class="plugin-doc-copy">以后需要刷新赛道时，只需要把这句话发给 Codex。pairing code 不需要用户查看或手工处理。</p>
+        <p class="plugin-doc-copy">之后想刷新赛道时，把这句话发给 Codex 即可。Plugin 平时只在本地更新快照，不会偷偷上传。</p>
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>3. 日常上传</h2><span>不会自动上传</span></div>
-        <p class="plugin-doc-copy">Plugin 使用期间最多每小时刷新一份本地 latest snapshot。需要刷新赛道时，对 Codex 说：</p>
-        <pre class="plugin-command">上传蹬了吗</pre>
-        <p class="plugin-doc-copy">普通上传直接使用 latest snapshot，不重新扫描日志。</p>
+        <div class="profile-panel-head"><h2>3. 多设备</h2><span>分别接入一次</span></div>
+        <p class="plugin-doc-copy">Windows、WSL、macOS 都可以作为独立 Codex 环境。每个环境各执行一次「接入这台 Codex」，它们会自动聚合到同一个骑手。</p>
+        <a class="profile-button plugin-doc-cta" href="/?bind=1">接入这台 Codex →</a>
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>4. 更新 Plugin</h2><span>版本感知</span></div>
-        <p class="plugin-doc-copy">新版 Plugin 会通过 <code>denglema_status</code> 检查当前版本和 GitHub main 上的最新版本。检测到更新后按顺序执行：</p>
+        <div class="profile-panel-head"><h2>4. 更新 Plugin</h2><span>有新版时再做</span></div>
+        <p class="plugin-doc-copy">Plugin 会检查最新版本。需要更新时执行：</p>
         <pre class="plugin-command">codex plugin marketplace upgrade denglema
 codex plugin add denglema@denglema</pre>
       </article>
@@ -77,10 +79,10 @@ codex plugin add denglema@denglema</pre>
 
     <section class="profile-panel recovery-panel">
       <div>
-        <h2>多设备</h2>
-        <p>Windows、WSL、macOS 各自作为一个 installation；分别执行一次「接入这台 Codex」后，服务端按同一个 rider 聚合。</p>
+        <h2>记住就这两件事</h2>
+        <p>第一次：点「接入这台 Codex」执行命令。以后：对 Codex 说「上传蹬了吗」。</p>
       </div>
-      <a class="profile-button plugin-doc-cta" href="/?bind=1">接入这台 Codex →</a>
+      <a class="profile-button plugin-doc-cta" href="/">回赛道 →</a>
     </section>
   </main>
 </body>

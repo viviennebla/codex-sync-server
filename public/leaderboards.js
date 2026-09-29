@@ -88,14 +88,14 @@ async function load() {
 
   if (percent < 100) {
     footnoteEl.textContent =
-      "还有设备只上传了总量，所以烧榜是当前可见明细，不会假装成完整统计。";
+      "还有设备只上传了总量，所以燃烧榜是当前可见明细，不会假装成完整统计。";
   } else {
     footnoteEl.textContent = "今天所有有数据的设备都已进入明细统计。";
   }
 }
 
 load().catch((error) => {
-  coverageEl.textContent = "烧榜读取失败";
+  coverageEl.textContent = "燃烧榜读取失败";
   footnoteEl.textContent = error.message;
   renderBoard(modelBoard, []);
   renderBoard(projectBoard, []);
