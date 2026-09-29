@@ -35,7 +35,7 @@
         <a class="profile-button" href="/plugin">📖 使用教程</a>
         <button id="uploadPromptButton" class="upload-button" type="button">⬆ 刷新赛道</button>
         <button id="devicesButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">我的设备</button>
-        <button id="pairButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">接入 Codex</button>
+        <button id="pairButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">接入 Agent</button>
       </div>
     </header>
 
@@ -73,19 +73,20 @@
   <dialog id="pairDialog" class="pair-dialog">
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
-      <p class="dialog-kicker">接入 Codex</p>
-      <h2>复制一条命令，然后开蹬</h2>
-      <p class="dialog-copy">命令会自动安装/更新 Plugin、绑定当前骑手，并立即采集和上传第一次快照。你不需要理解 pairing code。</p>
-      <button id="createPairingButton" type="button" class="dialog-primary">生成一键接入命令</button>
+      <p class="dialog-kicker">接入 Agent</p>
+      <h2>让当前 Agent 也来蹬</h2>
+      <p class="dialog-copy">Codex 可以一键安装；Cursor、Claude Code 和其他 Agent 直接复制接入 Prompt。两种方式都会自动绑定并上传第一份 usage。</p>
+      <button id="createPairingButton" type="button" class="dialog-primary">生成接入内容</button>
       <div id="pairingResult" class="pairing-result hidden">
         <code id="pairingCode">接入命令已生成</code>
         <div class="onboarding-platforms">
-          <button id="useShellCommandButton" type="button" class="auth-link">WSL / macOS / Linux</button>
-          <button id="usePowerShellCommandButton" type="button" class="auth-link">Windows PowerShell</button>
+          <button id="useShellCommandButton" type="button" class="auth-link">Codex · WSL/macOS/Linux</button>
+          <button id="usePowerShellCommandButton" type="button" class="auth-link">Codex · Windows</button>
+          <button id="useAgentPromptButton" type="button" class="auth-link">Cursor / Claude / Other</button>
         </div>
         <pre id="bindCommand"></pre>
         <button id="copyBindCommandButton" type="button" class="dialog-primary">复制命令</button>
-        <p>执行完后不用再操作网页；设备会自动出现，第一次快照也会自动上传。</p>
+        <p id="bindHelpText">执行完后不用再操作网页；Agent 会自动出现，第一次快照也会自动上传。</p>
       </div>
     </form>
   </dialog>
@@ -131,8 +132,8 @@
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
       <p class="dialog-kicker">手动刷新赛道</p>
-      <h2>把这句发给 Codex</h2>
-      <p class="dialog-copy">网页不会直接控制你的本地 Codex。复制下面的 Prompt，回到当前 Codex 会话发送即可上传 latest snapshot。</p>
+      <h2>把这句发给 Agent</h2>
+      <p class="dialog-copy">无论当前是 Codex、Cursor 还是其他已接入 Agent，发送下面这句话即可刷新当前 harness 的 usage。</p>
       <div class="upload-prompt-box"><code id="uploadPromptText">上传蹬了吗</code></div>
       <button id="copyUploadPromptButton" type="button" class="dialog-primary">复制 Prompt</button>
     </form>
@@ -144,7 +145,7 @@
       <h2>先领一辆车</h2>
       <p id="status" class="auth-copy">第一次来只需要一个昵称。换浏览器时用恢复码找回同一个 rider。</p>
 
-      <a class="login-plugin-link" href="/plugin">先看看 Plugin 怎么安装和使用 →</a>
+      <a class="login-plugin-link" href="/plugin">先看看 Agent 怎么接入 →</a>
 
       <div id="registerPanel" class="auth-panel">
         <label>昵称<input id="displayNameInput" maxlength="24" placeholder="例如 Alice"></label>

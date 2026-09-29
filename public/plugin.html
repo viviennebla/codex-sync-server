@@ -20,34 +20,34 @@
     <section class="profile-hero-card plugin-doc-hero">
       <div class="profile-avatar">🚲</div>
       <div class="profile-identity">
-        <p class="dialog-kicker">使用教程</p>
-        <h1>两步开始蹬 🚲</h1>
-        <p>第一次接入执行一条命令，以后只需要对 Codex 说「上传蹬了吗」。</p>
+        <p class="dialog-kicker">Agent 使用教程</p>
+        <h1>任何 Agent 都能来蹬 🚲</h1>
+        <p>Codex 有默认 Plugin adapter；Cursor、Claude Code 和其他 Agent 走同一份 Denglema Usage Contract。</p>
       </div>
     </section>
 
     <section class="plugin-doc-grid">
       <article class="profile-panel">
         <div class="profile-panel-head"><h2>1. 第一次接入</h2><span>只做一次</span></div>
-        <p class="plugin-doc-copy">先在网页创建或恢复你的骑手身份，然后点击「接入这台 Codex」。</p>
-        <p class="plugin-doc-copy">复制页面生成的一键命令到 Codex 所在终端执行。命令会自动安装/更新 Plugin、绑定当前骑手，并立即上传第一份快照。</p>
+        <p class="plugin-doc-copy">先创建/恢复骑手，然后点击「接入这个 Agent」。Codex 直接复制一键命令；Cursor、Claude Code 或其他 Agent 复制「其他 Agent」Prompt。</p>
+        <p class="plugin-doc-copy">Agent 会识别自己的 harness、绑定当前 rider，并按 schema v2 上传第一份累计 usage。</p>
       </article>
 
       <article class="profile-panel">
         <div class="profile-panel-head"><h2>2. 日常刷新</h2><span>只说一句</span></div>
         <pre class="plugin-command">上传蹬了吗</pre>
-        <p class="plugin-doc-copy">之后想刷新赛道时，把这句话发给 Codex 即可。Plugin 平时只在本地更新快照，不会偷偷上传。</p>
+        <p class="plugin-doc-copy">之后想刷新赛道时，把这句话发给当前已接入的 Agent 即可。每个 harness 只读取自己的 usage 数据源，不会偷偷上传对话内容。</p>
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>3. 多设备</h2><span>分别接入一次</span></div>
-        <p class="plugin-doc-copy">Windows、WSL、macOS 都可以作为独立 Codex 环境。每个环境各执行一次「接入这台 Codex」，它们会自动聚合到同一个骑手。</p>
-        <a class="profile-button plugin-doc-cta" href="/?bind=1">接入这台 Codex →</a>
+        <div class="profile-panel-head"><h2>3. 多 Agent / 多环境</h2><span>分别接入一次</span></div>
+        <p class="plugin-doc-copy">Windows Codex、WSL Codex、Cursor、Claude Code 都可以是独立 installation；它们会聚合到同一个 rider。</p>
+        <a class="profile-button plugin-doc-cta" href="/?bind=1">接入这个 Agent →</a>
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>4. 更新 Plugin</h2><span>有新版时再做</span></div>
-        <p class="plugin-doc-copy">Plugin 会检查最新版本。需要更新时执行：</p>
+        <div class="profile-panel-head"><h2>4. Codex Adapter</h2><span>仅 Codex 需要</span></div>
+        <p class="plugin-doc-copy">Codex 使用本仓库 Plugin / MCP adapter。检测到新版时执行：</p>
         <pre class="plugin-command">codex plugin marketplace upgrade denglema
 codex plugin add denglema@denglema</pre>
       </article>
@@ -61,6 +61,7 @@ codex plugin add denglema@denglema</pre>
           <ul>
             <li>日期与 observation timestamp</li>
             <li>累计 token total</li>
+            <li>Harness 标识（如 codex / cursor）</li>
             <li>Model 名称 + token 聚合</li>
             <li>Workspace basename + token 聚合</li>
           </ul>
@@ -80,7 +81,7 @@ codex plugin add denglema@denglema</pre>
     <section class="profile-panel recovery-panel">
       <div>
         <h2>记住就这两件事</h2>
-        <p>第一次：点「接入这台 Codex」执行命令。以后：对 Codex 说「上传蹬了吗」。</p>
+        <p>第一次：点「接入这个 Agent」。以后：对当前 Agent 说「上传蹬了吗」。</p>
       </div>
       <a class="profile-button plugin-doc-cta" href="/">回赛道 →</a>
     </section>

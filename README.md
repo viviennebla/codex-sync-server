@@ -1,10 +1,10 @@
 # 蹬了吗 / Codex Sync Server
 
-> **仓库定位：公开的「蹬了吗」网站 + 服务端。**
+> **仓库定位：公开的「蹬了吗」网站 + Harness-Agnostic Usage Server。**
 >
-> 本仓库负责赛道、燃烧榜、我的主页、用户身份、installation / usage 存储、服务端 API、Codex reset 刘海和部署。
+> 本仓库负责赛道、燃烧榜、我的主页、用户身份、installation / usage 存储、Denglema Usage Contract、服务端 API、Codex reset 刘海和部署。
 >
-> **本地 Codex 日志解析、snapshot 生成、Plugin / MCP / Skill 不在这里**，它们位于：
+> **Agent Harness 如何读取自己的 usage 不由服务端决定。** Codex 默认 adapter、portable Skill 和本地 Dashboard 位于：
 > [viviennebla/codex-usage-dashboard](https://github.com/viviennebla/codex-usage-dashboard)
 
 公开入口：<https://vimo-dev-server.taila62aff.ts.net/>
@@ -12,14 +12,16 @@
 ## 两个仓库怎么配合
 
 ```text
-本机 Codex / Claude Code 日志
+Codex / Cursor / Claude Code / Other Harness
         │
         ▼
-codex-usage-dashboard
-├─ 本地 Dashboard
-├─ Denglema Plugin / MCP / Skill
-├─ schema v2 snapshot
-└─ 安装 / 绑定 / 上传
+Harness Adapter
+├─ Codex MCP adapter
+├─ Portable Denglema Skill
+└─ Harness-native usage source
+        │
+        ▼
+Denglema schema v2
         │
         ▼
 codex-sync-server             ← 本仓库
@@ -47,11 +49,14 @@ codex-sync-server             ← 本仓库
 
 ## 数据流
 
-1. `codex-usage-dashboard` Plugin 在本地读取 Codex 日志并生成 schema v2 snapshot。
-2. 首次接入会绑定当前 rider，并上传第一份 snapshot。
-3. 服务端按 `user -> installation -> daily usage` 保存数据。
-4. 多个 installation 会聚合到同一个 rider。
-5. 当天没有 usage 的真实用户仍会显示在赛道上，token 为 `0`；历史日期数据不会因为跨天消失。
+1. 当前 Agent Harness 通过自己的 adapter 读取可信 usage，并生成同一份 schema v2 snapshot。
+2. Codex 默认使用 `codex-usage-dashboard` MCP adapter；Cursor / Claude Code / 其他 harness 可以复用同一个 Skill / HTTP Contract。
+3. 首次接入会绑定当前 rider，并上传第一份 snapshot.
+4. 服务端按 `user -> installation -> daily usage` 保存数据。
+5. 多个 installation 会聚合到同一个 rider。
+6. 当天没有 usage 的真实用户仍会显示在赛道上，token 为 `0`；历史日期数据不会因为跨天消失。
+
+Canonical 协议：[`docs/denglema-usage-contract.md`](docs/denglema-usage-contract.md)。
 
 上传的 usage 明细只包含聚合信息，例如：
 

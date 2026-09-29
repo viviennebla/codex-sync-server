@@ -157,6 +157,15 @@ export async function readDenglemaUsers(stateDir = "state") {
   return Object.values(store.by_id || {});
 }
 
+function normalizeHarness(value) {
+  if (value == null || value === "") return null;
+  const harness = String(value).trim().toLowerCase();
+  if (!/^[a-z0-9._-]{1,32}$/.test(harness)) {
+    throw new Error("Invalid harness");
+  }
+  return harness;
+}
+
 function normalizeUsageBreakdown(rows, field) {
   if (rows == null) return [];
   if (!Array.isArray(rows)) throw new Error(`Invalid ${field} breakdown`);
@@ -222,6 +231,7 @@ export function validateUsageSample(sample) {
     observed_at: new Date(observed).toISOString(),
     total_tokens: total,
     ...(version === 2 ? {
+      harness: normalizeHarness(sample.harness),
       models: normalizeUsageBreakdown(sample.models, "models"),
       projects: normalizeUsageBreakdown(sample.projects, "projects"),
     } : {}),
@@ -400,6 +410,7 @@ export async function readUserInstallations(userId, date, stateDir = "state") {
         created_at: installation.created_at || null,
         last_seen_at: installation.last_seen_at || null,
         today_tokens: Number(usage?.max_total_tokens || 0),
+        harness: usage?.latest?.harness || null,
         models: usage?.max_models || [],
         projects: usage?.max_projects || [],
         has_today_sample: Boolean(usage),

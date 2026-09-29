@@ -594,6 +594,7 @@ const server = createServer(async (req, res) => {
         installations: installations.map((item) => ({
           id: item.id,
           name: item.name,
+          harness: item.harness || null,
           today_tokens: item.today_tokens,
           last_seen_at: item.last_seen_at,
         })),
