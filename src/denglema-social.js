@@ -28,6 +28,7 @@ function paths(stateDir) {
   return {
     events: join(root, "events.json"),
     achievements: join(root, "achievements.json"),
+    leaders: join(root, "leaders.json"),
   };
 }
 
@@ -185,16 +186,14 @@ export async function readDenglemaEvents(stateDir = "state", options = {}) {
   const items = pruneEvents(store.items, now);
   const users = await readDenglemaUsers(stateDir);
   const byId = new Map(users.map((user) => [user.id, user]));
-  const viewerUserId = String(options.viewerUserId || "").trim() || null;
   return items.slice(-limit).reverse().map((item) => {
     const user = item.user_id ? byId.get(item.user_id) : null;
-    const hiddenAchievement = item.kind === "achievement" && item.user_id !== viewerUserId;
     return {
       id: item.id,
       kind: item.kind,
-      message: hiddenAchievement ? "发现了一个隐藏成就" : item.message,
+      message: item.message,
       created_at: item.created_at,
-      meta: hiddenAchievement ? null : (item.meta || null),
+      meta: item.meta || null,
       user: user ? {
         user_id: user.id,
         display_name: user.display_name || "骑手",
@@ -203,6 +202,44 @@ export async function readDenglemaEvents(stateDir = "state", options = {}) {
       } : null,
     };
   });
+}
+
+export async function syncLeaderboardLeader(date, stateDir = "state", options = {}) {
+  const now = options.now?.() || new Date();
+  const totals = await readUserTotals(date, stateDir);
+  const current = totals[0]?.total_tokens > 0 ? totals[0].user_id : null;
+  const file = paths(stateDir).leaders;
+  const store = await readJson(file, { version: 1, by_date: {} });
+  store.by_date ||= {};
+  const previous = store.by_date[date]?.user_id || null;
+
+  if (!current) return { changed: false, current: null, previous };
+
+  store.by_date[date] = {
+    user_id: current,
+    total_tokens: totals[0].total_tokens,
+    updated_at: now.toISOString(),
+  };
+  await writeJson(file, store);
+
+  if (!previous || previous === current) {
+    return { changed: false, current, previous };
+  }
+
+  await appendDenglemaEvent({
+    kind: "leader",
+    user_id: current,
+    message: "超车成为第一名",
+    meta: {
+      previous_user_id: previous,
+      total_tokens: totals[0].total_tokens,
+      date,
+    },
+    coalesce_key: "leader:" + date + ":" + current,
+    coalesce_window_ms: 60 * 60 * 1000,
+  }, stateDir, { now: () => now });
+
+  return { changed: true, current, previous };
 }
 
 function achievementMap(store, userId) {

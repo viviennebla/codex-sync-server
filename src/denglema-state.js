@@ -333,6 +333,9 @@ export async function consumePairingCode(code, installationName, stateDir = "sta
   const rawToken = options.token || randomBytes(32).toString("base64url");
   const installationId = options.installationId || `inst_${randomUUID()}`;
   const installations = await readJson(p.installations, { version: 1, items: {} });
+  const firstUserInstallation = !Object.values(installations.items || {}).some(
+    (item) => item.user_id === pairing.user_id,
+  );
   installations.items[installationId] = {
     id: installationId,
     user_id: pairing.user_id,
@@ -350,7 +353,13 @@ export async function consumePairingCode(code, installationName, stateDir = "sta
   codes[key] = pairing;
   await writeJson(p.pairingCodes, codes);
 
-  return { installation_id: installationId, user_id: pairing.user_id, token: rawToken };
+  return {
+    installation_id: installationId,
+    user_id: pairing.user_id,
+    token: rawToken,
+    first_user_installation: firstUserInstallation,
+    created_at: now.toISOString(),
+  };
 }
 
 export async function authenticateInstallation(rawToken, stateDir = "state") {

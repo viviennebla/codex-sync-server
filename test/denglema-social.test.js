@@ -15,6 +15,7 @@ import {
   appendDenglemaEvent,
   backfillHistoricalJoinEvents,
   readDenglemaEvents,
+  syncLeaderboardLeader,
   syncUserAchievements,
 } from "../src/denglema-social.js";
 
@@ -117,11 +118,11 @@ test("historical join events backfill from the earliest binding within 24h", asy
   assert.equal(joins[0].created_at, "2026-09-29T01:01:00.000Z");
 });
 
-test("achievement events hide details from other riders", async (t) => {
-  const root = await withRoot(t, "denglema-social-hidden-achievement-");
+test("achievement events expose the unlocked achievement name", async (t) => {
+  const root = await withRoot(t, "denglema-social-achievement-name-");
   await createWebUser({ display_name: "Alice", avatar_emoji: "🐱" }, root, {
     userId: "alice",
-    recoveryCode: "ALICE-HIDDEN",
+    recoveryCode: "ALICE-ACHIEVEMENT",
     now: () => new Date("2026-09-29T00:00:00Z"),
   });
   await appendDenglemaEvent({
@@ -131,19 +132,51 @@ test("achievement events hide details from other riders", async (t) => {
     meta: { achievement_id: "million_day", emoji: "🔥" },
   }, root, { now: () => new Date("2026-09-29T02:00:00Z") });
 
-  const own = await readDenglemaEvents(root, {
+  const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T02:01:00Z"),
-    viewerUserId: "alice",
   });
-  assert.equal(own[0].message, "解锁成就「百万燃料」");
-  assert.equal(own[0].meta.emoji, "🔥");
+  assert.equal(events[0].message, "解锁成就「百万燃料」");
+  assert.equal(events[0].meta.emoji, "🔥");
+});
 
-  const other = await readDenglemaEvents(root, {
-    now: () => new Date("2026-09-29T02:01:00Z"),
-    viewerUserId: "bob",
-  });
-  assert.equal(other[0].message, "发现了一个隐藏成就");
-  assert.equal(other[0].meta, null);
+test("leader event emits only when first place changes", async (t) => {
+  const root = await withRoot(t, "denglema-social-leader-");
+  for (const [id, name] of [["u-a", "Alice"], ["u-b", "Bob"]]) {
+    await createWebUser({ display_name: name, avatar_emoji: "🚴" }, root, {
+      userId: id,
+      recoveryCode: "RECOVERY-" + id,
+      now: () => new Date("2026-09-29T00:00:00Z"),
+    });
+  }
+
+  const pairA = await createPairingCode("u-a", root, { code: "LEAD-A", now: () => new Date("2026-09-29T00:01:00Z") });
+  const a = await consumePairingCode(pairA.code, "A", root, { token: "ta", installationId: "ia", now: () => new Date("2026-09-29T00:02:00Z") });
+  const pairB = await createPairingCode("u-b", root, { code: "LEAD-B", now: () => new Date("2026-09-29T00:03:00Z") });
+  const b = await consumePairingCode(pairB.code, "B", root, { token: "tb", installationId: "ib", now: () => new Date("2026-09-29T00:04:00Z") });
+
+  await upsertUsageSample({ id: a.installation_id, user_id: "u-a" }, {
+    schema_version: 2, harness: "codex", date: "2026-09-29",
+    observed_at: "2026-09-29T01:00:00Z", total_tokens: 100, models: [], projects: [],
+  }, root);
+  const initial = await syncLeaderboardLeader("2026-09-29", root, { now: () => new Date("2026-09-29T01:00:01Z") });
+  assert.equal(initial.changed, false);
+
+  await upsertUsageSample({ id: b.installation_id, user_id: "u-b" }, {
+    schema_version: 2, harness: "cursor", date: "2026-09-29",
+    observed_at: "2026-09-29T01:10:00Z", total_tokens: 150, models: [], projects: [],
+  }, root);
+  const changed = await syncLeaderboardLeader("2026-09-29", root, { now: () => new Date("2026-09-29T01:10:01Z") });
+  assert.equal(changed.changed, true);
+  assert.equal(changed.current, "u-b");
+  assert.equal(changed.previous, "u-a");
+
+  const again = await syncLeaderboardLeader("2026-09-29", root, { now: () => new Date("2026-09-29T01:11:00Z") });
+  assert.equal(again.changed, false);
+
+  const events = await readDenglemaEvents(root, { now: () => new Date("2026-09-29T01:11:01Z") });
+  const leader = events.find((item) => item.kind === "leader");
+  assert.equal(leader.user.display_name, "Bob");
+  assert.equal(leader.message, "超车成为第一名");
 });
 
 test("upload events coalesce within the configured window", async (t) => {
