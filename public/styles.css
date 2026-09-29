@@ -1672,83 +1672,76 @@ button { font: inherit; }
 }
 .profile-achievement-card.is-locked small { color: #8c8178; }
 
-/* 24h event stream: transparent rail, individual capsule messages */
+/* 24h event zone */
+:root {
+  --event-zone-width: clamp(310px, 25vw, 380px);
+}
+.race-stage {
+  margin-left: var(--event-zone-width);
+}
 .event-rail {
   position: fixed;
   z-index: 24;
-  top: 116px;
-  left: 16px;
-  width: 350px;
+  top: 112px;
+  left: 12px;
+  width: calc(var(--event-zone-width) - 24px);
   max-height: min(70vh, 660px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 8px;
-  background: transparent;
+  gap: 10px;
+  padding: 12px;
   border: 0;
+  border-radius: 28px;
+  background: rgba(255, 250, 240, .28);
   box-shadow: none;
+  backdrop-filter: blur(2px);
   overflow: visible;
-  transition: width .18s ease;
 }
 .event-rail-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 0 2px 2px 4px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 8px 0;
 }
 .event-rail-head > div {
-  min-width: 0;
   display: flex;
   align-items: baseline;
   gap: 8px;
 }
 .event-rail-head strong {
   font-size: 14px;
-  text-shadow: 0 1px rgba(255,255,255,.7);
+  text-shadow: 0 1px rgba(255,255,255,.75);
 }
 .event-rail-head span {
   color: #847b74;
   font-size: 10px;
   font-weight: 800;
 }
-.event-rail-head button {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  border: 1.5px solid rgba(39,49,60,.12);
-  border-radius: 50%;
-  background: rgba(255,250,240,.9);
-  color: #555e6c;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: 900;
-  box-shadow: 2px 2px 0 rgba(39,49,60,.06);
-}
 .event-list {
-  min-height: 70px;
+  min-height: 90px;
   display: grid;
   align-content: start;
-  gap: 9px;
+  gap: 10px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 2px 4px 4px 2px;
+  padding: 2px 2px 4px;
   scrollbar-width: none;
 }
 .event-list::-webkit-scrollbar { display: none; }
 .event-item {
   display: grid;
-  grid-template-columns: 30px minmax(0,1fr);
-  gap: 9px;
+  grid-template-columns: 32px minmax(0,1fr);
+  gap: 10px;
   align-items: center;
-  padding: 11px 14px 11px 11px;
+  padding: 13px 16px 13px 12px;
   border: 1.5px solid rgba(39,49,60,.12);
-  border-radius: 22px;
+  border-radius: 24px;
   background: rgba(255,250,240,.94);
   box-shadow: 3px 4px 0 rgba(39,49,60,.07);
   backdrop-filter: blur(7px);
 }
 .event-icon {
-  font-size: 19px;
+  font-size: 20px;
   line-height: 1;
   text-align: center;
 }
@@ -1756,14 +1749,14 @@ button { font: inherit; }
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0,1fr) auto;
-  gap: 8px;
+  gap: 9px;
   align-items: center;
 }
 .event-line {
   min-width: 0;
   color: #59616b;
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.42;
   overflow-wrap: anywhere;
 }
 .event-line strong {
@@ -1778,15 +1771,13 @@ button { font: inherit; }
   font-weight: 850;
   white-space: nowrap;
 }
-.event-comment {
-  background: rgba(246,240,229,.96);
-}
+.event-comment { background: rgba(246,240,229,.96); }
 .event-achievement {
-  border-color: rgba(218,168,45,.3);
+  border-color: rgba(218,168,45,.30);
   background: rgba(255,248,216,.96);
 }
 .event-join {
-  border-color: rgba(84,121,198,.27);
+  border-color: rgba(84,121,198,.28);
   background: rgba(239,245,255,.96);
 }
 .event-upload {
@@ -1794,7 +1785,7 @@ button { font: inherit; }
   background: rgba(240,249,242,.96);
 }
 .event-empty {
-  padding: 20px 12px;
+  padding: 24px 12px;
   color: #8e857e;
   font-size: 11px;
   text-shadow: 0 1px rgba(255,255,255,.7);
@@ -1803,7 +1794,7 @@ button { font: inherit; }
   display: grid;
   grid-template-columns: minmax(0,1fr) auto;
   gap: 6px;
-  padding: 5px 5px 5px 12px;
+  padding: 6px 6px 6px 13px;
   border: 1.5px solid rgba(39,49,60,.13);
   border-radius: 999px;
   background: rgba(255,250,240,.94);
@@ -1813,7 +1804,7 @@ button { font: inherit; }
 .event-composer input {
   min-width: 0;
   border: 0;
-  padding: 7px 2px;
+  padding: 8px 2px;
   background: transparent;
   color: #303842;
   font: inherit;
@@ -1823,7 +1814,7 @@ button { font: inherit; }
 .event-composer button {
   border: 0;
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 8px 13px;
   background: #27313c;
   color: #fffaf0;
   cursor: pointer;
@@ -1832,59 +1823,28 @@ button { font: inherit; }
 }
 .event-composer button:disabled { opacity: .5; cursor: wait; }
 
-.event-rail.is-collapsed {
-  width: 48px;
-}
-.event-rail.is-collapsed .event-list,
-.event-rail.is-collapsed .event-composer,
-.event-rail.is-collapsed .event-rail-head span {
-  display: none;
-}
-.event-rail.is-collapsed .event-rail-head {
-  width: 46px;
-  min-height: 118px;
-  padding: 8px 7px;
-  flex-direction: column;
-  border: 1.5px solid rgba(39,49,60,.12);
-  border-radius: 0 18px 18px 0;
-  background: rgba(255,250,240,.94);
-  box-shadow: 3px 4px 0 rgba(39,49,60,.07);
-}
-.event-rail.is-collapsed .event-rail-head > div {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-.event-rail.is-collapsed .event-rail-head strong {
-  font-size: 10px;
-  white-space: nowrap;
-}
-
 @media (max-width: 1100px) {
+  :root { --event-zone-width: 280px; }
   .event-rail {
-    top: auto;
     left: 8px;
-    bottom: 8px;
-    width: min(340px, calc(100vw - 16px));
-    max-height: 48vh;
-  }
-  .event-rail.is-collapsed {
-    width: 46px;
+    width: calc(var(--event-zone-width) - 16px);
   }
 }
-@media (max-width: 720px) {
-  .profile-achievement-grid {
-    grid-template-columns: 1fr;
-  }
-  .event-rail:not(.is-collapsed) {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    width: auto;
-    max-height: 46vh;
+@media (max-width: 760px) {
+  :root { --event-zone-width: 220px; }
+  .event-rail {
+    top: 96px;
+    padding: 8px;
+    border-radius: 20px;
   }
   .event-item {
-    border-radius: 18px;
+    grid-template-columns: 26px minmax(0,1fr);
+    gap: 7px;
+    padding: 10px 11px;
   }
+  .event-icon { font-size: 17px; }
+  .event-line { font-size: 10px; }
+  .event-body { grid-template-columns: 1fr; gap: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .event-rail { transition: none; }
