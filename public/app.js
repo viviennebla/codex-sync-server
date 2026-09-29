@@ -409,7 +409,8 @@ function renderRiderDevices(items) {
   devices.forEach((device) => {
     const item = document.createElement("div");
     item.className = "rider-device-chip";
-    item.textContent = (device.name || "Agent 设备") + " · " + formatTokens(device.today_tokens || 0);
+    const harness = device.harness ? String(device.harness) + " · " : "";
+    item.textContent = harness + (device.name || "Agent 环境") + " · " + formatTokens(device.today_tokens || 0);
     riderDevices.appendChild(item);
   });
 }
@@ -434,7 +435,7 @@ async function openRiderDetail(rider) {
           date: "09/" + String(22 + i).padStart(2, "0"),
           total_tokens: Math.round((rider.today_tokens || 0) * (.35 + i * .1)),
         })),
-        installations: [{ name: "Preview device", today_tokens: rider.today_tokens || 0 }],
+        installations: [{ name: "Preview", harness: "codex", today_tokens: rider.today_tokens || 0 }],
       };
       riderDetailSummary.textContent = "今日 " + formatTokens(fake.today_tokens);
       renderBreakdown(riderModels, fake.models);
@@ -448,7 +449,7 @@ async function openRiderDetail(rider) {
     riderDetailTitle.textContent = payload.user?.display_name || rider.display_name || "骑手";
     riderDetailSummary.textContent =
       "今日 " + formatTokens(payload.today_tokens || 0) +
-      " · " + (payload.installations || []).length + " 台设备";
+      " · " + (payload.installations || []).length + " 个 Agent 环境";
     renderBreakdown(riderModels, payload.models);
     renderBreakdown(riderProjects, payload.projects);
     renderRiderTrend(payload.trend);
