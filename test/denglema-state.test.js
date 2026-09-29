@@ -18,6 +18,8 @@ import {
   revokeUserInstallation,
   upsertUsageSample,
   updateWebUserAvatar,
+  updateWebUserEmoji,
+  updateWebUserEquippedAchievement,
   validateUsageSample,
 } from "../src/denglema-state.js";
 
@@ -84,6 +86,29 @@ test("rider avatar can be updated and restored to emoji fallback", async (t) => 
   );
   assert.equal(restored.avatar_url, null);
   assert.equal(restored.avatar_emoji, "🐙");
+});
+
+test("rider can change emoji and persist an equipped achievement preference", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-profile-prefs-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  await createWebUser({
+    display_name: "Prefs",
+    avatar_emoji: "🚴",
+  }, root, {
+    userId: "usr-prefs",
+    recoveryCode: "PREFS-1234",
+    now: () => new Date("2026-09-29T00:00:00Z"),
+  });
+  await updateWebUserAvatar("usr-prefs", "/api/avatars/usr-prefs.jpg?v=1", root);
+  const emoji = await updateWebUserEmoji("usr-prefs", "🐙", root);
+  assert.equal(emoji.avatar_emoji, "🐙");
+  assert.equal(emoji.avatar_url, null);
+
+  const equipped = await updateWebUserEquippedAchievement("usr-prefs", "million_day", root);
+  assert.equal(equipped.equipped_achievement_id, "million_day");
+  const cleared = await updateWebUserEquippedAchievement("usr-prefs", null, root);
+  assert.equal(cleared.equipped_achievement_id, null);
 });
 
 test("schema v2 accepts bounded harness metadata", () => {

@@ -27,7 +27,6 @@
           <span class="profile-avatar-edit">换图</span>
         </button>
         <input id="profileAvatarInput" type="file" accept="image/*" hidden>
-        <button id="profileAvatarReset" class="avatar-reset-button hidden" type="button">恢复 Emoji</button>
       </div>
       <div class="profile-identity">
         <p class="dialog-kicker">我的骑手主页</p>
@@ -40,10 +39,10 @@
       </div>
     </section>
 
-    <section class="profile-panel profile-achievements-panel">
+    <section id="profileAchievementsPanel" class="profile-panel profile-achievements-panel hidden">
       <div class="profile-panel-head">
         <h2>🏆 我的成就</h2>
-        <span id="profileAchievementCount">0/0</span>
+        <span>选择一个佩戴</span>
       </div>
       <div id="profileAchievementList" class="profile-achievement-grid"></div>
     </section>
@@ -80,6 +79,23 @@
       <div class="recovery-note">恢复码只在创建身份时显示一次；服务端只保存 hash。<br><a class="plugin-info-link" href="/plugin">使用教程 →</a></div>
     </section>
   </main>
+
+  <dialog id="profileAvatarDialog" class="pair-dialog">
+    <form method="dialog" class="dialog-card avatar-editor-card">
+      <button class="dialog-close" value="cancel" aria-label="关闭">×</button>
+      <p class="dialog-kicker">编辑头像</p>
+      <h2>换个样子</h2>
+      <label class="avatar-emoji-editor">
+        <span>Emoji</span>
+        <input id="profileEmojiInput" maxlength="8" autocomplete="off" placeholder="🚴">
+      </label>
+      <div class="avatar-editor-actions">
+        <button id="profileUseEmojiButton" type="button" class="dialog-primary">使用 Emoji</button>
+        <button id="profileChooseImageButton" type="button" class="profile-button">上传图片</button>
+      </div>
+      <p class="dialog-copy">选择 Emoji 会直接切回 Emoji 头像；上传图片会自动裁成方形。</p>
+    </form>
+  </dialog>
 
   <dialog id="profileUploadDialog" class="pair-dialog">
     <form method="dialog" class="dialog-card">

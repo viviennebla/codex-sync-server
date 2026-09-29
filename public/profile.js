@@ -3,9 +3,12 @@ const $ = (id) => document.getElementById(id);
 const profileAvatar = $("profileAvatar");
 const profileAvatarButton = $("profileAvatarButton");
 const profileAvatarInput = $("profileAvatarInput");
-const profileAvatarReset = $("profileAvatarReset");
-const profileAchievementCount = $("profileAchievementCount");
+const profileAchievementsPanel = $("profileAchievementsPanel");
 const profileAchievementList = $("profileAchievementList");
+const profileAvatarDialog = $("profileAvatarDialog");
+const profileEmojiInput = $("profileEmojiInput");
+const profileUseEmojiButton = $("profileUseEmojiButton");
+const profileChooseImageButton = $("profileChooseImageButton");
 const profileName = $("profileName");
 const profileMeta = $("profileMeta");
 const profileToday = $("profileToday");
@@ -58,10 +61,8 @@ function renderProfileAvatar(user) {
     image.src = value.avatar_url;
     image.alt = "";
     profileAvatar.appendChild(image);
-    profileAvatarReset.classList.remove("hidden");
   } else {
     profileAvatar.textContent = value.avatar_emoji || "🚴";
-    profileAvatarReset.classList.add("hidden");
   }
 }
 
@@ -129,6 +130,7 @@ async function uploadProfileAvatar(file) {
       body: JSON.stringify({ image_data_url: imageDataUrl })
     });
     renderProfileAvatar(result.user);
+    if (profileAvatarDialog.open) profileAvatarDialog.close();
     showToast("头像已更新，赛道也会同步换图", 3200);
   } finally {
     profileAvatarButton.disabled = false;
@@ -137,16 +139,6 @@ async function uploadProfileAvatar(file) {
   }
 }
 
-async function resetProfileAvatar() {
-  profileAvatarReset.disabled = true;
-  try {
-    const result = await jsonFetch("/api/me/avatar", { method: "DELETE" });
-    renderProfileAvatar(result.user);
-    showToast("已恢复 Emoji 头像", 2600);
-  } finally {
-    profileAvatarReset.disabled = false;
-  }
-}
 
 function formatTokens(value) {
   const n = Number(value || 0);
@@ -168,15 +160,28 @@ function formatAchievementTime(value) {
   return Math.floor(hours / 24) + " 天前";
 }
 
-function renderProfileAchievements(rows) {
+function renderProfileAchievements(rows, equippedId) {
   const values = Array.isArray(rows) ? rows : [];
-  const unlocked = values.filter((item) => item.unlocked).length;
-  profileAchievementCount.textContent = unlocked + "/" + values.length;
   profileAchievementList.replaceChildren();
+  if (!values.length) {
+    profileAchievementsPanel.classList.add("hidden");
+    return;
+  }
+  profileAchievementsPanel.classList.remove("hidden");
+
+  const none = document.createElement("button");
+  none.type = "button";
+  none.className = "profile-achievement-card achievement-none " + (!equippedId ? "is-equipped" : "");
+  none.innerHTML = '<div class="profile-achievement-emoji">◌</div><div class="profile-achievement-copy"><strong>不佩戴</strong><span>保持神秘</span></div>';
+  none.addEventListener("click", () => { void equipAchievement(null); });
+  profileAchievementList.appendChild(none);
 
   values.forEach((achievement) => {
-    const item = document.createElement("div");
-    item.className = "profile-achievement-card " + (achievement.unlocked ? "is-unlocked" : "is-locked");
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "profile-achievement-card is-unlocked " +
+      (equippedId === achievement.id ? "is-equipped" : "");
+    item.dataset.achievementId = achievement.id;
 
     const emoji = document.createElement("div");
     emoji.className = "profile-achievement-emoji";
@@ -189,17 +194,50 @@ function renderProfileAchievements(rows) {
     const description = document.createElement("span");
     description.textContent = achievement.description || "";
     const status = document.createElement("small");
-    if (achievement.unlocked) {
-      const age = formatAchievementTime(achievement.unlocked_at);
-      status.textContent = age === "刚刚" ? "刚刚解锁" : (age ? age + "解锁" : "已解锁");
-    } else {
-      status.textContent = "未解锁";
-    }
-
+    status.textContent = equippedId === achievement.id ? "佩戴中" : "点一下佩戴";
     copy.append(name, description, status);
     item.append(emoji, copy);
+    item.addEventListener("click", () => { void equipAchievement(achievement.id); });
     profileAchievementList.appendChild(item);
   });
+}
+
+async function equipAchievement(achievementId) {
+  try {
+    const result = await jsonFetch("/api/me/achievement", {
+      method: "PUT",
+      body: JSON.stringify({ achievement_id: achievementId })
+    });
+    const payload = await jsonFetch("/api/achievements");
+    renderProfileAchievements(payload.achievements || [], result.equipped_achievement?.id || null);
+    showToast(result.equipped_achievement
+      ? "已佩戴 " + result.equipped_achievement.emoji + " " + result.equipped_achievement.name
+      : "已取消佩戴", 2400);
+  } catch (error) {
+    showToast("成就更新失败：" + error.message, 3200);
+  }
+}
+
+async function useProfileEmoji() {
+  const emoji = profileEmojiInput.value.trim();
+  if (!emoji) {
+    showToast("先输入一个 Emoji", 2200);
+    return;
+  }
+  profileUseEmojiButton.disabled = true;
+  try {
+    const result = await jsonFetch("/api/me/avatar/emoji", {
+      method: "PUT",
+      body: JSON.stringify({ avatar_emoji: emoji })
+    });
+    renderProfileAvatar(result.user);
+    profileAvatarDialog.close();
+    showToast("Emoji 头像已更新", 2200);
+  } catch (error) {
+    showToast("Emoji 更新失败：" + error.message, 3200);
+  } finally {
+    profileUseEmojiButton.disabled = false;
+  }
 }
 
 function renderBreakdown(container, rows) {
@@ -292,7 +330,10 @@ async function loadProfile() {
     jsonFetch("/api/riders/" + encodeURIComponent(user.user_id)),
     jsonFetch("/api/achievements"),
   ]);
-  renderProfileAchievements(achievementPayload.achievements || []);
+  renderProfileAchievements(
+    achievementPayload.achievements || [],
+    achievementPayload.equipped_achievement_id || null
+  );
   const latestSeen = (detail.installations || [])
     .map((item) => item.last_seen_at)
     .filter(Boolean)
@@ -311,7 +352,17 @@ async function loadProfile() {
 }
 
 profileAvatarButton.addEventListener("click", () => {
-  if (!profileAvatarButton.disabled) profileAvatarInput.click();
+  if (profileAvatarButton.disabled) return;
+  profileEmojiInput.value = currentProfileUser?.avatar_emoji || "🚴";
+  profileAvatarDialog.showModal();
+});
+
+profileChooseImageButton.addEventListener("click", () => {
+  profileAvatarInput.click();
+});
+
+profileUseEmojiButton.addEventListener("click", () => {
+  void useProfileEmoji();
 });
 
 profileAvatarInput.addEventListener("change", () => {
@@ -322,11 +373,7 @@ profileAvatarInput.addEventListener("change", () => {
   });
 });
 
-profileAvatarReset.addEventListener("click", () => {
-  resetProfileAvatar().catch((error) => {
-    showToast("恢复头像失败：" + error.message, 4200);
-  });
-});
+
 
 profilePairButton.addEventListener("click", () => {
   location.href = "/?bind=1";

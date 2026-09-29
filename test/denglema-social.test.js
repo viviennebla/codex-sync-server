@@ -117,6 +117,35 @@ test("historical join events backfill from the earliest binding within 24h", asy
   assert.equal(joins[0].created_at, "2026-09-29T01:01:00.000Z");
 });
 
+test("achievement events hide details from other riders", async (t) => {
+  const root = await withRoot(t, "denglema-social-hidden-achievement-");
+  await createWebUser({ display_name: "Alice", avatar_emoji: "🐱" }, root, {
+    userId: "alice",
+    recoveryCode: "ALICE-HIDDEN",
+    now: () => new Date("2026-09-29T00:00:00Z"),
+  });
+  await appendDenglemaEvent({
+    kind: "achievement",
+    user_id: "alice",
+    message: "解锁成就「百万燃料」",
+    meta: { achievement_id: "million_day", emoji: "🔥" },
+  }, root, { now: () => new Date("2026-09-29T02:00:00Z") });
+
+  const own = await readDenglemaEvents(root, {
+    now: () => new Date("2026-09-29T02:01:00Z"),
+    viewerUserId: "alice",
+  });
+  assert.equal(own[0].message, "解锁成就「百万燃料」");
+  assert.equal(own[0].meta.emoji, "🔥");
+
+  const other = await readDenglemaEvents(root, {
+    now: () => new Date("2026-09-29T02:01:00Z"),
+    viewerUserId: "bob",
+  });
+  assert.equal(other[0].message, "发现了一个隐藏成就");
+  assert.equal(other[0].meta, null);
+});
+
 test("upload events coalesce within the configured window", async (t) => {
   const root = await withRoot(t, "denglema-social-coalesce-");
 
