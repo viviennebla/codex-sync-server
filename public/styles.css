@@ -836,7 +836,16 @@ button { font: inherit; }
 }
 .device-revoke:hover { transform: translateY(-1px); }
 .device-revoke:disabled { opacity: .55; cursor: wait; }
-.rider-detail-card { width: min(720px, calc(100vw - 36px)); }
+.rider-dialog {
+  width: min(760px, calc(100vw - 32px));
+  max-width: none;
+}
+.rider-detail-card {
+  width: 100%;
+  max-height: min(82vh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .rider-detail-card h3 {
   margin: 0 0 9px;
   font-size: 13px;
@@ -1334,7 +1343,11 @@ button { font: inherit; }
   .lane-number { left: 10px; font-size: 34px; }
   .rider { --scale: 1.02; }
   .rider-detail-grid { grid-template-columns: 1fr; }
-  .rider-detail-card { padding: 22px; }
+  .rider-dialog { width: calc(100vw - 16px); }
+  .rider-detail-card {
+    max-height: calc(100vh - 24px);
+    padding: 20px;
+  }
   .finish-mark { right: 2%; }
 }
 
