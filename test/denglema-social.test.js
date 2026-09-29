@@ -279,7 +279,7 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
     root,
     { now: () => new Date("2026-09-29T03:02:00Z") },
   );
-  assert.equal(first.filter((item) => item.unlocked).length, 7);
+  assert.equal(first.filter((item) => item.unlocked).length, 8);
   assert.equal(first.find((item) => item.id === "multi_harness").unlocked, true);
   assert.equal(first.find((item) => item.id === "took_the_crown").unlocked, true);
 
@@ -287,7 +287,7 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
     now: () => new Date("2026-09-29T03:02:01Z"),
     limit: 20,
   });
-  assert.equal(firstEvents.filter((item) => item.kind === "achievement").length, 7);
+  assert.equal(firstEvents.filter((item) => item.kind === "achievement").length, 8);
 
   await syncUserAchievements(
     "user-rider",
@@ -299,5 +299,100 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
     now: () => new Date("2026-09-29T04:00:01Z"),
     limit: 20,
   });
-  assert.equal(secondEvents.filter((item) => item.kind === "achievement").length, 7);
+  assert.equal(secondEvents.filter((item) => item.kind === "achievement").length, 8);
+});
+
+
+test("efficiency achievements require real activity instead of merely low token usage", async (t) => {
+  const root = await withRoot(t, "denglema-social-efficiency-");
+  await createWebUser({ display_name: "Efficient", avatar_emoji: "🎯" }, root, {
+    userId: "user-efficient",
+    recoveryCode: "EFFICIENT-RIDER",
+    now: () => new Date("2026-09-29T00:00:00Z"),
+  });
+
+  const pair = await createPairingCode("user-efficient", root, {
+    code: "EFF-A",
+    now: () => new Date("2026-09-29T00:01:00Z"),
+  });
+  const inst = await consumePairingCode(pair.code, "Cursor", root, {
+    token: "eff-token",
+    installationId: "eff-inst",
+    now: () => new Date("2026-09-29T00:02:00Z"),
+  });
+
+  await upsertUsageSample(
+    { id: inst.installation_id, user_id: "user-efficient" },
+    {
+      schema_version: 2,
+      harness: "cursor",
+      date: "2026-09-29",
+      observed_at: "2026-09-29T08:00:00Z",
+      total_tokens: 900_000,
+      models: [{ name: "model-a", total_tokens: 900_000 }],
+      projects: [
+        { name: "project-a", total_tokens: 300_000 },
+        { name: "project-b", total_tokens: 300_000 },
+        { name: "project-c", total_tokens: 300_000 },
+      ],
+    },
+    root,
+  );
+
+  const rows = await syncUserAchievements(
+    "user-efficient",
+    "2026-09-29",
+    root,
+    { now: () => new Date("2026-09-29T08:01:00Z") },
+  );
+  assert.equal(rows.find((item) => item.id === "lean_builder").unlocked, true);
+  assert.equal(rows.find((item) => item.id === "light_pack").unlocked, true);
+});
+
+test("three-day streak rewards consistency rather than token volume", async (t) => {
+  const root = await withRoot(t, "denglema-social-streak-");
+  await createWebUser({ display_name: "Steady", avatar_emoji: "🗓️" }, root, {
+    userId: "user-steady",
+    recoveryCode: "STEADY-RIDER",
+    now: () => new Date("2026-09-27T00:00:00Z"),
+  });
+
+  const pair = await createPairingCode("user-steady", root, {
+    code: "STEADY-A",
+    now: () => new Date("2026-09-27T00:01:00Z"),
+  });
+  const inst = await consumePairingCode(pair.code, "Codex", root, {
+    token: "steady-token",
+    installationId: "steady-inst",
+    now: () => new Date("2026-09-27T00:02:00Z"),
+  });
+
+  for (const [date, tokens] of [
+    ["2026-09-27", 80_000],
+    ["2026-09-28", 90_000],
+    ["2026-09-29", 70_000],
+  ]) {
+    await upsertUsageSample(
+      { id: inst.installation_id, user_id: "user-steady" },
+      {
+        schema_version: 2,
+        harness: "codex",
+        date,
+        observed_at: date + "T08:00:00Z",
+        total_tokens: tokens,
+        models: [],
+        projects: [],
+      },
+      root,
+    );
+  }
+
+  const rows = await syncUserAchievements(
+    "user-steady",
+    "2026-09-29",
+    root,
+    { now: () => new Date("2026-09-29T08:01:00Z") },
+  );
+  assert.equal(rows.find((item) => item.id === "three_day_streak").unlocked, true);
+  assert.equal(rows.find((item) => item.id === "million_day").unlocked, false);
 });
