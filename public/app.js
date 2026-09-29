@@ -33,6 +33,15 @@ const todayFreshnessEl = $("todayFreshness");
 const resetNotchStatus = $("resetNotchStatus");
 const resetBegButton = $("resetBegButton");
 const resetBegCount = $("resetBegCount");
+const achievementDock = $("achievementDock");
+const achievementCount = $("achievementCount");
+const achievementList = $("achievementList");
+const eventRail = $("eventRail");
+const eventRailToggle = $("eventRailToggle");
+const eventList = $("eventList");
+const eventComposer = $("eventComposer");
+const eventMessageInput = $("eventMessageInput");
+const eventSendButton = $("eventSendButton");
 const toastEl = $("toast");
 const registerPanel = $("registerPanel");
 const recoverPanel = $("recoverPanel");
@@ -265,6 +274,159 @@ function formatFreshness(value) {
 function renderFreshness() {
   if (!todayFreshnessEl) return;
   todayFreshnessEl.textContent = formatFreshness(me?.latest_seen_at);
+}
+
+function formatSocialTime(value) {
+  const ms = Date.now() - Date.parse(value || "");
+  if (!Number.isFinite(ms) || ms < 0) return "刚刚";
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return minutes + "m";
+  const hours = Math.floor(minutes / 60);
+  return hours + "h";
+}
+
+function renderAchievements(rows) {
+  if (!achievementList) return;
+  const values = Array.isArray(rows) ? rows : [];
+  const unlocked = values.filter((item) => item.unlocked).length;
+  achievementCount.textContent = unlocked + "/" + values.length;
+  achievementList.replaceChildren();
+
+  values.slice(0, 4).forEach((achievement) => {
+    const item = document.createElement("div");
+    item.className = "achievement-chip" + (achievement.unlocked ? " is-unlocked" : " is-locked");
+    item.title = achievement.description || "";
+
+    const emoji = document.createElement("span");
+    emoji.className = "achievement-emoji";
+    emoji.textContent = achievement.emoji || "🏅";
+
+    const copy = document.createElement("span");
+    copy.className = "achievement-copy";
+    const name = document.createElement("strong");
+    name.textContent = achievement.name || "成就";
+    const detail = document.createElement("small");
+    if (achievement.unlocked) {
+      const age = achievement.unlocked_at ? formatSocialTime(achievement.unlocked_at) : "";
+      detail.textContent = age === "刚刚" ? "刚刚解锁" : (age ? age + " 前解锁" : "已解锁");
+    } else {
+      detail.textContent = achievement.description || "未解锁";
+    }
+    copy.append(name, detail);
+    item.append(emoji, copy);
+    achievementList.appendChild(item);
+  });
+
+  achievementDock.classList.remove("hidden");
+}
+
+async function loadAchievements() {
+  if (!achievementDock) return;
+  if (previewMode) {
+    renderAchievements([
+      { emoji: "🚲", name: "第一脚", description: "第一次把 usage 蹬进赛道", unlocked: true, unlocked_at: new Date().toISOString() },
+      { emoji: "🔥", name: "百万燃料", description: "单日累计 1M token", unlocked: true, unlocked_at: new Date().toISOString() },
+      { emoji: "🤹", name: "多 Agent 骑手", description: "同一天用过 2 种 Agent Harness", unlocked: false },
+      { emoji: "👑", name: "戴过皇冠", description: "拿过一次今日第一", unlocked: false },
+    ]);
+    return;
+  }
+  try {
+    const payload = await jsonFetch("/api/achievements");
+    renderAchievements(payload.achievements || []);
+  } catch {}
+}
+
+function eventKindIcon(event) {
+  if (event.kind === "comment") return "💬";
+  if (event.kind === "achievement") return event.meta?.emoji || "🏆";
+  if (event.kind === "upload") return "⚡";
+  return "•";
+}
+
+function renderEvents(rows) {
+  if (!eventList) return;
+  const values = Array.isArray(rows) ? rows : [];
+  eventList.replaceChildren();
+
+  if (!values.length) {
+    const empty = document.createElement("div");
+    empty.className = "event-empty";
+    empty.textContent = "24 小时内还很安静。";
+    eventList.appendChild(empty);
+  }
+
+  values.forEach((event) => {
+    const item = document.createElement("div");
+    item.className = "event-item event-" + (event.kind || "system");
+
+    const icon = document.createElement("span");
+    icon.className = "event-icon";
+    icon.textContent = eventKindIcon(event);
+
+    const body = document.createElement("div");
+    body.className = "event-body";
+    const line = document.createElement("div");
+    line.className = "event-line";
+
+    const name = document.createElement("strong");
+    name.textContent = event.user?.display_name || "赛道";
+    const message = document.createElement("span");
+    message.textContent = event.message || "";
+    line.append(name, message);
+
+    const time = document.createElement("small");
+    time.textContent = formatSocialTime(event.created_at);
+
+    body.append(line, time);
+    item.append(icon, body);
+    eventList.appendChild(item);
+  });
+
+  eventRail.classList.remove("hidden");
+}
+
+async function loadEvents() {
+  if (!eventRail) return;
+  if (previewMode) {
+    renderEvents([
+      { kind: "achievement", message: "解锁成就「百万燃料」", created_at: new Date().toISOString(), meta: { emoji: "🔥" }, user: { display_name: "Alice" } },
+      { kind: "upload", message: "刷新了 cursor usage · 960,000 token", created_at: new Date(Date.now() - 5 * 60000).toISOString(), user: { display_name: "Bob" } },
+      { kind: "comment", message: "今天谁先把额度蹬没？", created_at: new Date(Date.now() - 12 * 60000).toISOString(), user: { display_name: "摸鱼中" } },
+    ]);
+    return;
+  }
+  try {
+    const payload = await jsonFetch("/api/events");
+    renderEvents(payload.events || []);
+  } catch {}
+}
+
+async function postEventMessage() {
+  const message = eventMessageInput?.value.trim();
+  if (!message || !eventSendButton) return;
+  eventSendButton.disabled = true;
+  try {
+    const payload = await jsonFetch("/api/events", {
+      method: "POST",
+      body: JSON.stringify({ message })
+    });
+    eventMessageInput.value = "";
+    renderEvents(payload.events || []);
+  } catch (error) {
+    showToast(error.message || "留言失败", 2600);
+  } finally {
+    eventSendButton.disabled = false;
+  }
+}
+
+function setEventRailCollapsed(collapsed) {
+  if (!eventRail) return;
+  eventRail.classList.toggle("is-collapsed", collapsed);
+  eventRailToggle.textContent = collapsed ? "‹" : "›";
+  eventRailToggle.setAttribute("aria-label", collapsed ? "展开动态栏" : "收起动态栏");
+  try { localStorage.setItem("denglema-event-rail-collapsed", collapsed ? "1" : "0"); } catch {}
 }
 
 function resetNotchLabel(record) {
@@ -849,7 +1011,10 @@ function startRaceRuntime() {
   scheduleDirector();
   scheduleAmbientDrift();
   refreshTimer = setInterval(() => {
-    if (!document.hidden) loadRaceData().catch(() => {});
+    if (document.hidden) return;
+    loadRaceData().catch(() => {});
+    loadEvents().catch(() => {});
+    loadAchievements().catch(() => {});
   }, 20000);
 }
 
@@ -866,8 +1031,10 @@ async function enterRace() {
   renderFreshness();
   await loadRaceData();
   void loadResetNotch();
+  void loadAchievements();
+  void loadEvents();
   if (me?.has_today_sample === false && !me?.needs_onboarding) {
-    showToast("今天还没刷新赛道；对 Codex 说「上传蹬了吗」即可", 5200);
+    showToast("今天还没刷新赛道；对当前 Agent 说「上传蹬了吗」即可", 5200);
   }
   startRaceRuntime();
 
@@ -889,6 +1056,8 @@ async function bootstrap() {
     me = { user_id: "preview_me", display_name: "我", avatar_emoji: "🚴" };
     loginOverlay.classList.add("hidden");
     await loadRaceData();
+    await loadAchievements();
+    await loadEvents();
     startRaceRuntime();
     return;
   }
@@ -1044,13 +1213,13 @@ function formatDeviceTime(value) {
 function renderDevices(payload) {
   const devices = payload.installations || [];
   devicesSummary.textContent =
-    "今日合计 " + formatTokens(payload.total_tokens || 0) + " · " + devices.length + " 台设备";
+    "今日合计 " + formatTokens(payload.total_tokens || 0) + " · " + devices.length + " 个 Agent 环境";
   devicesList.replaceChildren();
 
   if (!devices.length) {
     const empty = document.createElement("div");
     empty.className = "device-row";
-    empty.textContent = "还没有绑定设备";
+    empty.textContent = "还没有接入 Agent";
     devicesList.appendChild(empty);
     return;
   }
@@ -1243,6 +1412,21 @@ copyBindCommandButton.addEventListener("click", async () => {
 
 resetBegButton?.addEventListener("click", () => { void begForReset(); });
 
+eventRailToggle?.addEventListener("click", () => {
+  setEventRailCollapsed(!eventRail.classList.contains("is-collapsed"));
+});
+
+eventComposer?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  void postEventMessage();
+});
+
+try {
+  setEventRailCollapsed(localStorage.getItem("denglema-event-rail-collapsed") === "1");
+} catch {
+  setEventRailCollapsed(false);
+}
+
 document.addEventListener("visibilitychange", () => {
   document.body.classList.toggle("is-background-paused", document.hidden);
   if (document.hidden) {
@@ -1261,6 +1445,8 @@ document.addEventListener("visibilitychange", () => {
     }
     try { await loadRaceData(); } catch {}
     void loadResetNotch();
+    void loadAchievements();
+    void loadEvents();
     startRaceRuntime();
   })();
 });

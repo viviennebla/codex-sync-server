@@ -70,6 +70,29 @@
       <div class="desk-cat">🐈</div>
     </section>
   </main>
+  <aside id="achievementDock" class="achievement-dock hidden" aria-label="我的成就">
+    <div class="social-panel-head">
+      <strong>🏆 成就柜</strong>
+      <span id="achievementCount">0/0</span>
+    </div>
+    <div id="achievementList" class="achievement-list"></div>
+  </aside>
+
+  <aside id="eventRail" class="event-rail hidden" aria-label="最近 24 小时动态">
+    <div class="event-rail-head">
+      <div>
+        <strong>📣 24h 动态</strong>
+        <span>最近发生的事</span>
+      </div>
+      <button id="eventRailToggle" type="button" aria-label="收起动态栏">›</button>
+    </div>
+    <div id="eventList" class="event-list"></div>
+    <form id="eventComposer" class="event-composer">
+      <input id="eventMessageInput" maxlength="120" autocomplete="off" placeholder="留句话…">
+      <button id="eventSendButton" type="submit">发送</button>
+    </form>
+  </aside>
+
   <dialog id="pairDialog" class="pair-dialog">
     <form method="dialog" class="dialog-card">
       <button class="dialog-close" value="cancel" aria-label="关闭">×</button>

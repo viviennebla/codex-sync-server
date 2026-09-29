@@ -336,6 +336,7 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
   const file = p.usage(sample.date);
   const day = await readJson(file, { version: 1, date: sample.date, installations: {} });
   const existing = day.installations[installation.id] || null;
+  const previousAcceptedTotal = Number(existing?.max_total_tokens || 0);
   const reset = Boolean(existing && sample.total_tokens < existing.max_total_tokens);
   const acceptedTotal = existing ? Math.max(existing.max_total_tokens, sample.total_tokens) : sample.total_tokens;
   const acceptedModels = mergeMaxBreakdown(existing?.max_models, sample.models);
@@ -360,6 +361,9 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
   }
   return {
     accepted_total: acceptedTotal,
+    previous_accepted_total: previousAcceptedTotal,
+    accepted_delta: Math.max(0, acceptedTotal - previousAcceptedTotal),
+    first_sample: !existing,
     accepted_models: acceptedModels,
     accepted_projects: acceptedProjects,
     reset_detected: reset,
