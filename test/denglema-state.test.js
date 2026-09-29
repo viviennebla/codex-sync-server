@@ -17,6 +17,7 @@ import {
   readUserTotals,
   revokeUserInstallation,
   upsertUsageSample,
+  updateWebUserAvatar,
 } from "../src/denglema-state.js";
 
 test("web identity can be created and recovered without storing the raw recovery code", async (t) => {
@@ -47,6 +48,41 @@ test("web identity can be created and recovered without storing the raw recovery
   assert.equal(recovered.display_name, "Alice");
   assert.equal(recovered.last_login_at, "2026-09-28T01:00:00.000Z");
   assert.equal(await recoverWebUser("WRONG-CODE", root), null);
+});
+
+test("rider avatar can be updated and restored to emoji fallback", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-avatar-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  await createWebUser({
+    display_name: "Avatar Test",
+    avatar_emoji: "🐙",
+  }, root, {
+    userId: "usr-avatar",
+    recoveryCode: "AVATAR-1234-5678",
+    now: () => new Date("2026-09-29T00:00:00Z"),
+  });
+
+  const updated = await updateWebUserAvatar(
+    "usr-avatar",
+    "/api/avatars/usr-avatar.jpg?v=1",
+    root,
+    { now: () => new Date("2026-09-29T00:01:00Z") },
+  );
+  assert.equal(updated.avatar_url, "/api/avatars/usr-avatar.jpg?v=1");
+
+  const reread = await readDenglemaUser("usr-avatar", root);
+  assert.equal(reread.avatar_url, "/api/avatars/usr-avatar.jpg?v=1");
+  assert.equal(reread.avatar_emoji, "🐙");
+
+  const restored = await updateWebUserAvatar(
+    "usr-avatar",
+    null,
+    root,
+    { now: () => new Date("2026-09-29T00:02:00Z") },
+  );
+  assert.equal(restored.avatar_url, null);
+  assert.equal(restored.avatar_emoji, "🐙");
 });
 
 test("pairing binds an installation to the internal user id", async (t) => {

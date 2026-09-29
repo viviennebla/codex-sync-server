@@ -1,6 +1,9 @@
 const $ = (id) => document.getElementById(id);
 
 const profileAvatar = $("profileAvatar");
+const profileAvatarButton = $("profileAvatarButton");
+const profileAvatarInput = $("profileAvatarInput");
+const profileAvatarReset = $("profileAvatarReset");
 const profileName = $("profileName");
 const profileMeta = $("profileMeta");
 const profileToday = $("profileToday");
@@ -40,6 +43,107 @@ async function jsonFetch(url, options = {}) {
     throw error;
   }
   return payload;
+}
+
+let currentProfileUser = null;
+
+function renderProfileAvatar(user) {
+  currentProfileUser = user || currentProfileUser;
+  const value = currentProfileUser || {};
+  profileAvatar.replaceChildren();
+  if (value.avatar_url) {
+    const image = document.createElement("img");
+    image.src = value.avatar_url;
+    image.alt = "";
+    profileAvatar.appendChild(image);
+    profileAvatarReset.classList.remove("hidden");
+  } else {
+    profileAvatar.textContent = value.avatar_emoji || "🚴";
+    profileAvatarReset.classList.add("hidden");
+  }
+}
+
+function squareJpegDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !String(file.type || "").startsWith("image/")) {
+      reject(new Error("请选择图片文件"));
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      reject(new Error("原图太大，请选择 12 MB 以内的图片"));
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        const size = Math.min(width, height);
+        if (!size) throw new Error("无法读取图片");
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 256;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("浏览器不支持图片处理");
+        context.fillStyle = "#fffaf0";
+        context.fillRect(0, 0, 256, 256);
+        context.drawImage(
+          image,
+          (width - size) / 2,
+          (height - size) / 2,
+          size,
+          size,
+          0,
+          0,
+          256,
+          256
+        );
+        resolve(canvas.toDataURL("image/jpeg", 0.84));
+      } catch (error) {
+        reject(error);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("无法读取图片"));
+    };
+    image.src = objectUrl;
+  });
+}
+
+async function uploadProfileAvatar(file) {
+  profileAvatarButton.disabled = true;
+  profileAvatarButton.classList.add("is-uploading");
+  try {
+    showToast("正在处理头像…", 5000);
+    const imageDataUrl = await squareJpegDataUrl(file);
+    const result = await jsonFetch("/api/me/avatar", {
+      method: "PUT",
+      body: JSON.stringify({ image_data_url: imageDataUrl })
+    });
+    renderProfileAvatar(result.user);
+    showToast("头像已更新，赛道也会同步换图", 3200);
+  } finally {
+    profileAvatarButton.disabled = false;
+    profileAvatarButton.classList.remove("is-uploading");
+    profileAvatarInput.value = "";
+  }
+}
+
+async function resetProfileAvatar() {
+  profileAvatarReset.disabled = true;
+  try {
+    const result = await jsonFetch("/api/me/avatar", { method: "DELETE" });
+    renderProfileAvatar(result.user);
+    showToast("已恢复 Emoji 头像", 2600);
+  } finally {
+    profileAvatarReset.disabled = false;
+  }
 }
 
 function formatTokens(value) {
@@ -132,7 +236,7 @@ async function loadProfile() {
   }
 
   const user = me.user;
-  profileAvatar.textContent = user.avatar_emoji || "🚴";
+  renderProfileAvatar(user);
   profileName.textContent = user.display_name || "骑手";
 
   const detail = await jsonFetch("/api/riders/" + encodeURIComponent(user.user_id));
@@ -152,6 +256,24 @@ async function loadProfile() {
   renderTrend(detail.trend);
   renderDevices(detail.installations);
 }
+
+profileAvatarButton.addEventListener("click", () => {
+  if (!profileAvatarButton.disabled) profileAvatarInput.click();
+});
+
+profileAvatarInput.addEventListener("change", () => {
+  const file = profileAvatarInput.files?.[0];
+  if (!file) return;
+  uploadProfileAvatar(file).catch((error) => {
+    showToast("头像更新失败：" + error.message, 4200);
+  });
+});
+
+profileAvatarReset.addEventListener("click", () => {
+  resetProfileAvatar().catch((error) => {
+    showToast("恢复头像失败：" + error.message, 4200);
+  });
+});
 
 profilePairButton.addEventListener("click", () => {
   location.href = "/?bind=1";
