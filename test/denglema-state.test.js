@@ -18,6 +18,7 @@ import {
   revokeUserInstallation,
   upsertUsageSample,
   updateWebUserAvatar,
+  validateUsageSample,
 } from "../src/denglema-state.js";
 
 test("web identity can be created and recovered without storing the raw recovery code", async (t) => {
@@ -83,6 +84,29 @@ test("rider avatar can be updated and restored to emoji fallback", async (t) => 
   );
   assert.equal(restored.avatar_url, null);
   assert.equal(restored.avatar_emoji, "🐙");
+});
+
+test("schema v2 accepts bounded harness metadata", () => {
+  const sample = validateUsageSample({
+    schema_version: 2,
+    harness: "Cursor",
+    date: "2026-09-29",
+    observed_at: "2026-09-29T07:00:00Z",
+    total_tokens: 123,
+    models: [],
+    projects: [],
+  });
+  assert.equal(sample.harness, "cursor");
+
+  assert.throws(() => validateUsageSample({
+    schema_version: 2,
+    harness: "/home/user/.cursor",
+    date: "2026-09-29",
+    observed_at: "2026-09-29T07:00:00Z",
+    total_tokens: 123,
+    models: [],
+    projects: [],
+  }), /Invalid harness/);
 });
 
 test("pairing binds an installation to the internal user id", async (t) => {
