@@ -13,6 +13,15 @@ const EVENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_EVENTS = 240;
 const COMMENT_COOLDOWN_MS = 3000;
 
+export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
+  {
+    id: "plugin-0.1.16-auto-upload",
+    emoji: "📦",
+    message: "蹬了吗插件升级到 0.1.16 · 新增自动上传",
+    href: "/plugin#upgrade-0-1-16",
+  },
+];
+
 export const DENGLEMA_ACHIEVEMENTS = [
   { id: "first_ride", emoji: "🚲", name: "第一脚", description: "第一次把 usage 蹬进赛道" },
   { id: "million_day", emoji: "🔥", name: "百万燃料", description: "单日累计 1M token" },
@@ -27,6 +36,7 @@ function paths(stateDir) {
   const root = join(stateDir, "denglema");
   return {
     events: join(root, "events.json"),
+    announcements: join(root, "announcements.json"),
     achievements: join(root, "achievements.json"),
     leaders: join(root, "leaders.json"),
   };
@@ -177,8 +187,59 @@ export async function backfillHistoricalJoinEvents(stateDir = "state", options =
   return run;
 }
 
+export async function ensureDenglemaReleaseAnnouncements(
+  stateDir = "state",
+  options = {},
+) {
+  const now = options.now?.() || new Date();
+  const run = eventQueue.then(async () => {
+    const p = paths(stateDir);
+    const [eventStore, announcementStore] = await Promise.all([
+      readJson(p.events, { version: 1, items: [] }),
+      readJson(p.announcements, { version: 1, published: {} }),
+    ]);
+
+    announcementStore.published ||= {};
+    const items = pruneEvents(eventStore.items, now);
+    let added = 0;
+
+    for (const announcement of DENGLEMA_RELEASE_ANNOUNCEMENTS) {
+      if (announcementStore.published[announcement.id]) continue;
+
+      const createdAt = now.toISOString();
+      items.push({
+        id: "evt_" + randomUUID(),
+        kind: "release",
+        user_id: null,
+        message: announcement.message,
+        created_at: createdAt,
+        meta: {
+          announcement_id: announcement.id,
+          emoji: announcement.emoji,
+          href: announcement.href,
+        },
+        coalesce_key: null,
+      });
+      announcementStore.published[announcement.id] = createdAt;
+      added += 1;
+    }
+
+    if (added) {
+      await Promise.all([
+        writeJson(p.events, { version: 1, items: pruneEvents(items, now) }),
+        writeJson(p.announcements, announcementStore),
+      ]);
+    }
+
+    return added;
+  });
+  eventQueue = run.catch(() => {});
+  return run;
+}
+
 export async function readDenglemaEvents(stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
+  await ensureDenglemaReleaseAnnouncements(stateDir, { now: () => now });
   await backfillHistoricalJoinEvents(stateDir, { now: () => now });
   const limit = Math.min(50, Math.max(1, Number(options.limit || 20)));
   const file = paths(stateDir).events;

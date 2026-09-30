@@ -309,6 +309,7 @@ function formatSocialTime(value) {
 
 function eventKindIcon(event) {
   if (event.kind === "comment") return "💬";
+  if (event.kind === "release") return event.meta?.emoji || "📦";
   if (event.kind === "achievement") return event.meta?.emoji || "🏆";
   if (event.kind === "join") return "🏁";
   if (event.kind === "leader") return "👑";
@@ -329,8 +330,15 @@ function renderEvents(rows) {
   }
 
   values.forEach((event) => {
-    const item = document.createElement("div");
+    const href = typeof event.meta?.href === "string" && event.meta.href.startsWith("/")
+      ? event.meta.href
+      : null;
+    const item = document.createElement(href ? "a" : "div");
     item.className = "event-item event-" + (event.kind || "system");
+    if (href) {
+      item.href = href;
+      item.setAttribute("aria-label", (event.message || "更新公告") + "，查看详情");
+    }
 
     const icon = document.createElement("span");
     icon.className = "event-icon";
@@ -342,7 +350,9 @@ function renderEvents(rows) {
     line.className = "event-line";
 
     const name = document.createElement("strong");
-    name.textContent = event.user?.display_name || "赛道";
+    name.textContent = event.kind === "release"
+      ? "更新"
+      : (event.user?.display_name || "赛道");
     const message = document.createElement("span");
     message.textContent = event.message || "";
     line.append(name, message);

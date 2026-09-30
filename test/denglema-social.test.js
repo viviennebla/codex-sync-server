@@ -14,6 +14,7 @@ import {
   addDenglemaComment,
   appendDenglemaEvent,
   backfillHistoricalJoinEvents,
+  ensureDenglemaReleaseAnnouncements,
   readDenglemaEvents,
   syncLeaderboardLeader,
   syncUserAchievements,
@@ -59,10 +60,39 @@ test("24h event feed prunes old events, enriches users, and rate-limits comments
   const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T03:00:02Z"),
   });
-  assert.equal(events.length, 1);
-  assert.equal(events[0].kind, "comment");
-  assert.equal(events[0].message, "今天谁先把额度蹬没？");
-  assert.equal(events[0].user.display_name, "Alice");
+  const comments = events.filter((item) => item.kind === "comment");
+  assert.equal(comments.length, 1);
+  assert.equal(comments[0].message, "今天谁先把额度蹬没？");
+  assert.equal(comments[0].user.display_name, "Alice");
+});
+
+test("release announcement publishes once, links to upgrade notes, and does not reappear", async (t) => {
+  const root = await withRoot(t, "denglema-social-release-announcement-");
+  let now = new Date("2026-09-30T03:00:00Z");
+
+  assert.equal(
+    await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
+    1,
+  );
+  assert.equal(
+    await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
+    0,
+  );
+
+  let events = await readDenglemaEvents(root, { now: () => now });
+  const release = events.find((item) => item.kind === "release");
+  assert.ok(release);
+  assert.equal(release.message, "蹬了吗插件升级到 0.1.16 · 新增自动上传");
+  assert.equal(release.meta.emoji, "📦");
+  assert.equal(release.meta.href, "/plugin#upgrade-0-1-16");
+
+  now = new Date("2026-10-02T04:00:00Z");
+  events = await readDenglemaEvents(root, { now: () => now });
+  assert.equal(events.some((item) => item.kind === "release"), false);
+  assert.equal(
+    await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
+    0,
+  );
 });
 
 test("historical join events backfill from the earliest binding within 24h", async (t) => {
@@ -135,8 +165,10 @@ test("achievement events expose the unlocked achievement name", async (t) => {
   const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T02:01:00Z"),
   });
-  assert.equal(events[0].message, "解锁成就「百万燃料」");
-  assert.equal(events[0].meta.emoji, "🔥");
+  const achievement = events.find((item) => item.kind === "achievement");
+  assert.ok(achievement);
+  assert.equal(achievement.message, "解锁成就「百万燃料」");
+  assert.equal(achievement.meta.emoji, "🔥");
 });
 
 test("leader event emits only when first place changes", async (t) => {
@@ -201,8 +233,9 @@ test("upload events coalesce within the configured window", async (t) => {
   const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T03:05:01Z"),
   });
-  assert.equal(events.length, 1);
-  assert.equal(events[0].message, "刷新至 200");
+  const uploads = events.filter((item) => item.kind === "upload");
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].message, "刷新至 200");
 });
 
 test("achievements unlock once and include multi-harness progress", async (t) => {
