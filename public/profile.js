@@ -62,6 +62,64 @@ const TRANSPORT_OPTIONS = Object.freeze([
 
 let currentProfileUser = null;
 
+function renderTransportOptions(selected) {
+  if (!profileTransportList) return;
+  const active = String(selected || "bike");
+  profileTransportList.replaceChildren();
+
+  TRANSPORT_OPTIONS.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "profile-transport-card" + (option.id === active ? " is-selected" : "");
+    button.dataset.transport = option.id;
+    button.setAttribute("aria-pressed", option.id === active ? "true" : "false");
+
+    const emoji = document.createElement("span");
+    emoji.className = "profile-transport-emoji";
+    emoji.textContent = option.emoji;
+
+    const copy = document.createElement("span");
+    copy.className = "profile-transport-copy";
+    const name = document.createElement("strong");
+    name.textContent = option.name;
+    const note = document.createElement("small");
+    note.textContent = option.note;
+    copy.append(name, note);
+
+    button.append(emoji, copy);
+    button.addEventListener("click", () => {
+      if (option.id !== (currentProfileUser?.transport || "bike")) {
+        void selectTransport(option.id);
+      }
+    });
+    profileTransportList.appendChild(button);
+  });
+}
+
+async function selectTransport(transport) {
+  const option = TRANSPORT_OPTIONS.find((item) => item.id === transport);
+  if (!option) return;
+
+  const buttons = [...profileTransportList.querySelectorAll("button")];
+  buttons.forEach((button) => { button.disabled = true; });
+
+  try {
+    const result = await jsonFetch("/api/me/transport", {
+      method: "PUT",
+      body: JSON.stringify({ transport })
+    });
+    currentProfileUser = {
+      ...(currentProfileUser || {}),
+      transport: result.transport || transport,
+    };
+    renderTransportOptions(currentProfileUser.transport);
+    showToast(option.emoji + " 已切换到" + option.name + "，回赛道就能看到", 2800);
+  } catch (error) {
+    showToast("出行方式更新失败：" + error.message, 3400);
+    renderTransportOptions(currentProfileUser?.transport || "bike");
+  }
+}
+
 function renderProfileAvatar(user) {
   currentProfileUser = user || currentProfileUser;
   const value = currentProfileUser || {};
