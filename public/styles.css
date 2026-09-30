@@ -3002,13 +3002,15 @@ button { font: inherit; }
 
 /* Office stage: riders are coworkers moving through a shared workspace, not racers. */
 .app-shell {
-  grid-template-rows: 82px 0 minmax(600px, 1fr) 116px;
+  grid-template-rows: 82px minmax(600px, 1fr);
 }
-.office-strip {
-  display: none;
+.office-strip,
+.desk-edge {
+  display: none !important;
 }
 
 .race-stage {
+  grid-row: 2;
   min-height: 600px;
   background-image:
     linear-gradient(rgba(255,255,255,.025), rgba(255,255,255,.025)),
@@ -3248,10 +3250,11 @@ body.time-night .race-stage::before {
 @media (max-width: 900px) {
   .app-shell {
     min-height: 780px;
-    grid-template-rows: 72px 0 520px 100px;
+    grid-template-rows: 72px minmax(560px, 1fr);
   }
   .race-stage {
-    min-height: 520px;
+    grid-row: 2;
+    min-height: 560px;
     background-size: 100% 100%;
     background-position: center;
   }
