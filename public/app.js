@@ -1313,6 +1313,7 @@ async function saveDraggedRider(state) {
       rider.x = position.x;
       rider.office_position = result.office_position || position;
     }
+    state.node.dataset.drift = "0";
     if (state.node._riderData) {
       state.node._riderData = {
         ...state.node._riderData,
@@ -1583,7 +1584,11 @@ function randomFrom(values) {
 }
 
 function triggerMotion(rider, node, action, options = {}) {
-  if (!node || activeMotion.has(rider.user_id)) return false;
+  if (
+    !node
+    || activeMotion.has(rider.user_id)
+    || riderDragState?.riderId === rider.user_id
+  ) return false;
   const burst = node.querySelector(".effect-burst");
   const motion = node.querySelector(".rider-motion");
   const prop = node.querySelector(".social-prop");
@@ -1706,7 +1711,11 @@ function scheduleAmbientDrift() {
   ambientTimer = setInterval(() => {
     visibleRiders.forEach((rider) => {
       const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
-      if (!node || activeMotion.has(rider.user_id)) return;
+      if (
+        !node
+        || activeMotion.has(rider.user_id)
+        || riderDragState?.riderId === rider.user_id
+      ) return;
       const current = Number(node.dataset.drift || 0);
       const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
       const candidate = Math.max(
@@ -1736,7 +1745,7 @@ function startRaceRuntime() {
   scheduleAmbientDrift();
   refreshTimer = setInterval(() => {
     if (document.hidden) return;
-    loadRaceData().catch(() => {});
+    if (!riderDragState) loadRaceData().catch(() => {});
     loadEvents().catch(() => {});
   }, 20000);
 }
