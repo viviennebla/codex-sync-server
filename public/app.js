@@ -64,6 +64,11 @@ let pairingPollTimer = null;
 let pairingCodeCurrent = null;
 let pairingCommandMode = "shell";
 let previewMode = false;
+let officeLayoutVersion = 0;
+let riderDragState = null;
+const OFFICE_X_MIN = 22;
+const OFFICE_X_MAX = 78;
+const OFFICE_HARD_GAP = 7.5;
 const activeMotion = new Map();
 const shownCommentEventIds = new Set();
 const riderMessageTimers = new Map();
@@ -826,28 +831,74 @@ function stableHash(text) {
   }
   return Math.abs(hash);
 }
-function lanePlan(riders) {
-  // Stable pseudo-random order, then round-robin across all four lanes.
-  // This keeps the layout playful between identities while preventing the
-  // leaderboard leaders from permanently crowding the top lanes.
-  const ordered = [...riders].sort((a, b) => {
-    const ah = stableHash(a.user_id + ":lane");
-    const bh = stableHash(b.user_id + ":lane");
-    return ah - bh || String(a.user_id).localeCompare(String(b.user_id));
-  });
-  const laneById = new Map();
-  const offset = ordered.length
-    ? stableHash(ordered.map((rider) => rider.user_id).join("|")) % 4
-    : 0;
+function stableUnit(text) {
+  return (stableHash(text) % 10000) / 9999;
+}
 
-  ordered.forEach((rider, index) => {
-    laneById.set(rider.user_id, ((index + offset) % 4) + 1);
+function lanePlan(riders) {
+  // Manual positions are anchors; everyone else still gets a stable,
+  // deliberately imperfect office distribution around them.
+  const laneById = new Map();
+  const counts = [0, 0, 0, 0];
+
+  riders.forEach((rider) => {
+    const manualLane = Number(rider.office_position?.lane);
+    if (Number.isInteger(manualLane) && manualLane >= 1 && manualLane <= 4) {
+      laneById.set(rider.user_id, manualLane);
+      counts[manualLane - 1] += 1;
+    }
+  });
+
+  const ordered = riders
+    .filter((rider) => !laneById.has(rider.user_id))
+    .sort((a, b) => (
+      stableHash(a.user_id + ":lane-order")
+      - stableHash(b.user_id + ":lane-order")
+      || String(a.user_id).localeCompare(String(b.user_id))
+    ));
+
+  ordered.forEach((rider) => {
+    let chosenLane = 1;
+    let bestScore = -Infinity;
+    for (let lane = 1; lane <= 4; lane += 1) {
+      const preference = stableUnit(rider.user_id + ":lane:" + lane) * 10000;
+      const crowdingPenalty = counts[lane - 1] * 2200;
+      const score = preference - crowdingPenalty;
+      if (score > bestScore) {
+        bestScore = score;
+        chosenLane = lane;
+      }
+    }
+    laneById.set(rider.user_id, chosenLane);
+    counts[chosenLane - 1] += 1;
   });
 
   return riders.map((rider) => ({
     ...rider,
     lane: laneById.get(rider.user_id) || 1
   }));
+}
+
+function officeXAvailable(x, occupied) {
+  return occupied.every((otherX) => Math.abs(Number(otherX) - x) >= OFFICE_HARD_GAP);
+}
+
+function findSoftOfficeX(preferred, occupied, key) {
+  const base = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, preferred));
+  if (officeXAvailable(base, occupied)) return base;
+
+  const direction = stableUnit(key + ":side") < 0.5 ? -1 : 1;
+  const steps = [3, 5, 7, 9, 12, 15, 18, 22, 26];
+  for (const step of steps) {
+    for (const sign of [direction, -direction]) {
+      const candidate = Math.max(
+        OFFICE_X_MIN,
+        Math.min(OFFICE_X_MAX, base + sign * step),
+      );
+      if (officeXAvailable(candidate, occupied)) return candidate;
+    }
+  }
+  return base;
 }
 
 function positionPlan(riders) {
@@ -860,13 +911,47 @@ function positionPlan(riders) {
         stableHash(a.user_id + ":club-order")
         - stableHash(b.user_id + ":club-order")
       ));
-    const count = laneRiders.length;
-    laneRiders.forEach((rider, index) => {
-      const x = count <= 1
-        ? 50
-        : 20 + index * (60 / Math.max(1, count - 1));
-      const jitter = ((stableHash(rider.user_id + ":club-jitter") % 7) - 3) * 0.7;
-      targetById.set(rider.user_id, Math.max(16, Math.min(84, x + jitter)));
+    if (!laneRiders.length) continue;
+
+    const occupied = [];
+    laneRiders.forEach((rider) => {
+      const manualX = Number(rider.office_position?.x);
+      if (Number.isFinite(manualX)) {
+        const x = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, manualX));
+        targetById.set(rider.user_id, x);
+        occupied.push(x);
+      }
+    });
+
+    const automatic = laneRiders.filter((rider) => !targetById.has(rider.user_id));
+    const count = automatic.length;
+    if (!count) continue;
+
+    const minGap = count <= 2 ? 13 : count <= 4 ? 11 : 9;
+    const maxGap = count <= 2 ? 24 : count <= 4 ? 19 : 14;
+    const offsets = [0];
+    for (let index = 1; index < count; index += 1) {
+      const left = automatic[index - 1];
+      const right = automatic[index];
+      const pairKey = [left.user_id, right.user_id].sort().join("|");
+      const gap = minGap + stableUnit(pairKey + ":office-gap") * (maxGap - minGap);
+      offsets.push(offsets[index - 1] + gap);
+    }
+
+    const span = offsets.at(-1) || 0;
+    const laneBias = (
+      stableUnit("lane:" + lane + ":" + automatic.map((rider) => rider.user_id).join("|")) - 0.5
+    ) * 12;
+    let start = 50 + laneBias - span / 2;
+    if (start < OFFICE_X_MIN) start = OFFICE_X_MIN;
+    if (start + span > OFFICE_X_MAX) start -= (start + span - OFFICE_X_MAX);
+
+    automatic.forEach((rider, index) => {
+      const microJitter = (stableUnit(rider.user_id + ":office-jitter") - 0.5) * 1.8;
+      const preferred = start + offsets[index] + microJitter;
+      const x = findSoftOfficeX(preferred, occupied, rider.user_id);
+      targetById.set(rider.user_id, x);
+      occupied.push(x);
     });
   }
 
@@ -895,6 +980,46 @@ const PERSONALITIES = Object.freeze([
   { id: "milk-tea", emoji: "🧋", label: "奶茶骑手" },
   { id: "sleepy", emoji: "💤", label: "困困骑手" },
 ]);
+
+const WORKSTATION_STYLES = Object.freeze([
+  "minimal",
+  "plant",
+  "coffee",
+  "dual",
+  "cozy",
+]);
+
+function workstationFor(rider) {
+  const requested = String(
+    rider.workstation_style
+      || rider.workstation?.style
+      || rider.workstation
+      || ""
+  );
+  if (WORKSTATION_STYLES.includes(requested)) return requested;
+  return WORKSTATION_STYLES[
+    stableHash(String(rider.user_id || "rider") + ":workstation") % WORKSTATION_STYLES.length
+  ];
+}
+
+function workstationMarkup(rider) {
+  const style = workstationFor(rider);
+  const extras = [];
+  if (style === "plant") extras.push('<i class="workstation-plant">●</i>');
+  if (style === "coffee") extras.push('<i class="workstation-mug">☕</i>');
+  if (style === "dual") extras.push('<i class="workstation-screen workstation-screen-secondary"></i>');
+  if (style === "cozy") extras.push('<i class="workstation-lamp"></i>');
+  return (
+    '<div class="rider-workstation workstation-' + style + '" aria-hidden="true">' +
+      '<i class="workstation-screen"></i>' +
+      '<i class="workstation-screen-stand"></i>' +
+      '<i class="workstation-desk-top"></i>' +
+      '<i class="workstation-desk-leg leg-left"></i>' +
+      '<i class="workstation-desk-leg leg-right"></i>' +
+      extras.join("") +
+    '</div>'
+  );
+}
 
 function transportFor(rider) {
   const value = String(rider.transport || "bike");
@@ -953,12 +1078,15 @@ function riderMarkup(rider) {
   const pressure = quotaPressure(rider);
   const cadenceBase = rider.mood === "chill" ? 1.14 : 0.78;
   const cadence = Math.max(0.44, cadenceBase * (1 - pressure * 0.34)).toFixed(2);
-  const edgeClass = Number(rider.x || 0) >= 80 ? " is-near-right" : "";
+  const workstation = workstationFor(rider);
+  const edgeClass = Number(rider.x || 0) >= 70 ? " is-near-right" : "";
   return (
     '<div class="rider mode-' + transport + ' ' + classes + edgeClass + '" data-rider-id="' + rider.user_id + '"' +
       ' data-transport="' + transport + '"' +
+      ' data-workstation="' + workstation + '"' +
       ' style="--x:' + rider.x + '%;--accent:' + (rider.accent || "#4c8ad9") +
       ';--phase:' + phase + 's;--cadence:' + cadence + 's">' +
+      workstationMarkup(rider) +
       '<div class="effect-speed"></div>' +
       '<div class="effect-fire"></div>' +
       '<div class="effect-dust"></div>' +
@@ -1028,8 +1156,15 @@ function updateRiderNode(node, rider) {
   }
 
   node.style.setProperty("--x", rider.x + "%");
-  node.classList.toggle("is-near-right", Number(rider.x || 0) >= 80);
+  node.classList.toggle("is-near-right", Number(rider.x || 0) >= 70);
   node.style.setProperty("--accent", rider.accent || "#4c8ad9");
+
+  const nextWorkstation = workstationFor(rider);
+  if (node.dataset.workstation !== nextWorkstation) {
+    node.querySelector(".rider-workstation")?.remove();
+    node.insertAdjacentHTML("afterbegin", workstationMarkup(rider));
+    node.dataset.workstation = nextWorkstation;
+  }
   const pressure = quotaPressure(rider);
   const cadenceBase = rider.mood === "chill"
     ? 1.14
@@ -1109,10 +1244,170 @@ function updateRiderNode(node, rider) {
   }
 
   if (rider.demo) {
-    node.classList.remove("is-clickable");
+    node.classList.remove("is-clickable", "is-own-rider");
   } else {
     node.classList.add("is-clickable");
+    node.classList.toggle(
+      "is-own-rider",
+      !previewMode && rider.user_id === me?.user_id,
+    );
+    if (!previewMode && rider.user_id === me?.user_id) {
+      node.title = "拖动我换个位置";
+    } else {
+      node.removeAttribute("title");
+    }
   }
+}
+
+function currentRiderX(rider) {
+  const node = document.querySelector('[data-rider-id="' + CSS.escape(rider.user_id) + '"]');
+  const inline = Number.parseFloat(node?.style.left || "");
+  return Number.isFinite(inline) ? inline : Number(rider.x || 50);
+}
+
+function hasHardOfficeCollision(lane, x, riderId) {
+  return visibleRiders.some((other) => (
+    other.user_id !== riderId
+    && Number(other.lane) === Number(lane)
+    && Math.abs(currentRiderX(other) - x) < OFFICE_HARD_GAP
+  ));
+}
+
+function pointerOfficePosition(event) {
+  const stage = document.querySelector(".race-stage");
+  const rect = stage?.getBoundingClientRect();
+  if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+  const x = Math.max(
+    OFFICE_X_MIN,
+    Math.min(OFFICE_X_MAX, ((event.clientX - rect.left) / rect.width) * 100),
+  );
+  const lane = Math.max(
+    1,
+    Math.min(4, Math.floor(((event.clientY - rect.top) / rect.height) * 4) + 1),
+  );
+  return { lane, x: Math.round(x * 10) / 10 };
+}
+
+function rollbackRiderDrag(state) {
+  const lane = $("lane" + state.original.lane);
+  if (lane && state.node.parentElement !== lane) lane.appendChild(state.node);
+  state.node.style.left = state.original.x + "%";
+  state.node.classList.toggle("is-near-right", state.original.x >= 70);
+}
+
+async function saveDraggedRider(state) {
+  const position = state.lastValid;
+  try {
+    const result = await jsonFetch("/api/me/office-position", {
+      method: "PUT",
+      body: JSON.stringify({
+        lane: position.lane,
+        x: position.x,
+        expected_layout_version: officeLayoutVersion,
+      }),
+    });
+    officeLayoutVersion = Number(result.layout_version || officeLayoutVersion);
+    const rider = visibleRiders.find((item) => item.user_id === state.riderId);
+    if (rider) {
+      rider.lane = position.lane;
+      rider.x = position.x;
+      rider.office_position = result.office_position || position;
+    }
+    state.node.dataset.drift = "0";
+    if (state.node._riderData) {
+      state.node._riderData = {
+        ...state.node._riderData,
+        lane: position.lane,
+        x: position.x,
+        office_position: result.office_position || position,
+      };
+    }
+    showToast("位置放好了", 1500);
+  } catch (error) {
+    rollbackRiderDrag(state);
+    if (error.status === 409) {
+      showToast("刚好有人也在挪位置，再试一下", 2600);
+    } else {
+      showToast("这次没放稳：" + error.message, 3000);
+    }
+    try { await loadRaceData(); } catch {}
+  }
+}
+
+function attachOwnRiderDrag(node) {
+  node.addEventListener("pointerdown", (event) => {
+    const rider = node._riderData;
+    if (
+      previewMode
+      || !rider
+      || rider.demo
+      || rider.user_id !== me?.user_id
+      || event.button > 0
+      || event.target.closest?.("button")
+    ) return;
+
+    const start = {
+      lane: Number(rider.lane || 1),
+      x: currentRiderX(rider),
+    };
+    riderDragState = {
+      pointerId: event.pointerId,
+      riderId: rider.user_id,
+      node,
+      original: start,
+      lastValid: start,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      moved: false,
+    };
+    node.classList.add("is-dragging");
+    node.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+
+  node.addEventListener("pointermove", (event) => {
+    const state = riderDragState;
+    if (!state || state.node !== node || state.pointerId !== event.pointerId) return;
+    const position = pointerOfficePosition(event);
+    if (!position) return;
+
+    const distance = Math.hypot(
+      event.clientX - state.startClientX,
+      event.clientY - state.startClientY,
+    );
+    if (distance > 5) state.moved = true;
+
+    if (hasHardOfficeCollision(position.lane, position.x, state.riderId)) {
+      node.classList.add("is-drag-blocked");
+      return;
+    }
+
+    node.classList.remove("is-drag-blocked");
+    const lane = $("lane" + position.lane);
+    if (lane && node.parentElement !== lane) lane.appendChild(node);
+    node.style.left = position.x + "%";
+    node.classList.toggle("is-near-right", position.x >= 70);
+    state.lastValid = position;
+  });
+
+  const finish = (event, cancelled = false) => {
+    const state = riderDragState;
+    if (!state || state.node !== node || state.pointerId !== event.pointerId) return;
+    riderDragState = null;
+    node.classList.remove("is-dragging", "is-drag-blocked");
+    try { node.releasePointerCapture?.(event.pointerId); } catch {}
+
+    if (cancelled || !state.moved) {
+      if (cancelled) rollbackRiderDrag(state);
+      return;
+    }
+    node.dataset.justDragged = "1";
+    window.setTimeout(() => { delete node.dataset.justDragged; }, 0);
+    void saveDraggedRider(state);
+  };
+
+  node.addEventListener("pointerup", (event) => finish(event, false));
+  node.addEventListener("pointercancel", (event) => finish(event, true));
 }
 
 function renderRiders(riders) {
@@ -1155,10 +1450,12 @@ function renderRiders(riders) {
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
       node.addEventListener("click", () => {
+        if (node.dataset.justDragged === "1") return;
         if (node._riderData && !node._riderData.demo) {
           void openRiderDetail(node._riderData);
         }
       });
+      attachOwnRiderDrag(node);
       node.querySelector(".rider-message-button")?.addEventListener("click", (event) => {
         event.stopPropagation();
         togglePinnedRiderMessage(rider.user_id);
@@ -1183,6 +1480,7 @@ async function loadRaceData() {
     return;
   }
   const payload = await jsonFetch("/api/riders");
+  officeLayoutVersion = Math.max(0, Number(payload.layout_version || 0));
   const real = (payload.riders || []).map((rider) => ({
     ...rider,
     display_name: rider.user_id === (me && me.user_id)
@@ -1286,13 +1584,24 @@ function randomFrom(values) {
 }
 
 function triggerMotion(rider, node, action, options = {}) {
-  if (!node || activeMotion.has(rider.user_id)) return false;
+  if (
+    !node
+    || activeMotion.has(rider.user_id)
+    || riderDragState?.riderId === rider.user_id
+  ) return false;
   const burst = node.querySelector(".effect-burst");
   const motion = node.querySelector(".rider-motion");
   const prop = node.querySelector(".social-prop");
-  const text = options.text || randomFrom(action.bursts || ["嘿"]);
+  const personalSlogans = Array.isArray(rider.slogans)
+    ? rider.slogans.filter((value) => typeof value === "string" && value.trim())
+    : [];
+  const usesPersonalSlogan = !options.text && personalSlogans.length > 0;
+  const text = options.text || randomFrom(
+    usesPersonalSlogan ? personalSlogans : (action.bursts || ["嘿"])
+  );
 
   if (burst) burst.textContent = text;
+  node.classList.toggle("has-personal-slogan", usesPersonalSlogan);
   if (prop) {
     const propText = options.prop || (action.props?.length ? randomFrom(action.props) : "");
     prop.textContent = propText;
@@ -1313,6 +1622,7 @@ function triggerMotion(rider, node, action, options = {}) {
     node.classList.remove(action.className);
     node.classList.remove("effect-heavy");
     node.classList.remove("has-social-prop");
+    node.classList.remove("has-personal-slogan");
     if (prop) prop.textContent = "";
     activeMotion.delete(rider.user_id);
     syncMessageLayer();
@@ -1401,11 +1711,20 @@ function scheduleAmbientDrift() {
   ambientTimer = setInterval(() => {
     visibleRiders.forEach((rider) => {
       const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
-      if (!node || activeMotion.has(rider.user_id)) return;
+      if (
+        !node
+        || activeMotion.has(rider.user_id)
+        || riderDragState?.riderId === rider.user_id
+      ) return;
       const current = Number(node.dataset.drift || 0);
       const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
+      const candidate = Math.max(
+        OFFICE_X_MIN,
+        Math.min(OFFICE_X_MAX, Number(rider.x || 50) + next),
+      );
+      if (hasHardOfficeCollision(rider.lane, candidate, rider.user_id)) return;
       node.dataset.drift = String(next);
-      node.style.left = Math.max(17, Math.min(84, Number(rider.x || 50) + next)) + "%";
+      node.style.left = candidate + "%";
     });
   }, 4200);
 }
@@ -1426,7 +1745,7 @@ function startRaceRuntime() {
   scheduleAmbientDrift();
   refreshTimer = setInterval(() => {
     if (document.hidden) return;
-    loadRaceData().catch(() => {});
+    if (!riderDragState) loadRaceData().catch(() => {});
     loadEvents().catch(() => {});
   }, 20000);
 }

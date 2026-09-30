@@ -78,6 +78,52 @@ export function normalizeDenglemaTransport(value) {
   return transport;
 }
 
+export const MAX_DENGLEMA_SLOGANS = 8;
+export const MAX_DENGLEMA_SLOGAN_LENGTH = 28;
+export const DENGLEMA_OFFICE_X_MIN = 22;
+export const DENGLEMA_OFFICE_X_MAX = 78;
+
+export function normalizeDenglemaSlogans(value) {
+  if (value == null) return [];
+  if (!Array.isArray(value)) throw new Error("slogans must be an array");
+  if (value.length > MAX_DENGLEMA_SLOGANS) {
+    throw new Error("slogans supports at most " + MAX_DENGLEMA_SLOGANS + " lines");
+  }
+  const seen = new Set();
+  const slogans = [];
+  for (const item of value) {
+    const slogan = String(item ?? "").replace(/\s+/g, " ").trim();
+    if (!slogan) continue;
+    if ([...slogan].length > MAX_DENGLEMA_SLOGAN_LENGTH) {
+      throw new Error("each slogan must be at most " + MAX_DENGLEMA_SLOGAN_LENGTH + " characters");
+    }
+    if (seen.has(slogan)) continue;
+    seen.add(slogan);
+    slogans.push(slogan);
+  }
+  return slogans;
+}
+
+export function normalizeDenglemaOfficePosition(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("office_position must be an object");
+  }
+  const lane = Number(value.lane);
+  const x = Number(value.x);
+  if (!Number.isInteger(lane) || lane < 1 || lane > 4) {
+    throw new Error("office_position lane must be 1-4");
+  }
+  if (!Number.isFinite(x) || x < DENGLEMA_OFFICE_X_MIN || x > DENGLEMA_OFFICE_X_MAX) {
+    throw new Error(
+      "office_position x must be between "
+      + DENGLEMA_OFFICE_X_MIN
+      + " and "
+      + DENGLEMA_OFFICE_X_MAX
+    );
+  }
+  return { lane, x: Math.round(x * 10) / 10 };
+}
+
 export async function createWebUser(profile, stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
   const file = paths(stateDir).users;
@@ -203,6 +249,21 @@ export async function updateWebUserTransport(userId, transport, stateDir = "stat
   return user;
 }
 
+export async function updateWebUserSlogans(userId, slogans, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.slogans = normalizeDenglemaSlogans(slogans);
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
 export async function updateWebUserEquippedAchievement(userId, achievementId, stateDir = "state", options = {}) {
   const id = String(userId || "").trim();
   if (!id) return null;
@@ -221,6 +282,54 @@ export async function updateWebUserEquippedAchievement(userId, achievementId, st
 export async function readDenglemaUsers(stateDir = "state") {
   const store = await readJson(paths(stateDir).users, { by_id: {} });
   return Object.values(store.by_id || {});
+}
+
+export async function readDenglemaOfficeLayoutVersion(stateDir = "state") {
+  const store = await readJson(paths(stateDir).users, { layout_version: 0 });
+  return Math.max(0, Number(store.layout_version || 0));
+}
+
+let officeLayoutWriteQueue = Promise.resolve();
+
+export async function updateWebUserOfficePosition(
+  userId,
+  position,
+  expectedLayoutVersion,
+  stateDir = "state",
+  options = {},
+) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const expected = Number(expectedLayoutVersion);
+  if (!Number.isInteger(expected) || expected < 0) {
+    throw new Error("expected_layout_version must be a non-negative integer");
+  }
+  const normalized = normalizeDenglemaOfficePosition(position);
+
+  const run = officeLayoutWriteQueue.then(async () => {
+    const file = paths(stateDir).users;
+    const store = await readJson(file, { version: 1, by_id: {}, layout_version: 0 });
+    const currentVersion = Math.max(0, Number(store.layout_version || 0));
+    if (currentVersion !== expected) {
+      const error = new Error("office layout changed");
+      error.code = "DENGLEMA_LAYOUT_CONFLICT";
+      error.layout_version = currentVersion;
+      throw error;
+    }
+
+    const user = store.by_id?.[id];
+    if (!user) return null;
+    const nextVersion = currentVersion + 1;
+    user.office_position = normalized;
+    user.updated_at = (options.now?.() || new Date()).toISOString();
+    store.by_id[id] = user;
+    store.layout_version = nextVersion;
+    await writeJson(file, store);
+    return { user, layout_version: nextVersion };
+  });
+
+  officeLayoutWriteQueue = run.catch(() => {});
+  return run;
 }
 
 function normalizeHarness(value) {
