@@ -3002,14 +3002,14 @@ button { font: inherit; }
 
 /* Office stage: riders are coworkers moving through a shared workspace, not racers. */
 .app-shell {
-  grid-template-rows: 82px 0 minmax(560px, 1fr) 116px;
+  grid-template-rows: 82px 0 minmax(600px, 1fr) 116px;
 }
 .office-strip {
   display: none;
 }
 
 .race-stage {
-  min-height: 560px;
+  min-height: 600px;
   background-image:
     linear-gradient(rgba(255,255,255,.025), rgba(255,255,255,.025)),
     url("/office-stage.svg");
@@ -3036,8 +3036,8 @@ button { font: inherit; }
 
 /* Bigger character silhouette and tighter avatar treatment. */
 .rider {
-  width: 172px;
-  height: 142px;
+  width: 166px;
+  height: 136px;
   filter: drop-shadow(0 4px 3px rgba(53,64,70,.10));
 }
 .rider.is-clickable:hover {
@@ -3047,8 +3047,8 @@ button { font: inherit; }
 .avatar-ring {
   left: 52px;
   top: -2px;
-  width: 62px;
-  height: 62px;
+  width: 60px;
+  height: 60px;
   border: 2px solid rgba(255,253,246,.96);
   background: rgba(255,246,214,.92);
   box-shadow:
@@ -3056,7 +3056,7 @@ button { font: inherit; }
     0 0 0 1px rgba(49,61,69,.06);
 }
 .emoji-avatar {
-  font-size: 48px;
+  font-size: 46px;
   line-height: .9;
   background: transparent;
   transform: translateY(1px) scale(1.03);
