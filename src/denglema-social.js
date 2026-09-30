@@ -95,9 +95,16 @@ function cleanMessage(value) {
 }
 
 function pruneEvents(items, now) {
-  const cutoff = now.getTime() - EVENT_WINDOW_MS;
+  const nowMs = now.getTime();
+  const cutoff = nowMs - EVENT_WINDOW_MS;
   return (Array.isArray(items) ? items : [])
-    .filter((item) => Number.isFinite(Date.parse(item?.created_at)) && Date.parse(item.created_at) >= cutoff)
+    .filter((item) => {
+      const createdAt = Date.parse(item?.created_at || "");
+      const expiresAt = Date.parse(item?.expires_at || "");
+      return Number.isFinite(createdAt)
+        && createdAt >= cutoff
+        && (!Number.isFinite(expiresAt) || expiresAt > nowMs);
+    })
     .slice(-MAX_EVENTS);
 }
 
@@ -126,6 +133,7 @@ export async function appendDenglemaEvent(event, stateDir = "state", options = {
         previous.message = message;
         previous.created_at = now.toISOString();
         previous.meta = event.meta || null;
+        previous.expires_at = event?.expires_at || previous.expires_at || null;
         await writeJson(file, { version: 1, items: pruneEvents(items, now) });
         return previous;
       }
@@ -138,6 +146,7 @@ export async function appendDenglemaEvent(event, stateDir = "state", options = {
       message,
       created_at: now.toISOString(),
       meta: event?.meta || null,
+      expires_at: event?.expires_at || null,
       coalesce_key: event?.coalesce_key ? String(event.coalesce_key) : null,
     };
     items.push(item);
@@ -282,6 +291,8 @@ export async function readDenglemaEvents(stateDir = "state", options = {}) {
       message: item.message,
       created_at: item.created_at,
       meta: item.meta || null,
+      expires_at: item.expires_at || null,
+      actor: item.meta?.actor || null,
       user: user ? {
         user_id: user.id,
         display_name: user.display_name || "骑手",
