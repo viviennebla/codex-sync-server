@@ -1191,6 +1191,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "styles.css", "text/css; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/office-stage.webp") {
+      await sendStatic(res, "office-stage.webp", "image/webp");
+      return;
+    }
 
     // ── 404 ──
     sendError(res, 404, "Not Found");
