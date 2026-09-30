@@ -5,6 +5,7 @@ const profileAvatarButton = $("profileAvatarButton");
 const profileAvatarInput = $("profileAvatarInput");
 const profileAchievementsPanel = $("profileAchievementsPanel");
 const profileAchievementList = $("profileAchievementList");
+const profileTransportList = $("profileTransportList");
 const profileAvatarDialog = $("profileAvatarDialog");
 const profileEmojiInput = $("profileEmojiInput");
 const profileUseEmojiButton = $("profileUseEmojiButton");
@@ -49,6 +50,15 @@ async function jsonFetch(url, options = {}) {
   }
   return payload;
 }
+
+const TRANSPORT_OPTIONS = Object.freeze([
+  { id: "bike", emoji: "🚲", name: "自行车", note: "经典蹬法" },
+  { id: "scooter", emoji: "🛴", name: "滑板车", note: "单脚通勤" },
+  { id: "skateboard", emoji: "🛹", name: "滑板", note: "滑一会再写" },
+  { id: "walk", emoji: "🚶", name: "古法通勤", note: "纯靠双腿" },
+  { id: "surf", emoji: "🏄", name: "冲浪", note: "办公室有浪" },
+  { id: "skate", emoji: "🛼", name: "轮滑", note: "左右横跳" },
+]);
 
 let currentProfileUser = null;
 
