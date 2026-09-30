@@ -26,6 +26,7 @@ import {
 import { createCodexRunwayReader } from "./codex-runway.js";
 import {
   DENGLEMA_ACHIEVEMENTS,
+  DENGLEMA_PRODUCT_TIMEZONE,
   addDenglemaComment,
   appendDenglemaEvent,
   readDenglemaEvents,
@@ -46,7 +47,7 @@ const STATE_DIR = process.env.STATE_DIR || "state";
 const SKILLS_DIR = process.env.SKILLS_DIR || "skills-store";
 const SKILL_BUNDLE_FILE = "skills-bundle.json";
 const TOKEN = process.env.DASHBOARD_TOKEN || null;
-const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || "UTC";
+const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || DENGLEMA_PRODUCT_TIMEZONE;
 const DENGLEMA_BASE_URL = (process.env.DENGLEMA_BASE_URL || `http://${BIND}:${PORT}`).replace(/\/+$/, "");
 const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || "";
 const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
@@ -687,7 +688,7 @@ const server = createServer(async (req, res) => {
         sendError(res, 400, "Invalid date");
         return;
       }
-      const achievements = await syncUserAchievements(user.id, date, STATE_DIR);
+      const achievements = await syncUserAchievements(user.id, date, STATE_DIR, { timezone: DENGLEMA_TIMEZONE });
       sendJson(res, 200, {
         date,
         equipped_achievement_id: user.equipped_achievement_id || null,
@@ -711,7 +712,7 @@ const server = createServer(async (req, res) => {
       }
       const body = await readBody(req);
       const achievementId = body?.achievement_id ? String(body.achievement_id) : null;
-      const achievements = await syncUserAchievements(user.id, currentDateKey(), STATE_DIR);
+      const achievements = await syncUserAchievements(user.id, currentDateKey(), STATE_DIR, { timezone: DENGLEMA_TIMEZONE });
       if (achievementId && !achievements.some((item) => item.id === achievementId && item.unlocked)) {
         sendError(res, 400, "Achievement is not unlocked");
         return;
@@ -939,7 +940,7 @@ const server = createServer(async (req, res) => {
               coalesce_key: "upload:" + installation.id,
               coalesce_window_ms: 10 * 60 * 1000,
             }, STATE_DIR);
-            await syncUserAchievements(installation.user_id, body.date, STATE_DIR);
+            await syncUserAchievements(installation.user_id, body.date, STATE_DIR, { timezone: DENGLEMA_TIMEZONE });
             await syncLeaderboardLeader(body.date, STATE_DIR);
           } catch (socialError) {
             log("warn", "social_event_failed", {
