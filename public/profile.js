@@ -5,6 +5,7 @@ const profileAvatarButton = $("profileAvatarButton");
 const profileAvatarInput = $("profileAvatarInput");
 const profileAchievementsPanel = $("profileAchievementsPanel");
 const profileAchievementList = $("profileAchievementList");
+const profileTransportList = $("profileTransportList");
 const profileAvatarDialog = $("profileAvatarDialog");
 const profileEmojiInput = $("profileEmojiInput");
 const profileUseEmojiButton = $("profileUseEmojiButton");
@@ -50,7 +51,74 @@ async function jsonFetch(url, options = {}) {
   return payload;
 }
 
+const TRANSPORT_OPTIONS = Object.freeze([
+  { id: "bike", emoji: "🚲", name: "自行车", note: "经典蹬法" },
+  { id: "scooter", emoji: "🛴", name: "滑板车", note: "单脚通勤" },
+  { id: "skateboard", emoji: "🛹", name: "滑板", note: "滑一会再写" },
+  { id: "walk", emoji: "🚶", name: "古法通勤", note: "纯靠双腿" },
+  { id: "surf", emoji: "🏄", name: "冲浪", note: "办公室有浪" },
+  { id: "skate", emoji: "🛼", name: "轮滑", note: "左右横跳" },
+]);
+
 let currentProfileUser = null;
+
+function renderTransportOptions(selected) {
+  if (!profileTransportList) return;
+  const active = String(selected || "bike");
+  profileTransportList.replaceChildren();
+
+  TRANSPORT_OPTIONS.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "profile-transport-card" + (option.id === active ? " is-selected" : "");
+    button.dataset.transport = option.id;
+    button.setAttribute("aria-pressed", option.id === active ? "true" : "false");
+
+    const emoji = document.createElement("span");
+    emoji.className = "profile-transport-emoji";
+    emoji.textContent = option.emoji;
+
+    const copy = document.createElement("span");
+    copy.className = "profile-transport-copy";
+    const name = document.createElement("strong");
+    name.textContent = option.name;
+    const note = document.createElement("small");
+    note.textContent = option.note;
+    copy.append(name, note);
+
+    button.append(emoji, copy);
+    button.addEventListener("click", () => {
+      if (option.id !== (currentProfileUser?.transport || "bike")) {
+        void selectTransport(option.id);
+      }
+    });
+    profileTransportList.appendChild(button);
+  });
+}
+
+async function selectTransport(transport) {
+  const option = TRANSPORT_OPTIONS.find((item) => item.id === transport);
+  if (!option) return;
+
+  const buttons = [...profileTransportList.querySelectorAll("button")];
+  buttons.forEach((button) => { button.disabled = true; });
+
+  try {
+    const result = await jsonFetch("/api/me/transport", {
+      method: "PUT",
+      body: JSON.stringify({ transport })
+    });
+    currentProfileUser = {
+      ...(currentProfileUser || {}),
+      transport: result.transport || transport,
+    };
+    renderTransportOptions(currentProfileUser.transport);
+    showToast(option.emoji + " 已切换到" + option.name + "，回赛道就能看到", 2800);
+  } catch (error) {
+    showToast("出行方式更新失败：" + error.message, 3400);
+    renderTransportOptions(currentProfileUser?.transport || "bike");
+  }
+}
 
 function renderProfileAvatar(user) {
   currentProfileUser = user || currentProfileUser;
@@ -324,6 +392,7 @@ async function loadProfile() {
 
   const user = me.user;
   renderProfileAvatar(user);
+  renderTransportOptions(user.transport || "bike");
   profileName.textContent = user.display_name || "骑手";
 
   const [detail, achievementPayload] = await Promise.all([

@@ -2062,6 +2062,88 @@ button { font: inherit; }
   .beg-particle-layer { display: none; }
 }
 
+/* Rider appearance */
+.profile-appearance-panel { margin-top: 16px; }
+.profile-appearance-group {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px dashed rgba(39,49,60,.12);
+}
+.profile-appearance-group:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.profile-appearance-copy {
+  display: grid;
+  gap: 4px;
+}
+.profile-appearance-copy strong {
+  color: #343b45;
+  font-size: 13px;
+}
+.profile-appearance-copy span {
+  color: #8b8179;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.profile-transport-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.profile-transport-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 10px 11px;
+  border: 1.5px solid rgba(39,49,60,.12);
+  border-radius: 14px;
+  background: #fffdf7;
+  color: #343b45;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.profile-transport-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(84,121,198,.34);
+}
+.profile-transport-card.is-selected {
+  border-color: rgba(84,121,198,.46);
+  background: #eef3ff;
+  box-shadow: inset 0 0 0 1px rgba(84,121,198,.10);
+}
+.profile-transport-card:disabled {
+  cursor: wait;
+  opacity: .62;
+}
+.profile-transport-emoji {
+  font-size: 27px;
+  line-height: 1;
+  text-align: center;
+}
+.profile-transport-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.profile-transport-copy strong {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-transport-copy small {
+  color: #8d837b;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
 /* Profile achievements */
 .profile-achievements-panel { margin-top: 16px; }
 .profile-achievement-grid {
@@ -2474,4 +2556,14 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .rider-achievement::before,
   .rider-achievement::after { animation: none; display: none; }
+}
+
+@media (max-width: 760px) {
+  .profile-appearance-group {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .profile-transport-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
