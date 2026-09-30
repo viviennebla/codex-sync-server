@@ -26,6 +26,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "update-log-dedupe-2026-09",
+    emoji: "🪞",
+    message: "更新日志入口去重 · 一个入口已经够负责了",
+    href: "/updates",
+  },
+  {
     id: "update-log-page-2026-09",
     emoji: "📝",
     message: "#51 更新日志独立成页 · 24h 动态终于不用兼职当历史书",
