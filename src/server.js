@@ -567,6 +567,9 @@ const server = createServer(async (req, res) => {
           transport: user.transport || "bike",
           equipped_achievement: publicEquippedAchievement(user),
           today_tokens: today?.total_tokens || 0,
+          quota_remaining_percent: today?.quota_remaining_percent ?? null,
+          quota_pressure: today?.quota_pressure ?? null,
+          quota_updated_at: today?.quota_updated_at || null,
           has_today_sample: Boolean(today),
           installation_count: installations.length,
           latest_seen_at: installations
@@ -662,6 +665,9 @@ const server = createServer(async (req, res) => {
           equipped_achievement: publicEquippedAchievement(rider),
         },
         today_tokens: today?.total_tokens || 0,
+        quota_remaining_percent: today?.quota_remaining_percent ?? null,
+        quota_pressure: today?.quota_pressure ?? null,
+        quota_updated_at: today?.quota_updated_at || null,
         models: today?.models || [],
         projects: today?.projects || [],
         installations: installations.map((item) => ({
@@ -669,6 +675,7 @@ const server = createServer(async (req, res) => {
           name: item.name,
           harness: item.harness || null,
           today_tokens: item.today_tokens,
+          usage_limits: item.usage_limits || null,
           last_seen_at: item.last_seen_at,
         })),
         trend,
@@ -816,6 +823,9 @@ const server = createServer(async (req, res) => {
             equipped_achievement: publicEquippedAchievement(user),
             today_tokens: row?.total_tokens || 0,
             installations: row?.installations || 0,
+            quota_remaining_percent: row?.quota_remaining_percent ?? null,
+            quota_pressure: row?.quota_pressure ?? null,
+            quota_updated_at: row?.quota_updated_at || null,
             recent_rate_tpm: null,
           };
         }),
