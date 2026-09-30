@@ -1977,6 +1977,27 @@ button { font: inherit; }
   border-color: rgba(75,151,103,.24);
   background: rgba(240,249,242,.96);
 }
+.event-release {
+  position: relative;
+  border-color: rgba(91,111,183,.28);
+  background: rgba(242,244,255,.96);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.event-release:hover {
+  border-color: rgba(91,111,183,.46);
+  transform: translateY(-1px);
+}
+.event-release::after {
+  content: "→";
+  position: absolute;
+  right: 13px;
+  bottom: 8px;
+  color: #7481ad;
+  font-size: 11px;
+  font-weight: 950;
+}
 .event-empty {
   padding: 24px 12px;
   color: #8e857e;
