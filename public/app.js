@@ -769,6 +769,7 @@ function riderMarkup(rider) {
           '<span class="personality-accessory" title="' + escapeHtml(personality.label) + '">' +
             personality.emoji +
           '</span>' +
+          '<span class="social-prop" aria-hidden="true"></span>' +
           '<div class="body"></div>' +
           '<div class="arm"></div>' +
           '<div class="leg leg-a"></div>' +
@@ -957,6 +958,32 @@ async function loadRaceData() {
 }
 
 const MOTION_ACTIONS = {
+  wave: {
+    className: "is-waving",
+    duration: 1500,
+    bursts: ["嗨～", "还蹬呢?", "早啊", "下班没?"]
+  },
+  sip: {
+    className: "is-sipping",
+    duration: 1850,
+    bursts: ["喝口水", "咖啡续命", "奶茶时间", "先抿一口"],
+    props: ["☕", "🧋", "🥤"]
+  },
+  stretch: {
+    className: "is-stretching",
+    duration: 1800,
+    bursts: ["伸个懒腰", "肩膀报警", "活动一下"]
+  },
+  yawn: {
+    className: "is-yawning",
+    duration: 1950,
+    bursts: ["哈欠…", "眼睛下班了", "困了"]
+  },
+  coast: {
+    className: "is-coasting",
+    duration: 2200,
+    bursts: ["滑一会", "这段不蹬", "省点腿", "随缘前进"]
+  },
   sprint: {
     className: "is-sprinting",
     duration: 1800,
@@ -975,28 +1002,57 @@ const MOTION_ACTIONS = {
   celebrate: {
     className: "is-celebrating",
     duration: 1900,
-    bursts: ["嘿!", "今天也行", "下班!"]
+    bursts: ["嘿!", "今天也行", "准备下班"]
   }
 };
 
-function chooseMotion(_rider) {
+function chooseMotion(rider) {
+  const personality = personalityFor(rider).id;
+  const personalityRoll = Math.random();
+
+  if ((personality === "coffee" || personality === "milk-tea") && personalityRoll < 0.34) {
+    return MOTION_ACTIONS.sip;
+  }
+  if (personality === "sleepy" && personalityRoll < 0.38) {
+    return MOTION_ACTIONS.yawn;
+  }
+  if (personality === "plant" && personalityRoll < 0.3) {
+    return MOTION_ACTIONS.coast;
+  }
+
   const roll = Math.random();
-  if (roll < 0.22) return MOTION_ACTIONS.sprint;
-  if (roll < 0.46) return MOTION_ACTIONS.wheelie;
-  if (roll < 0.72) return MOTION_ACTIONS.bonk;
+  if (roll < 0.20) return MOTION_ACTIONS.wave;
+  if (roll < 0.36) return MOTION_ACTIONS.sip;
+  if (roll < 0.50) return MOTION_ACTIONS.stretch;
+  if (roll < 0.64) return MOTION_ACTIONS.yawn;
+  if (roll < 0.82) return MOTION_ACTIONS.coast;
+  if (roll < 0.87) return MOTION_ACTIONS.sprint;
+  if (roll < 0.92) return MOTION_ACTIONS.wheelie;
+  if (roll < 0.96) return MOTION_ACTIONS.bonk;
   return MOTION_ACTIONS.celebrate;
 }
 
-function triggerMotion(rider, node, action) {
-  if (!node || activeMotion.has(rider.user_id)) return;
+function randomFrom(values) {
+  return values[Math.floor(Math.random() * values.length)];
+}
+
+function triggerMotion(rider, node, action, options = {}) {
+  if (!node || activeMotion.has(rider.user_id)) return false;
   const burst = node.querySelector(".effect-burst");
   const motion = node.querySelector(".rider-motion");
-  const text = action.bursts[Math.floor(Math.random() * action.bursts.length)];
+  const prop = node.querySelector(".social-prop");
+  const text = options.text || randomFrom(action.bursts || ["嘿"]);
+
   if (burst) burst.textContent = text;
+  if (prop) {
+    const propText = options.prop || (action.props?.length ? randomFrom(action.props) : "");
+    prop.textContent = propText;
+    node.classList.toggle("has-social-prop", Boolean(propText));
+  }
 
   activeMotion.set(rider.user_id, action.className);
   node.classList.add(action.className);
-  if (action === MOTION_ACTIONS.sprint && Math.random() > 0.78) {
+  if (action === MOTION_ACTIONS.sprint && Math.random() > 0.86) {
     node.classList.add("effect-heavy");
   }
 
@@ -1005,7 +1061,9 @@ function triggerMotion(rider, node, action) {
     if (finished) return;
     finished = true;
     node.classList.remove(action.className);
-    if (rider.mood !== "burning") node.classList.remove("effect-heavy");
+    node.classList.remove("effect-heavy");
+    node.classList.remove("has-social-prop");
+    if (prop) prop.textContent = "";
     activeMotion.delete(rider.user_id);
   };
 
@@ -1020,24 +1078,66 @@ function triggerMotion(rider, node, action) {
     motion?.removeEventListener("animationend", onEnd);
     finish();
   }, action.duration + 180);
+  return true;
+}
+
+function nearbyRiderPairs() {
+  const available = visibleRiders
+    .filter((rider) => !activeMotion.has(rider.user_id))
+    .sort((a, b) => a.lane - b.lane || Number(a.x || 0) - Number(b.x || 0));
+  const pairs = [];
+
+  for (let index = 1; index < available.length; index += 1) {
+    const left = available[index - 1];
+    const right = available[index];
+    if (
+      left.lane === right.lane
+      && Math.abs(Number(left.x || 0) - Number(right.x || 0)) <= 22
+    ) {
+      pairs.push([left, right]);
+    }
+  }
+  return pairs;
+}
+
+function triggerNearbyWave() {
+  const pairs = nearbyRiderPairs();
+  if (!pairs.length) return false;
+  const [first, second] = randomFrom(pairs);
+  const firstNode = document.querySelector('[data-rider-id="' + first.user_id + '"]');
+  const secondNode = document.querySelector('[data-rider-id="' + second.user_id + '"]');
+  if (!firstNode || !secondNode) return false;
+
+  const lines = [
+    ["嗨～", "还蹬呢?"],
+    ["早啊", "早!"],
+    ["下班没?", "快了快了"],
+    ["今天咋样?", "随缘蹬"],
+  ];
+  const [firstText, secondText] = randomFrom(lines);
+  const firstTriggered = triggerMotion(first, firstNode, MOTION_ACTIONS.wave, { text: firstText });
+  const secondTriggered = triggerMotion(second, secondNode, MOTION_ACTIONS.wave, { text: secondText });
+  return firstTriggered || secondTriggered;
 }
 
 function scheduleDirector() {
   clearTimeout(directorTimer);
-  const delay = 3000 + Math.random() * 3600;
+  const delay = 4400 + Math.random() * 5200;
   directorTimer = setTimeout(() => {
     if (!visibleRiders.length) {
       scheduleDirector();
       return;
     }
 
-    const ranked = [...visibleRiders].sort((a, b) => b.today_tokens - a.today_tokens);
-    const pool = ranked.slice(0, Math.min(4, ranked.length));
-    if (ranked.length > 4 && Math.random() > 0.55) {
-      pool.push(ranked[4 + Math.floor(Math.random() * (ranked.length - 4))]);
+    // Social interactions win over performance theatre when two riders happen
+    // to drift close together.
+    if (visibleRiders.length > 1 && Math.random() < 0.34 && triggerNearbyWave()) {
+      scheduleDirector();
+      return;
     }
-    const available = pool.filter((rider) => !activeMotion.has(rider.user_id));
-    const chosen = available[Math.floor(Math.random() * available.length)];
+
+    const available = visibleRiders.filter((rider) => !activeMotion.has(rider.user_id));
+    const chosen = available.length ? randomFrom(available) : null;
     const node = chosen && document.querySelector('[data-rider-id="' + chosen.user_id + '"]');
 
     if (node) triggerMotion(chosen, node, chooseMotion(chosen));
