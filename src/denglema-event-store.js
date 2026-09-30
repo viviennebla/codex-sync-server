@@ -4,10 +4,12 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  statSync,
 } from "node:fs";
 import { join } from "node:path";
 
-const LEGACY_MIGRATION_KEY = "legacy-json-events-v1";
+const LEGACY_EVENTS_SIGNATURE_KEY = "legacy-events-json-signature";
+const LEGACY_ANNOUNCEMENTS_SIGNATURE_KEY = "legacy-announcements-json-signature";
 
 function denglemaRoot(stateDir) {
   return join(stateDir, "denglema");
@@ -59,19 +61,40 @@ function validLegacyEvent(item) {
   );
 }
 
-function migrateLegacyJson(db, stateDir) {
-  const migrated = db.prepare(
-    "SELECT value FROM storage_meta WHERE key = ?"
-  ).get(LEGACY_MIGRATION_KEY);
-  if (migrated) return;
+function legacyFileSignature(path) {
+  if (!existsSync(path)) return "missing";
+  try {
+    const stat = statSync(path);
+    return stat.size + ":" + Math.floor(stat.mtimeMs);
+  } catch {
+    return "unreadable";
+  }
+}
 
+function migrateLegacyJson(db, stateDir) {
   const root = denglemaRoot(stateDir);
   const eventsPath = join(root, "events.json");
   const announcementsPath = join(root, "announcements.json");
-  const legacyEvents = existsSync(eventsPath)
+  const eventsSignature = legacyFileSignature(eventsPath);
+  const announcementsSignature = legacyFileSignature(announcementsPath);
+  const getMeta = db.prepare("SELECT value FROM storage_meta WHERE key = ?");
+  const previousEventsSignature = getMeta.get(LEGACY_EVENTS_SIGNATURE_KEY)?.value || null;
+  const previousAnnouncementsSignature = getMeta.get(
+    LEGACY_ANNOUNCEMENTS_SIGNATURE_KEY
+  )?.value || null;
+
+  if (
+    previousEventsSignature === eventsSignature
+    && previousAnnouncementsSignature === announcementsSignature
+  ) return;
+
+  const legacyEvents = eventsSignature !== previousEventsSignature && existsSync(eventsPath)
     ? readLegacyJson(eventsPath, { version: 1, items: [] })
     : { version: 1, items: [] };
-  const legacyAnnouncements = existsSync(announcementsPath)
+  const legacyAnnouncements = (
+    announcementsSignature !== previousAnnouncementsSignature
+    && existsSync(announcementsPath)
+  )
     ? readLegacyJson(announcementsPath, { version: 1, published: {} })
     : { version: 1, published: {} };
 
@@ -91,7 +114,7 @@ function migrateLegacyJson(db, stateDir) {
     INSERT OR IGNORE INTO release_announcements (id, published_at)
     VALUES (?, ?)
   `);
-  const markMigration = db.prepare(`
+  const saveMeta = db.prepare(`
     INSERT OR REPLACE INTO storage_meta (key, value)
     VALUES (?, ?)
   `);
@@ -124,7 +147,8 @@ function migrateLegacyJson(db, stateDir) {
       );
     }
 
-    markMigration.run(LEGACY_MIGRATION_KEY, new Date().toISOString());
+    saveMeta.run(LEGACY_EVENTS_SIGNATURE_KEY, eventsSignature);
+    saveMeta.run(LEGACY_ANNOUNCEMENTS_SIGNATURE_KEY, announcementsSignature);
   })();
 }
 
