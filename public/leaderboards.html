@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>燃烧榜 · 蹬了吗</title>
+  <title>今日蹬况 · 蹬了吗</title>
   <link rel="stylesheet" href="/styles.css">
   <script type="module" src="/leaderboards.js"></script>
 </head>
@@ -18,32 +18,64 @@
       </div>
     </header>
 
-    <section class="burn-hero">
+    <section class="burn-hero route-hero">
       <div>
-        <p class="dialog-kicker">今日燃烧榜</p>
-        <h1>谁在烧 Token 🔥</h1>
-        <p id="burnCoverage" class="burn-subtitle">正在统计今天的火力…</p>
+        <p class="dialog-kicker">今日蹬况</p>
+        <h1>今天都蹬去哪了？ 🗺️</h1>
+        <p id="burnCoverage" class="burn-subtitle">正在看看办公室今天都跑了哪些路线…</p>
       </div>
-      <div class="burn-flame" aria-hidden="true">🔥</div>
+      <div class="route-hero-doodle" aria-hidden="true">〰🚲〰</div>
     </section>
 
-    <section class="burn-grid">
-      <article class="profile-panel burn-panel">
+    <section class="route-observations" aria-labelledby="routeObservationsTitle">
+      <div class="profile-panel-head">
+        <h2 id="routeObservationsTitle">🔭 今日观察</h2>
+        <span>不是绩效，只是围观</span>
+      </div>
+      <div id="routeObservations" class="route-observation-list"></div>
+    </section>
+
+    <section class="burn-grid route-grid">
+      <article class="profile-panel burn-panel route-panel">
         <div class="profile-panel-head">
-          <h2>🤖 Model</h2>
-          <span>今天谁最费模型</span>
+          <h2>🤖 Model 出没</h2>
+          <span>今天碰到了哪些模型</span>
         </div>
-        <div id="modelBoard" class="burn-list"></div>
+        <div id="modelBoard" class="route-list"></div>
       </article>
 
-      <article class="profile-panel burn-panel">
+      <article class="profile-panel burn-panel route-panel">
         <div class="profile-panel-head">
-          <h2>🧩 Project</h2>
-          <span>今天哪个项目最能烧</span>
+          <h2>🧩 Project 路线</h2>
+          <span>大家今天路过哪里</span>
         </div>
-        <div id="projectBoard" class="burn-list"></div>
+        <div id="projectBoard" class="route-list"></div>
       </article>
     </section>
+
+    <details class="legacy-burn">
+      <summary>
+        <span>🔥 偷看传统燃烧榜</span>
+        <small>数据没删，只是不让它坐主席台</small>
+      </summary>
+      <div class="burn-grid legacy-burn-grid">
+        <article class="profile-panel burn-panel">
+          <div class="profile-panel-head">
+            <h2>🤖 Model</h2>
+            <span>按今日燃料排序</span>
+          </div>
+          <div id="legacyModelBoard" class="burn-list"></div>
+        </article>
+
+        <article class="profile-panel burn-panel">
+          <div class="profile-panel-head">
+            <h2>🧩 Project</h2>
+            <span>按今日燃料排序</span>
+          </div>
+          <div id="legacyProjectBoard" class="burn-list"></div>
+        </article>
+      </div>
+    </details>
 
     <p id="burnFootnote" class="burn-footnote"></p>
   </main>
