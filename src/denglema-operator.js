@@ -84,6 +84,12 @@ function cleanTtlHours(value) {
   return ttl;
 }
 
+function announcementFingerprint({ message, emoji, href, ttlHours }) {
+  return createHash("sha256")
+    .update(JSON.stringify({ message, emoji, href, ttl_hours: ttlHours }))
+    .digest("hex");
+}
+
 export function operatorTokenAuthorized(authorizationHeader, configuredToken) {
   const expected = String(configuredToken || "");
   if (!expected) return false;
@@ -116,8 +122,12 @@ export async function publishOperatorAnnouncement(input, stateDir = "state", opt
     store.idempotency ||= {};
     store.audit ||= [];
 
+    const content_hash = announcementFingerprint({ message, emoji, href, ttlHours });
     const previous = store.idempotency[idempotencyKey];
     if (previous?.event_id) {
+      if (previous.content_hash && previous.content_hash !== content_hash) {
+        throw new Error("idempotency_key was already used with different content");
+      }
       return {
         created: false,
         event_id: previous.event_id,
@@ -133,6 +143,8 @@ export async function publishOperatorAnnouncement(input, stateDir = "state", opt
       user_id: null,
       message,
       expires_at: expiresAt,
+      coalesce_key: "operator:announcement:" + idempotencyKey,
+      coalesce_window_ms: ttlHours * 60 * 60 * 1000,
       meta: {
         announcement_id: idempotencyKey,
         emoji,
@@ -151,6 +163,7 @@ export async function publishOperatorAnnouncement(input, stateDir = "state", opt
       event_id: event.id,
       created_at: now.toISOString(),
       expires_at: expiresAt,
+      content_hash,
     };
     store.idempotency[idempotencyKey] = record;
     store.idempotency = boundedObject(store.idempotency, MAX_IDEMPOTENCY_KEYS);
@@ -178,7 +191,10 @@ export async function publishOperatorAnnouncement(input, stateDir = "state", opt
 }
 
 export async function readOperatorAudit(stateDir = "state", options = {}) {
-  const limit = Math.min(100, Math.max(1, Number(options.limit || 50)));
+  const requestedLimit = Number(options.limit || 50);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(100, Math.max(1, Math.floor(requestedLimit)))
+    : 50;
   const store = await readJson(operatorStatePath(stateDir), {
     version: 1,
     idempotency: {},
