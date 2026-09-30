@@ -961,7 +961,7 @@ const server = createServer(async (req, res) => {
       }
       sendJson(res, 200, {
         window_hours: 24,
-        events: await readDenglemaEvents(STATE_DIR, { limit: 20 }),
+        events: await readDenglemaEvents(STATE_DIR, { limit: 240 }),
       });
       return;
     }
