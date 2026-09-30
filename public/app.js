@@ -833,7 +833,9 @@ function positionPlan(riders) {
     laneRiders.forEach((rider, index) => {
       // Keep coworkers in a centered office cluster instead of stretching a
       // two-person lane from one side of the room to the other.
-      const spacing = count >= 5 ? 14 : count === 4 ? 17 : 18;
+      const spacing = count <= 1
+        ? 0
+        : Math.min(18, 56 / Math.max(1, count - 1));
       const center = (count - 1) / 2;
       const x = 50 + (index - center) * spacing;
       const jitter = ((stableHash(rider.user_id + ":club-jitter") % 5) - 2) * 0.55;
@@ -1401,7 +1403,7 @@ function scheduleAmbientDrift() {
       const current = Number(node.dataset.drift || 0);
       const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
       node.dataset.drift = String(next);
-      node.style.left = Math.max(17, Math.min(84, Number(rider.x || 50) + next)) + "%";
+      node.style.left = Math.max(22, Math.min(78, Number(rider.x || 50) + next)) + "%";
     });
   }, 4200);
 }
