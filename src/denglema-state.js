@@ -624,15 +624,17 @@ export async function readUserTotals(date, stateDir = "state") {
     ].map(Number).filter(Number.isFinite);
     if (remainingValues.length) {
       const remaining = Math.min(...remainingValues);
-      current.quota_remaining_percent = current.quota_remaining_percent === null
-        ? remaining
-        : Math.min(current.quota_remaining_percent, remaining);
       const updatedAt = Date.parse(usageLimits?.updated_at || "");
-      if (
-        Number.isFinite(updatedAt)
-        && (!current.quota_updated_at || updatedAt > Date.parse(current.quota_updated_at))
-      ) {
-        current.quota_updated_at = new Date(updatedAt).toISOString();
+      const currentUpdatedAt = Date.parse(current.quota_updated_at || "");
+      if (Number.isFinite(updatedAt)) {
+        if (!Number.isFinite(currentUpdatedAt) || updatedAt > currentUpdatedAt) {
+          current.quota_remaining_percent = remaining;
+          current.quota_updated_at = new Date(updatedAt).toISOString();
+        } else if (updatedAt === currentUpdatedAt) {
+          current.quota_remaining_percent = current.quota_remaining_percent === null
+            ? remaining
+            : Math.min(current.quota_remaining_percent, remaining);
+        }
       }
     }
     totals.set(userId, current);
