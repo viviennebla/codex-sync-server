@@ -12,6 +12,7 @@ import {
   upsertUsageSample,
 } from "../src/denglema-state.js";
 import {
+  DENGLEMA_RELEASE_ANNOUNCEMENTS,
   addDenglemaComment,
   analyzeDenglemaUsageRhythm,
   appendDenglemaEvent,
@@ -76,7 +77,7 @@ test("release announcement publishes once, links to upgrade notes, and does not 
 
   assert.equal(
     await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
-    2,
+    DENGLEMA_RELEASE_ANNOUNCEMENTS.length,
   );
   assert.equal(
     await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
