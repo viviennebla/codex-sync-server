@@ -107,6 +107,7 @@ npm test
 | `DENGLEMA_BASE_URL` | 当前 bind/port | 外部访问地址，用于安全 cookie 判断 |
 | `DENGLEMA_SESSION_SECRET` | `DASHBOARD_TOKEN` | Web rider session 签名密钥 |
 | `DENGLEMA_SESSION_TTL_SECONDS` | 90 天 | Web session 有效期 |
+| `DENGLEMA_OPERATOR_TOKEN` | 空（Operator API 关闭） | AI Operator 专用 Bearer token；不与 Web session / DASHBOARD_TOKEN 共用 |
 
 生产部署必须配置稳定的 `DENGLEMA_SESSION_SECRET`。
 
@@ -120,11 +121,53 @@ denglema/
 ├─ installations.json
 ├─ pairing-codes.json
 ├─ reset-beg.json
+├─ operator.json
 └─ usage/
    └─ YYYY-MM-DD.json
 ```
 
 `usage/YYYY-MM-DD.json` 按天保存，因此新的一天会从 0 开始，但历史文件仍然保留。
+
+## AI Operator A1
+
+配置 `DENGLEMA_OPERATOR_TOKEN` 后，会启用受限的运行时运营接口。未配置时接口返回 503，不会自动放开。
+
+发布公告：
+
+```http
+POST /api/operator/announcements
+Authorization: Bearer <DENGLEMA_OPERATOR_TOKEN>
+Content-Type: application/json
+```
+
+```json
+{
+  "idempotency_key": "web-social-transports-2026-09",
+  "message": "蹬了吗更新 · 支持在线 24h 留言和更多交通工具",
+  "emoji": "💬",
+  "href": "/plugin#web-social-transports",
+  "ttl_hours": 24
+}
+```
+
+规则：
+
+- `idempotency_key` 相同且内容相同：返回原 event，不重复发布；
+- 同一个 key 对应不同内容：返回 400；
+- `href` 仅允许站内 `/` 路径；
+- `ttl_hours` 当前限制为 1–24 小时；
+- Operator event 会写入 24h Event Feed，并携带 `actor.type=ai_operator`；
+- idempotency 和 audit 都保存在有界的 `STATE_DIR/denglema/operator.json` 中；
+- Operator token 不会写入 audit 或事件。
+
+读取最近 audit：
+
+```http
+GET /api/operator/audit?limit=50
+Authorization: Bearer <DENGLEMA_OPERATOR_TOKEN>
+```
+
+A1 不允许 AI Operator 修改 usage、成就、榜单、用户资料或 installation。
 
 ## 当前部署
 
