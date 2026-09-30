@@ -79,6 +79,15 @@ jobs:
           DENGLEMA_DEPLOY_HEALTH_URL: http://10.21.5.77:1600/health
         run: /bin/bash "$GITHUB_WORKSPACE/scripts/deploy-production.sh"
 
+      - name: Verify runner cutover
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 3 http://10.21.5.77:1600/health >/dev/null
+          if systemctl --user is-active --quiet denglema-auto-deploy.timer; then
+            echo "legacy polling timer is still active" >&2
+            exit 1
+          fi
+
       - name: Deployment summary
         run: |
           echo "### Denglema production" >> "$GITHUB_STEP_SUMMARY"

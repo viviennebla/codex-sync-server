@@ -22,6 +22,17 @@ fail() {
   exit 1
 }
 
+wait_healthy() {
+  local deadline=$((SECONDS + HEALTH_TIMEOUT))
+  while (( SECONDS < deadline )); do
+    if curl --fail --silent --show-error --max-time 3 "$HEALTH_URL" >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
 [[ -n "$EXPECTED_SHA" ]] || fail "DENGLEMA_EXPECTED_SHA is required for runner deployment"
 
 for command in git npm curl flock systemctl; do
@@ -51,8 +62,10 @@ if [[ "$REMOTE_SHA" != "$EXPECTED_SHA" ]]; then
 fi
 
 if [[ "$CURRENT_SHA" == "$EXPECTED_SHA" ]]; then
-  log "tested commit is already deployed"
+  log "tested commit is already deployed; verifying health before cutover"
+  wait_healthy || fail "health check timed out after ${HEALTH_TIMEOUT}s"
   systemctl --user disable --now denglema-auto-deploy.timer >/dev/null 2>&1 || true
+  log "healthy at ${EXPECTED_SHA:0:8}; legacy polling timer disabled"
   exit 0
 fi
 
@@ -99,16 +112,12 @@ if ! systemctl --user restart "$SERVICE_NAME"; then
   exit 1
 fi
 
-deadline=$((SECONDS + HEALTH_TIMEOUT))
-while (( SECONDS < deadline )); do
-  if curl --fail --silent --show-error --max-time 3 "$HEALTH_URL" >/dev/null; then
-    log "healthy at ${EXPECTED_SHA:0:8}"
-    systemctl --user disable --now denglema-auto-deploy.timer >/dev/null 2>&1 || true
-    log "legacy polling timer disabled"
-    exit 0
-  fi
-  sleep 1
-done
+if wait_healthy; then
+  log "healthy at ${EXPECTED_SHA:0:8}"
+  systemctl --user disable --now denglema-auto-deploy.timer >/dev/null 2>&1 || true
+  log "legacy polling timer disabled"
+  exit 0
+fi
 
 rollback "health check timed out after ${HEALTH_TIMEOUT}s"
 exit 1
