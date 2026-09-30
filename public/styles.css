@@ -447,6 +447,11 @@ button { font: inherit; }
 .rider.is-wheelie .rider-motion { animation: wheeliePop 1.9s cubic-bezier(.22,.72,.22,1) both; }
 .rider.is-bonking .rider-motion { animation: bonkSag 2.3s ease-in-out both; }
 .rider.is-celebrating .rider-motion { animation: victoryHop 2s cubic-bezier(.2,.75,.22,1) both; }
+.rider.is-waving .rider-motion { animation: socialSway 1.5s ease-in-out both; }
+.rider.is-sipping .rider-motion { animation: sipPause 1.85s ease-in-out both; }
+.rider.is-stretching .rider-motion { animation: stretchPause 1.8s ease-in-out both; }
+.rider.is-yawning .rider-motion { animation: yawnPause 1.95s ease-in-out both; }
+.rider.is-coasting .rider-motion { animation: coastGlide 2.2s ease-in-out both; }
 .rider.is-tired .rider-inner { animation: tiredWobble .62s ease-in-out infinite; }
 .rider.is-chill .rider-inner { animation-duration: 1.65s; }
 
@@ -542,6 +547,41 @@ button { font: inherit; }
 .rider.is-wheelie .arm { top: 49px; transform: rotate(9deg) scaleX(1.08); }
 .rider.is-bonking .arm { top: 63px; transform: rotate(30deg) scaleX(.92); }
 .rider.is-celebrating .arm { top: 37px; transform: rotate(-62deg) scaleX(1.18); }
+.rider.is-waving .arm {
+  top: 41px;
+  left: 83px;
+  animation: friendlyWave .36s ease-in-out infinite alternate;
+}
+.rider.is-sipping .arm {
+  top: 43px;
+  left: 83px;
+  transform: rotate(-38deg) scaleX(.82);
+}
+.rider.is-sipping .social-prop {
+  left: 91px;
+  top: 28px;
+}
+.rider.is-stretching .arm {
+  top: 31px;
+  left: 75px;
+  transform: rotate(-78deg) scaleX(1.22);
+}
+.rider.is-stretching .body {
+  top: 43px;
+  transform: rotate(-2deg) scaleY(1.08);
+}
+.rider.is-yawning .avatar-ring {
+  animation: sleepyNod .65s ease-in-out infinite alternate;
+}
+.rider.is-coasting .wheel,
+.rider.is-coasting .mini-wheel,
+.rider.is-coasting .board-wheel {
+  animation-play-state: paused;
+}
+.rider.is-coasting .leg {
+  animation-play-state: paused;
+  opacity: .78;
+}
 
 .bike {
   position: absolute;
@@ -610,6 +650,23 @@ button { font: inherit; }
 }
 .mode-surf .personality-accessory { left: 30px; top: 22px; }
 .mode-walk .personality-accessory { left: 36px; top: 25px; }
+
+.social-prop {
+  position: absolute;
+  z-index: 14;
+  left: 95px;
+  top: 17px;
+  display: none;
+  font-size: 21px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 0 rgba(39,49,60,.14));
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+.rider.has-social-prop .social-prop {
+  display: block;
+  animation: socialPropPop .3s ease-out both;
+}
 
 /* Scooter */
 .transport-scooter {
@@ -996,7 +1053,12 @@ button { font: inherit; }
 .rider.is-sprinting .effect-burst,
 .rider.is-wheelie .effect-burst,
 .rider.is-bonking .effect-burst,
-.rider.is-celebrating .effect-burst {
+.rider.is-celebrating .effect-burst,
+.rider.is-waving .effect-burst,
+.rider.is-sipping .effect-burst,
+.rider.is-stretching .effect-burst,
+.rider.is-yawning .effect-burst,
+.rider.is-coasting .effect-burst {
   display: block;
   animation: comicBubblePop .38s cubic-bezier(.18,.88,.28,1.2) both;
 }
@@ -1420,6 +1482,39 @@ button { font: inherit; }
 @keyframes burstPop { from { transform: scale(.5) rotate(-10deg); opacity: 0; } to { transform: scale(1) rotate(-5deg); opacity: 1; } }
 @keyframes miniRide { 50% { transform: translateY(-4px) rotate(-3deg); } }
 @keyframes crownBob { 50% { transform: translateY(-4px) rotate(4deg) scale(1.06); } }
+@keyframes socialSway {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  35% { transform: translate(1px,-2px) rotate(-1deg); }
+  70% { transform: translate(3px,-1px) rotate(1deg); }
+}
+@keyframes sipPause {
+  0%,100% { transform: translateY(0); }
+  35%,70% { transform: translateY(2px) rotate(-1deg); }
+}
+@keyframes stretchPause {
+  0%,100% { transform: translateY(0) scaleY(1); }
+  45%,70% { transform: translateY(-4px) scaleY(1.04); }
+}
+@keyframes yawnPause {
+  0%,100% { transform: translateY(0) rotate(0); }
+  45%,75% { transform: translateY(3px) rotate(2deg); }
+}
+@keyframes coastGlide {
+  0%,100% { transform: translateX(0); }
+  45% { transform: translateX(6px) translateY(1px); }
+}
+@keyframes friendlyWave {
+  from { transform: rotate(-28deg) scaleX(1.02); }
+  to { transform: rotate(-82deg) scaleX(1.12); }
+}
+@keyframes sleepyNod {
+  from { transform: rotate(-3deg) translateY(1px); }
+  to { transform: rotate(5deg) translateY(4px); }
+}
+@keyframes socialPropPop {
+  from { opacity: 0; transform: translateY(5px) scale(.55) rotate(-8deg); }
+  to { opacity: 1; transform: translateY(0) scale(1) rotate(4deg); }
+}
 @keyframes scooterWobble {
   35% { transform: rotate(-6deg) translateY(-2px); }
   65% { transform: rotate(5deg) translateY(0); }
@@ -1895,6 +1990,10 @@ button { font: inherit; }
   .mini-wheel,
   .board-wheel,
   .leg,
+  .arm,
+  .body,
+  .avatar-ring,
+  .social-prop,
   .leader-crown,
   .mini-bike,
   .effect-fire,
