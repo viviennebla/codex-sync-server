@@ -14,6 +14,8 @@ import {
   readDenglemaUsers,
   readDenglemaOfficeLayoutVersion,
   readDimensionLeaderboard,
+  projectPrivacyForUser,
+  projectRowsForPublic,
   recoverWebUser,
   readUserInstallations,
   readUserTotals,
@@ -23,6 +25,7 @@ import {
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
   updateWebUserOfficePosition,
+  updateWebUserProjectPrivacy,
   updateWebUserQuotaEmotion,
   updateWebUserSlogans,
   updateWebUserTransport,
@@ -616,6 +619,67 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── GET /api/me/projects ── private raw project names + public projection settings
+    if (method === "GET" && url.pathname === "/api/me/projects") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const date = url.searchParams.get("date") || currentDateKey();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendError(res, 400, "Invalid date");
+        return;
+      }
+      const totals = await readUserTotals(date, STATE_DIR);
+      const today = totals.find((row) => row.user_id === user.id) || { projects: [] };
+      const byName = new Map(
+        (today.projects || []).map((row) => [String(row.name), Number(row.total_tokens || 0)]),
+      );
+      for (const name of Object.keys(user.project_privacy || {})) {
+        if (!byName.has(name)) byName.set(name, 0);
+      }
+      const projects = [...byName.entries()]
+        .map(([name, total_tokens]) => {
+          const rule = projectPrivacyForUser(user, name);
+          return {
+            name,
+            total_tokens,
+            mode: rule.mode,
+            alias: rule.alias,
+            public_name: rule.mode === "hidden"
+              ? null
+              : (rule.mode === "alias" ? rule.alias : name),
+          };
+        })
+        .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name));
+      sendJson(res, 200, { date, projects });
+      return;
+    }
+
+    // ── PUT /api/me/project-privacy ── hide or alias one raw project basename
+    if (method === "PUT" && url.pathname === "/api/me/project-privacy") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const updated = await updateWebUserProjectPrivacy(
+          user.id,
+          body?.project,
+          body?.mode,
+          body?.alias,
+          STATE_DIR,
+        );
+        sendJson(res, 200, { ok: true, privacy: updated });
+      } catch (error) {
+        sendJson(res, 400, { error: error?.message || "Could not update project privacy" });
+      }
+      return;
+    }
+
     // ── GET /api/avatars/:id.jpg ── public rider avatar asset
     const avatarMatch = url.pathname.match(/^\/api\/avatars\/([A-Za-z0-9_-]+)\.jpg$/);
     if (method === "GET" && avatarMatch) {
@@ -763,7 +827,7 @@ const server = createServer(async (req, res) => {
         quota_pressure: today?.quota_pressure ?? null,
         quota_updated_at: today?.quota_updated_at || null,
         models: today?.models || [],
-        projects: today?.projects || [],
+        projects: projectRowsForPublic(rider, today?.projects || []),
         installations: installations.map((item) => ({
           id: item.id,
           name: item.name,
@@ -1319,6 +1383,14 @@ const server = createServer(async (req, res) => {
     }
     if (method === "GET" && url.pathname === "/me") {
       await sendStatic(res, "profile.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/privacy") {
+      await sendStatic(res, "privacy.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/privacy.js") {
+      await sendStatic(res, "privacy.js", "text/javascript; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/plugin") {
