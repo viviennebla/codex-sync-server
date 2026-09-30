@@ -3399,3 +3399,129 @@ body.time-night .race-stage::before {
     --scale: 1.04;
   }
 }
+
+
+/* Personal workstations + time-aware office floor */
+:root {
+  --office-floor-1: #f4dfbd;
+  --office-floor-2: #f3eadb;
+  --office-floor-3: #dfe4e8;
+  --office-floor-4: #e7c99f;
+  --office-scene-wash: rgba(255,255,255,.02);
+}
+body.time-morning {
+  --office-floor-1: #f2dbb6;
+  --office-floor-2: #f0e5d4;
+  --office-floor-3: #d9dfe2;
+  --office-floor-4: #e3c397;
+  --office-scene-wash: rgba(255,230,183,.06);
+}
+body.time-day {
+  --office-floor-1: #f6e2bf;
+  --office-floor-2: #f6eddf;
+  --office-floor-3: #e2e8ec;
+  --office-floor-4: #ebcea3;
+  --office-scene-wash: rgba(255,255,255,.035);
+}
+body.time-evening {
+  --office-floor-1: #e8ceb5;
+  --office-floor-2: #eadfd7;
+  --office-floor-3: #d5d6dc;
+  --office-floor-4: #dab690;
+  --office-scene-wash: rgba(222,151,125,.09);
+}
+body.time-night {
+  --office-floor-1: #c9b9ad;
+  --office-floor-2: #c9c6c8;
+  --office-floor-3: #bcc3ce;
+  --office-floor-4: #c6aa91;
+  --office-scene-wash: rgba(66,79,110,.14);
+}
+.race-stage {
+  background-color: var(--office-floor-2);
+  background-image:
+    linear-gradient(var(--office-scene-wash), var(--office-scene-wash)),
+    url("/office-stage.svg"),
+    linear-gradient(var(--window-sky), var(--window-sky)),
+    linear-gradient(
+      to bottom,
+      var(--office-floor-1) 0 25%,
+      var(--office-floor-2) 25% 50%,
+      var(--office-floor-3) 50% 75%,
+      var(--office-floor-4) 75% 100%
+    );
+  background-size: 100% 100%, 100% 100%, 34.4% 10.8%, 100% 100%;
+  background-position: center, center, 51.6% 2.45%, center;
+  background-repeat: no-repeat;
+}
+.rider-workstation {
+  position: absolute;
+  z-index: 2;
+  left: 120px;
+  top: 69px;
+  width: 92px;
+  height: 64px;
+  pointer-events: none;
+  transform-origin: 50% 80%;
+  filter: drop-shadow(0 3px 2px rgba(58,63,66,.10));
+}
+.rider.is-near-right .rider-workstation { left: -49px; }
+.workstation-desk-top {
+  position: absolute; left: 3px; top: 36px; width: 86px; height: 8px;
+  border-radius: 5px; background: #b99169;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.18);
+}
+.workstation-desk-leg {
+  position: absolute; top: 42px; width: 6px; height: 20px;
+  border-radius: 0 0 3px 3px; background: #9e7858;
+}
+.workstation-desk-leg.leg-left { left: 12px; }
+.workstation-desk-leg.leg-right { right: 12px; }
+.workstation-screen {
+  position: absolute; z-index: 2; left: 28px; top: 5px;
+  width: 38px; height: 29px; border: 4px solid #526674;
+  border-radius: 5px;
+  background: linear-gradient(145deg, rgba(255,255,255,.28), transparent 40%), var(--window-sky);
+}
+.workstation-screen-stand {
+  position: absolute; left: 44px; top: 31px; width: 7px; height: 7px;
+  border-radius: 2px; background: #526674;
+}
+.workstation-screen-stand::after {
+  content: ""; position: absolute; left: -6px; top: 5px;
+  width: 19px; height: 4px; border-radius: 999px; background: #526674;
+}
+.workstation-plant {
+  position: absolute; z-index: 3; left: 4px; top: 15px;
+  width: 20px; height: 23px; color: #78a267; font: 900 19px/1 system-ui,sans-serif;
+}
+.workstation-plant::after {
+  content: ""; position: absolute; left: 4px; top: 17px;
+  width: 13px; height: 9px; border-radius: 2px 2px 5px 5px; background: #c69069;
+}
+.workstation-mug {
+  position: absolute; z-index: 3; right: 7px; top: 18px;
+  font-style: normal; font-size: 17px; transform: rotate(4deg);
+}
+.workstation-dual .workstation-screen:first-child { left: 16px; width: 34px; transform: rotate(-2deg); }
+.workstation-screen-secondary { left: 50px; width: 34px; transform: rotate(2deg); }
+.workstation-dual .workstation-screen-stand { left: 43px; }
+.workstation-lamp {
+  position: absolute; z-index: 3; right: 6px; top: 9px;
+  width: 5px; height: 28px; border-radius: 999px;
+  background: #6f7680; transform: rotate(8deg); transform-origin: bottom;
+}
+.workstation-lamp::before {
+  content: ""; position: absolute; left: -6px; top: -3px;
+  width: 17px; height: 10px; border-radius: 9px 9px 4px 4px; background: #f0c75a;
+}
+.workstation-cozy .workstation-desk-top { background: #b78767; }
+.workstation-coffee .workstation-desk-top { background: #bd8f65; }
+body.time-evening .rider-workstation,
+body.time-night .rider-workstation {
+  filter: saturate(.82) brightness(.94) drop-shadow(0 3px 2px rgba(49,54,65,.12));
+}
+body.time-night .workstation-screen { box-shadow: 0 0 9px rgba(145,188,226,.25); }
+@media (max-width: 900px) {
+  .rider-workstation { transform: scale(.88); }
+}
