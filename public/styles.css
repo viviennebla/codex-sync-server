@@ -2666,3 +2666,335 @@ button { font: inherit; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Rider visual cleanup: club first, race second. */
+.today-total {
+  gap: 6px;
+  color: #6f7780;
+}
+.today-total > span:first-child {
+  font-size: 11px;
+  font-weight: 800;
+}
+.today-total strong {
+  color: #b96a54;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+.today-total .tiny-bars {
+  opacity: .42;
+  transform: scale(.78);
+  transform-origin: left bottom;
+}
+.today-freshness {
+  color: #9a918a;
+  font-size: 9px;
+}
+
+.lane {
+  border-top-width: 1px;
+  border-top-color: rgba(255,248,229,.34);
+}
+.lane:last-of-type {
+  border-bottom-width: 1px;
+  border-bottom-color: rgba(255,248,229,.22);
+}
+.lane-number,
+.finish-mark {
+  display: none !important;
+}
+.track-motion {
+  opacity: .08;
+}
+
+.rider {
+  width: 150px;
+  height: 118px;
+}
+.avatar-ring {
+  left: 51px;
+  top: 3px;
+  width: 48px;
+  height: 48px;
+  border-width: 2px;
+}
+.emoji-avatar {
+  font-size: 27px;
+}
+.body {
+  left: 58px;
+  top: 47px;
+  width: 34px;
+  height: 21px;
+}
+.arm {
+  top: 51px;
+  left: 80px;
+  width: 31px;
+}
+.leg {
+  top: 62px;
+  left: 68px;
+  height: 28px;
+}
+
+.personality-accessory {
+  left: 42px;
+  top: 37px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(39,49,60,.10);
+  border-radius: 50%;
+  background: rgba(255,250,240,.90);
+  font-size: 13px;
+  transform: rotate(-7deg);
+  filter: none;
+}
+.mode-surf .personality-accessory,
+.mode-walk .personality-accessory {
+  left: 42px;
+  top: 37px;
+}
+
+.name-chip {
+  left: 99px;
+  top: 13px;
+  width: max-content;
+  max-width: 128px !important;
+  min-width: 58px;
+  grid-template-columns: 6px minmax(0, 1fr);
+  column-gap: 5px;
+  padding: 4px 7px 4px 6px;
+  border-radius: 11px;
+  box-shadow: 0 1px 0 rgba(88,48,34,.08);
+}
+.name-chip::before {
+  width: 6px;
+  height: 6px;
+}
+.name-chip .rider-name,
+.name-chip > span:first-child {
+  max-width: 103px !important;
+  font-size: 11px;
+  line-height: 1.15;
+}
+.name-chip .tokens {
+  display: block;
+  margin-top: 1px;
+  color: #9a918a;
+  font-size: 7.5px;
+  line-height: 1;
+  font-weight: 650;
+}
+.name-chip .tokens[hidden] {
+  display: none !important;
+}
+
+.rider-achievement {
+  left: 43px !important;
+  right: auto !important;
+  top: 43px;
+  width: 19px;
+  height: 19px;
+  max-width: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  overflow: visible;
+  border: 1px solid rgba(78,88,107,.15);
+  border-radius: 50%;
+  background: rgba(255,253,248,.94);
+  box-shadow: 0 1px 0 rgba(39,49,60,.07);
+  font-size: 11px;
+  line-height: 1;
+  text-shadow: none;
+}
+.rider-achievement::before,
+.rider-achievement::after {
+  display: none !important;
+}
+.leader-crown,
+.rider.is-near-right .leader-crown {
+  left: 43px;
+  right: auto;
+  top: -1px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  transform: rotate(-10deg);
+  filter: drop-shadow(0 1px 0 rgba(39,49,60,.12));
+}
+.rider.is-near-right .name-chip {
+  left: auto;
+  right: 96px;
+}
+
+/* Each transport owns its leg mechanics. Only the bicycle pedals. */
+.mode-bike .leg {
+  animation: pedalLeg .72s ease-in-out infinite;
+}
+.mode-bike .leg.leg-b {
+  animation-delay: -.36s;
+}
+
+.mode-scooter .leg {
+  animation: none;
+  height: 25px;
+  top: 61px;
+}
+.mode-scooter .leg-a {
+  left: 66px;
+  transform: rotate(13deg);
+}
+.mode-scooter .leg-b {
+  left: 78px;
+  height: 29px;
+  transform: rotate(-18deg);
+}
+.mode-scooter.is-sprinting .leg-b {
+  animation: scooterKick .55s ease-in-out infinite alternate;
+}
+
+.mode-skateboard .leg {
+  animation: none;
+  top: 60px;
+  height: 27px;
+}
+.mode-skateboard .leg-a {
+  left: 62px;
+  transform: rotate(16deg);
+}
+.mode-skateboard .leg-b {
+  left: 79px;
+  transform: rotate(-15deg);
+}
+.mode-skateboard.is-sprinting .leg-b {
+  animation: skateboardPush .62s ease-in-out infinite alternate;
+}
+
+.mode-walk .leg {
+  top: 61px;
+  height: 30px;
+  animation: walkStride .82s ease-in-out infinite alternate;
+}
+.mode-walk .leg-a {
+  left: 65px;
+}
+.mode-walk .leg-b {
+  left: 79px;
+  animation-delay: -.82s;
+}
+
+.mode-surf .leg {
+  animation: none;
+  top: 60px;
+  height: 24px;
+}
+.mode-surf .leg-a {
+  left: 63px;
+  transform: rotate(25deg);
+}
+.mode-surf .leg-b {
+  left: 80px;
+  transform: rotate(-25deg);
+}
+.mode-surf.is-wheelie .leg-a {
+  transform: rotate(31deg);
+}
+.mode-surf.is-wheelie .leg-b {
+  transform: rotate(-31deg);
+}
+
+.mode-skate .leg {
+  top: 60px;
+  height: 27px;
+  animation: skateGlide .95s ease-in-out infinite alternate;
+}
+.mode-skate .leg-a {
+  left: 64px;
+  transform: rotate(10deg);
+}
+.mode-skate .leg-b {
+  left: 79px;
+  animation-delay: -.95s;
+  transform: rotate(-10deg);
+}
+
+/* Make casual actions readable in a single glance. */
+.effect-burst {
+  left: 92px;
+  top: -32px;
+  min-width: 48px;
+  max-width: 116px;
+  padding: 6px 9px;
+  border-width: 2px;
+  font-size: 12px;
+  box-shadow: 2px 3px 0 rgba(39,49,60,.14);
+}
+.rider.is-waving .effect-burst,
+.rider.is-sipping .effect-burst,
+.rider.is-stretching .effect-burst,
+.rider.is-yawning .effect-burst,
+.rider.is-coasting .effect-burst {
+  display: block;
+}
+.rider.is-waving .arm {
+  top: 38px;
+  left: 79px;
+  width: 34px;
+}
+.rider.is-sipping .social-prop {
+  left: 89px;
+  top: 24px;
+  font-size: 22px;
+}
+.rider.is-stretching .arm {
+  top: 28px;
+}
+.rider.is-yawning .effect-burst {
+  font-size: 13px;
+}
+.rider.is-coasting {
+  opacity: .94;
+}
+
+/* Zero-token riders stay present without shouting. */
+.rider:has(.tokens[hidden]) .name-chip {
+  background: rgba(255,250,240,.80);
+}
+.rider:has(.tokens[hidden]) .personality-accessory {
+  opacity: .78;
+}
+
+@keyframes scooterKick {
+  from { transform: rotate(-18deg) translateY(0); }
+  to { transform: rotate(-42deg) translate(5px, 4px); }
+}
+@keyframes skateboardPush {
+  from { transform: rotate(-15deg) translateY(0); }
+  to { transform: rotate(-38deg) translate(5px, 5px); }
+}
+@keyframes walkStride {
+  from { transform: rotate(24deg) translateX(-2px); }
+  to { transform: rotate(-24deg) translateX(2px); }
+}
+@keyframes skateGlide {
+  from { transform: rotate(13deg) translateX(-2px); }
+  to { transform: rotate(-13deg) translateX(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-bike .leg,
+  .mode-scooter .leg,
+  .mode-skateboard .leg,
+  .mode-walk .leg,
+  .mode-surf .leg,
+  .mode-skate .leg {
+    animation: none !important;
+  }
+}

@@ -148,6 +148,23 @@ const PREVIEW_RIDERS = [
     mood: "tired",
     transport: "walk",
     accent: "#7b79ac"
+  },
+  {
+    user_id: "preview_bike",
+    display_name: "古典蹬法",
+    avatar_emoji: "🚴",
+    today_tokens: 0,
+    transport: "bike",
+    accent: "#c98464",
+    equipped_achievement: { emoji: "🧪", name: "模型探险家" }
+  },
+  {
+    user_id: "preview_skate",
+    display_name: "名字有一点点长的同事",
+    avatar_url: avatarSvg("#f1d3a8", "#514334", "smile"),
+    today_tokens: 2380000,
+    transport: "skate",
+    accent: "#9a77b7"
   }
 ];
 
@@ -638,40 +655,27 @@ function lanePlan(riders) {
 
 function positionPlan(riders) {
   const targetById = new Map();
-  const maxTokens = Math.max(0, ...riders.map((rider) => Number(rider.today_tokens || 0)));
-  const maxLog = maxTokens > 0 ? Math.log1p(maxTokens) : 1;
 
-  riders.forEach((rider) => {
-    const stableBase = 26 + (stableHash(rider.user_id + ":club-x") % 47);
-    const usageNudge = maxTokens > 0
-      ? (Math.log1p(Number(rider.today_tokens || 0)) / maxLog - 0.5) * 8
-      : 0;
-    targetById.set(
-      rider.user_id,
-      Math.max(16, Math.min(84, stableBase + usageNudge)),
-    );
-  });
-
-  // Keep nearby club members readable without restoring a strict leaderboard order.
   for (let lane = 1; lane <= 4; lane += 1) {
     const laneRiders = riders
       .filter((rider) => rider.lane === lane)
-      .sort((a, b) => (targetById.get(a.user_id) || 50) - (targetById.get(b.user_id) || 50));
-
-    let previous = 6;
+      .sort((a, b) => (
+        stableHash(a.user_id + ":club-order")
+        - stableHash(b.user_id + ":club-order")
+      ));
+    const count = laneRiders.length;
     laneRiders.forEach((rider, index) => {
-      const raw = targetById.get(rider.user_id) || 50;
-      const stagger = ((stableHash(rider.user_id + ":stagger") % 5) - 2) * 1.1;
-      let x = Math.max(raw + stagger, previous + (index ? 15 : 0));
-      x = Math.min(88, x);
-      targetById.set(rider.user_id, x);
-      previous = x;
+      const x = count <= 1
+        ? 50
+        : 20 + index * (60 / Math.max(1, count - 1));
+      const jitter = ((stableHash(rider.user_id + ":club-jitter") % 7) - 3) * 0.7;
+      targetById.set(rider.user_id, Math.max(16, Math.min(84, x + jitter)));
     });
   }
 
   return riders.map((rider) => ({
     ...rider,
-    x: targetById.get(rider.user_id) || 45
+    x: targetById.get(rider.user_id) || 50
   }));
 }
 
@@ -740,6 +744,12 @@ function transportMarkup(transport) {
   '</div>';
 }
 
+function raceAvatarEmoji(rider) {
+  const emoji = String(rider.avatar_emoji || "🙂");
+  const transportLike = new Set(["🚴", "🚵", "🚲", "🛴", "🛹", "🏄", "🛼"]);
+  return transportLike.has(emoji) ? "🙂" : emoji;
+}
+
 function riderMarkup(rider) {
   const classes = stateFor(rider).join(" ");
   const transport = transportFor(rider);
@@ -764,7 +774,7 @@ function riderMarkup(rider) {
           '<div class="avatar-ring">' +
             (rider.avatar_url
               ? '<img src="' + escapeHtml(rider.avatar_url) + '" alt="">'
-              : '<span class="emoji-avatar">' + escapeHtml(rider.avatar_emoji || "🚴") + '</span>') +
+              : '<span class="emoji-avatar">' + escapeHtml(raceAvatarEmoji(rider)) + '</span>') +
           '</div>' +
           '<span class="personality-accessory" title="' + escapeHtml(personality.label) + '">' +
             personality.emoji +
@@ -778,14 +788,17 @@ function riderMarkup(rider) {
         '</div>' +
       '</div>' +
       (rider.equipped_achievement
-        ? '<div class="rider-achievement">' +
-            escapeHtml(rider.equipped_achievement.emoji || "🏅") + " " +
-            escapeHtml(rider.equipped_achievement.name || "") +
+        ? '<div class="rider-achievement" title="' +
+            escapeHtml(rider.equipped_achievement.name || "成就") + '">' +
+            escapeHtml(rider.equipped_achievement.emoji || "🏅") +
           '</div>'
         : '') +
       '<div class="name-chip" title="' + escapeHtml(TRANSPORT_LABELS[transport]) + '">' +
         '<span class="rider-name">' + escapeHtml(rider.display_name || "同事") + '</span>' +
-        '<small class="tokens">' + formatTokens(rider.today_tokens) + ' today</small>' +
+        '<small class="tokens"' +
+          (Number(rider.today_tokens || 0) > 0 ? "" : " hidden") + ">" +
+          (Number(rider.today_tokens || 0) > 0 ? formatTokens(rider.today_tokens) : "") +
+        '</small>' +
       '</div>' +
     '</div>'
   );
@@ -819,7 +832,10 @@ function updateRiderNode(node, rider) {
   const name = node.querySelector(".name-chip .rider-name");
   const tokens = node.querySelector(".name-chip .tokens");
   if (name) name.textContent = rider.display_name || "同事";
-  if (tokens) tokens.textContent = formatTokens(rider.today_tokens) + " today";
+  if (tokens) {
+    tokens.textContent = Number(rider.today_tokens || 0) > 0 ? formatTokens(rider.today_tokens) : "";
+    tokens.hidden = Number(rider.today_tokens || 0) <= 0;
+  }
 
   const nextTransport = transportFor(rider);
   if (node.dataset.transport !== nextTransport) {
@@ -842,7 +858,8 @@ function updateRiderNode(node, rider) {
       const chip = node.querySelector(".name-chip");
       node.insertBefore(achievement, chip);
     }
-    achievement.textContent = (equipped.emoji || "🏅") + " " + (equipped.name || "");
+    achievement.textContent = equipped.emoji || "🏅";
+    achievement.title = equipped.name || "成就";
   } else if (achievement) {
     achievement.remove();
   }
@@ -850,7 +867,7 @@ function updateRiderNode(node, rider) {
   const ring = node.querySelector(".avatar-ring");
   const avatarKey = rider.avatar_url
     ? "url:" + rider.avatar_url
-    : "emoji:" + (rider.avatar_emoji || "🚴");
+    : "emoji:" + raceAvatarEmoji(rider);
   if (ring && node.dataset.avatarKey !== avatarKey) {
     node.dataset.avatarKey = avatarKey;
     ring.replaceChildren();
@@ -862,7 +879,7 @@ function updateRiderNode(node, rider) {
     } else {
       const emoji = document.createElement("span");
       emoji.className = "emoji-avatar";
-      emoji.textContent = rider.avatar_emoji || "🚴";
+      emoji.textContent = raceAvatarEmoji(rider);
       ring.appendChild(emoji);
     }
   }
@@ -918,10 +935,10 @@ function renderRiders(riders) {
       lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-      node.style.setProperty("--scale", String(1.16 + sizeJitter));
+      node.style.setProperty("--scale", String(0.94 + sizeJitter));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
-        : "emoji:" + (rider.avatar_emoji || "🚴");
+        : "emoji:" + raceAvatarEmoji(rider);
       node.addEventListener("click", () => {
         if (node._riderData && !node._riderData.demo) {
           void openRiderDetail(node._riderData);
@@ -960,28 +977,30 @@ async function loadRaceData() {
 const MOTION_ACTIONS = {
   wave: {
     className: "is-waving",
-    duration: 1500,
-    bursts: ["嗨～", "还蹬呢?", "早啊", "下班没?"]
+    duration: 3200,
+    bursts: ["嗨～", "还蹬呢?", "早啊", "下班没?"],
+    props: ["👋"]
   },
   sip: {
     className: "is-sipping",
-    duration: 1850,
+    duration: 3400,
     bursts: ["喝口水", "咖啡续命", "奶茶时间", "先抿一口"],
     props: ["☕", "🧋", "🥤"]
   },
   stretch: {
     className: "is-stretching",
-    duration: 1800,
+    duration: 3300,
     bursts: ["伸个懒腰", "肩膀报警", "活动一下"]
   },
   yawn: {
     className: "is-yawning",
-    duration: 1950,
-    bursts: ["哈欠…", "眼睛下班了", "困了"]
+    duration: 3500,
+    bursts: ["哈欠…", "眼睛下班了", "困了"],
+    props: ["💤"]
   },
   coast: {
     className: "is-coasting",
-    duration: 2200,
+    duration: 3800,
     bursts: ["滑一会", "这段不蹬", "省点腿", "随缘前进"]
   },
   sprint: {
@@ -1025,10 +1044,10 @@ function chooseMotion(rider) {
   if (roll < 0.36) return MOTION_ACTIONS.sip;
   if (roll < 0.50) return MOTION_ACTIONS.stretch;
   if (roll < 0.64) return MOTION_ACTIONS.yawn;
-  if (roll < 0.82) return MOTION_ACTIONS.coast;
-  if (roll < 0.87) return MOTION_ACTIONS.sprint;
-  if (roll < 0.92) return MOTION_ACTIONS.wheelie;
-  if (roll < 0.96) return MOTION_ACTIONS.bonk;
+  if (roll < 0.88) return MOTION_ACTIONS.coast;
+  if (roll < 0.91) return MOTION_ACTIONS.sprint;
+  if (roll < 0.94) return MOTION_ACTIONS.wheelie;
+  if (roll < 0.97) return MOTION_ACTIONS.bonk;
   return MOTION_ACTIONS.celebrate;
 }
 
@@ -1122,7 +1141,7 @@ function triggerNearbyWave() {
 
 function scheduleDirector() {
   clearTimeout(directorTimer);
-  const delay = 4400 + Math.random() * 5200;
+  const delay = 2600 + Math.random() * 2600;
   directorTimer = setTimeout(() => {
     if (!visibleRiders.length) {
       scheduleDirector();
@@ -1219,6 +1238,15 @@ async function bootstrap() {
     await loadRaceData();
     await loadEvents();
     startRaceRuntime();
+
+    const forcedMotion = new URLSearchParams(location.search).get("motion");
+    if (forcedMotion && MOTION_ACTIONS[forcedMotion]) {
+      window.setTimeout(() => {
+        const rider = visibleRiders[0];
+        const node = rider && document.querySelector('[data-rider-id="' + rider.user_id + '"]');
+        if (rider && node) triggerMotion(rider, node, MOTION_ACTIONS[forcedMotion]);
+      }, 120);
+    }
     return;
   }
 
