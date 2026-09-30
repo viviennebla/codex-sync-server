@@ -8,10 +8,12 @@ import {
   consumePairingCode,
   createPairingCode,
   createWebUser,
+  readUserUsageHistory,
   upsertUsageSample,
 } from "../src/denglema-state.js";
 import {
   addDenglemaComment,
+  analyzeDenglemaUsageRhythm,
   appendDenglemaEvent,
   backfillHistoricalJoinEvents,
   ensureDenglemaReleaseAnnouncements,
@@ -312,7 +314,7 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
     root,
     { now: () => new Date("2026-09-29T03:02:00Z") },
   );
-  assert.equal(first.filter((item) => item.unlocked).length, 7);
+  assert.equal(first.filter((item) => item.unlocked).length, 9);
   assert.equal(first.find((item) => item.id === "multi_harness").unlocked, true);
   assert.equal(first.find((item) => item.id === "took_the_crown").unlocked, true);
 
@@ -320,7 +322,7 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
     now: () => new Date("2026-09-29T03:02:01Z"),
     limit: 20,
   });
-  assert.equal(firstEvents.filter((item) => item.kind === "achievement").length, 7);
+  assert.equal(firstEvents.filter((item) => item.kind === "achievement").length, 9);
 
   await syncUserAchievements(
     "user-rider",
@@ -332,5 +334,223 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
     now: () => new Date("2026-09-29T04:00:01Z"),
     limit: 20,
   });
-  assert.equal(secondEvents.filter((item) => item.kind === "achievement").length, 7);
+  assert.equal(secondEvents.filter((item) => item.kind === "achievement").length, 9);
+});
+
+
+function rhythmSamples(startIso, totals, stepMinutes = 60) {
+  const start = Date.parse(startIso);
+  return totals.map((total_tokens, index) => ({
+    observed_at: new Date(start + index * stepMinutes * 60_000).toISOString(),
+    total_tokens,
+    installations: 1,
+    introduced_installation: index === 0,
+  }));
+}
+
+test("work rhythm uses the Asia/Shanghai weekday 09:00-18:00 window", () => {
+  const rhythm = analyzeDenglemaUsageRhythm([
+    { observed_at: "2026-09-30T01:00:00Z", total_tokens: 0, installations: 1, introduced_installation: true },
+    { observed_at: "2026-09-30T10:00:00Z", total_tokens: 54_000, installations: 1, introduced_installation: false },
+  ]);
+  assert.equal(rhythm.timezone, "Asia/Shanghai");
+  assert.equal(rhythm.work_intervals.length, 1);
+  assert.equal(rhythm.work_intervals[0].minutes, 9 * 60);
+});
+
+test("09:00 boundary excludes pre-work interval and includes interval starting at 09:00", () => {
+  const rhythm = analyzeDenglemaUsageRhythm([
+    { observed_at: "2026-09-30T00:00:00Z", total_tokens: 0, installations: 1, introduced_installation: true },
+    { observed_at: "2026-09-30T01:00:00Z", total_tokens: 600, installations: 1, introduced_installation: false },
+    { observed_at: "2026-09-30T02:00:00Z", total_tokens: 1_200, installations: 1, introduced_installation: false },
+  ]);
+  assert.equal(rhythm.work_intervals.length, 1);
+  assert.equal(rhythm.work_intervals[0].start_at, "2026-09-30T01:00:00.000Z");
+  assert.equal(rhythm.early_bird, true);
+});
+
+test("18:00 boundary includes interval ending at 18:00 and excludes later work rhythm", () => {
+  const rhythm = analyzeDenglemaUsageRhythm([
+    { observed_at: "2026-09-30T09:00:00Z", total_tokens: 0, installations: 1, introduced_installation: true },
+    { observed_at: "2026-09-30T10:00:00Z", total_tokens: 600, installations: 1, introduced_installation: false },
+    { observed_at: "2026-09-30T11:00:00Z", total_tokens: 1_200, installations: 1, introduced_installation: false },
+  ]);
+  assert.equal(rhythm.work_intervals.length, 1);
+  assert.equal(rhythm.work_intervals[0].end_at, "2026-09-30T10:00:00.000Z");
+  assert.equal(rhythm.night_ride, true);
+});
+
+test("weekend usage is excluded from work stability and only feeds playful timing", () => {
+  const rhythm = analyzeDenglemaUsageRhythm([
+    { observed_at: "2026-10-03T01:00:00Z", total_tokens: 0, installations: 1, introduced_installation: true },
+    { observed_at: "2026-10-03T02:00:00Z", total_tokens: 600, installations: 1, introduced_installation: false },
+  ]);
+  assert.equal(rhythm.work_intervals.length, 0);
+  assert.equal(rhythm.weekend_rider, true);
+  assert.equal(rhythm.rhythm_eligible, false);
+});
+
+test("steady positive work burn rate unlocks steady cruise", () => {
+  const rhythm = analyzeDenglemaUsageRhythm(
+    rhythmSamples("2026-09-30T01:00:00Z", [0, 6_000, 12_000, 18_000, 24_000, 30_000]),
+  );
+  assert.equal(rhythm.interval_count, 5);
+  assert.equal(rhythm.coverage_minutes, 300);
+  assert.equal(rhythm.rhythm_eligible, true);
+  assert.equal(rhythm.coefficient_of_variation, 0);
+  assert.equal(rhythm.steady_cruise, true);
+  assert.equal(rhythm.heartbeat_rider, false);
+});
+
+test("highly variable positive work burn rate unlocks heartbeat rider", () => {
+  const rhythm = analyzeDenglemaUsageRhythm(
+    rhythmSamples("2026-09-30T01:00:00Z", [0, 600, 12_600, 13_200, 25_200, 25_800]),
+  );
+  assert.equal(rhythm.rhythm_eligible, true);
+  assert.ok(rhythm.coefficient_of_variation >= 0.9);
+  assert.equal(rhythm.steady_cruise, false);
+  assert.equal(rhythm.heartbeat_rider, true);
+});
+
+test("insufficient samples never unlock a rhythm achievement", () => {
+  const rhythm = analyzeDenglemaUsageRhythm(
+    rhythmSamples("2026-09-30T01:00:00Z", [0, 6_000, 12_000, 18_000, 24_000]),
+  );
+  assert.equal(rhythm.interval_count, 4);
+  assert.equal(rhythm.rhythm_eligible, false);
+  assert.equal(rhythm.steady_cruise, false);
+  assert.equal(rhythm.heartbeat_rider, false);
+});
+
+test("multiple installations aggregate into one user timeline without duplicate intervals", async (t) => {
+  const root = await withRoot(t, "denglema-rhythm-multi-install-");
+  const sample = (observed_at, total_tokens) => ({
+    schema_version: 2,
+    harness: "codex",
+    date: "2026-09-30",
+    observed_at,
+    total_tokens,
+    models: [],
+    projects: [],
+  });
+
+  await upsertUsageSample({ id: "inst-a", user_id: "multi" }, sample("2026-09-30T01:00:00Z", 100), root);
+  await upsertUsageSample({ id: "inst-b", user_id: "multi" }, sample("2026-09-30T01:00:00Z", 50), root);
+  await upsertUsageSample({ id: "inst-a", user_id: "multi" }, sample("2026-09-30T02:00:00Z", 200), root);
+  await upsertUsageSample({ id: "inst-b", user_id: "multi" }, sample("2026-09-30T02:00:00Z", 100), root);
+
+  const history = await readUserUsageHistory("multi", "2026-09-30", root);
+  assert.deepEqual(history.map((item) => item.total_tokens), [150, 300]);
+  const rhythm = analyzeDenglemaUsageRhythm(history);
+  assert.equal(rhythm.interval_count, 1);
+  assert.equal(rhythm.work_intervals[0].token_delta, 150);
+});
+
+test("usage sample history is bounded to 96 lightweight points per installation", async (t) => {
+  const root = await withRoot(t, "denglema-rhythm-history-bound-");
+  const start = Date.parse("2026-09-30T00:00:00Z");
+  for (let index = 0; index < 100; index += 1) {
+    await upsertUsageSample({ id: "inst-bounded", user_id: "bounded" }, {
+      schema_version: 2,
+      harness: "codex",
+      date: "2026-09-30",
+      observed_at: new Date(start + index * 5 * 60_000).toISOString(),
+      total_tokens: (index + 1) * 10,
+      models: [],
+      projects: [],
+    }, root);
+  }
+  const history = await readUserUsageHistory("bounded", "2026-09-30", root);
+  assert.equal(history.length, 96);
+  assert.equal(history[0].total_tokens, 50);
+  assert.equal(history.at(-1).total_tokens, 1_000);
+});
+
+
+test("balance achievements require real activity instead of rewarding zero tokens", async (t) => {
+  const root = await withRoot(t, "denglema-balance-real-activity-");
+  await createWebUser({ display_name: "Focus", avatar_emoji: "🎯" }, root, {
+    userId: "focus",
+    recoveryCode: "FOCUS-USER",
+  });
+  const pairing = await createPairingCode("focus", root, { code: "FOCUS-INSTALL" });
+  const installation = await consumePairingCode(pairing.code, "Focus device", root, {
+    token: "focus-token",
+    installationId: "focus-inst",
+  });
+
+  const empty = await syncUserAchievements("focus", "2026-09-30", root);
+  assert.equal(empty.find((item) => item.id === "precise_rider").unlocked, false);
+  assert.equal(empty.find((item) => item.id === "light_multitasker").unlocked, false);
+
+  await upsertUsageSample({ id: installation.installation_id, user_id: "focus" }, {
+    schema_version: 2,
+    harness: "codex",
+    date: "2026-09-30",
+    observed_at: "2026-09-30T02:00:00Z",
+    total_tokens: 100,
+    models: [{ name: "gpt-5.6-sol", total_tokens: 100 }],
+    projects: [{ name: "one-project", total_tokens: 100 }],
+  }, root);
+
+  const active = await syncUserAchievements("focus", "2026-09-30", root);
+  assert.equal(active.find((item) => item.id === "precise_rider").unlocked, true);
+});
+
+test("balanced breadth and three consecutive active days unlock planned balance achievements", async (t) => {
+  const root = await withRoot(t, "denglema-balance-planned-");
+  await createWebUser({ display_name: "Balanced", avatar_emoji: "🧭" }, root, {
+    userId: "balanced",
+    recoveryCode: "BALANCED-USER",
+  });
+  const pairA = await createPairingCode("balanced", root, { code: "BALANCED-A" });
+  const instA = await consumePairingCode(pairA.code, "A", root, {
+    token: "balanced-a",
+    installationId: "balanced-a",
+  });
+  const pairB = await createPairingCode("balanced", root, { code: "BALANCED-B" });
+  const instB = await consumePairingCode(pairB.code, "B", root, {
+    token: "balanced-b",
+    installationId: "balanced-b",
+  });
+
+  for (const date of ["2026-09-28", "2026-09-29"]) {
+    await upsertUsageSample({ id: instA.installation_id, user_id: "balanced" }, {
+      schema_version: 2,
+      harness: "codex",
+      date,
+      observed_at: `${date}T02:00:00Z`,
+      total_tokens: 100,
+      models: [{ name: "model-a", total_tokens: 100 }],
+      projects: [{ name: "project-a", total_tokens: 100 }],
+    }, root);
+  }
+
+  await upsertUsageSample({ id: instA.installation_id, user_id: "balanced" }, {
+    schema_version: 2,
+    harness: "codex",
+    date: "2026-09-30",
+    observed_at: "2026-09-30T02:00:00Z",
+    total_tokens: 200,
+    models: [{ name: "model-a", total_tokens: 200 }],
+    projects: [
+      { name: "project-a", total_tokens: 80 },
+      { name: "project-b", total_tokens: 60 },
+      { name: "project-c", total_tokens: 60 },
+    ],
+  }, root);
+  await upsertUsageSample({ id: instB.installation_id, user_id: "balanced" }, {
+    schema_version: 2,
+    harness: "cursor",
+    date: "2026-09-30",
+    observed_at: "2026-09-30T02:05:00Z",
+    total_tokens: 100,
+    models: [{ name: "model-b", total_tokens: 100 }],
+    projects: [{ name: "project-b", total_tokens: 100 }],
+  }, root);
+
+  const achievements = await syncUserAchievements("balanced", "2026-09-30", root);
+  assert.equal(achievements.find((item) => item.id === "light_multitasker").unlocked, true);
+  assert.equal(achievements.find((item) => item.id === "all_round_route").unlocked, true);
+  assert.equal(achievements.find((item) => item.id === "three_day_streak").unlocked, true);
 });
