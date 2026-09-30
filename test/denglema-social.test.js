@@ -554,3 +554,57 @@ test("balanced breadth and three consecutive active days unlock planned balance 
   assert.equal(achievements.find((item) => item.id === "all_round_route").unlocked, true);
   assert.equal(achievements.find((item) => item.id === "three_day_streak").unlocked, true);
 });
+
+
+test("achievement sync emits a bounded structured rhythm summary without affecting unlocks", async (t) => {
+  const root = await withRoot(t, "denglema-rhythm-log-");
+  await createWebUser({ display_name: "Logger", avatar_emoji: "🧘" }, root, {
+    userId: "logger",
+    recoveryCode: "LOGGER-USER",
+  });
+  const pair = await createPairingCode("logger", root, { code: "LOGGER-INSTALL" });
+  const installation = await consumePairingCode(pair.code, "Logger device", root, {
+    token: "logger-token",
+    installationId: "logger-inst",
+  });
+
+  for (const [index, total] of [0, 6000, 12000, 18000, 24000, 30000].entries()) {
+    await upsertUsageSample({ id: installation.installation_id, user_id: "logger" }, {
+      schema_version: 2,
+      harness: "codex",
+      date: "2026-09-30",
+      observed_at: new Date(Date.parse("2026-09-30T01:00:00Z") + index * 60 * 60_000).toISOString(),
+      total_tokens: total,
+      models: [],
+      projects: [],
+    }, root);
+  }
+
+  let summary = null;
+  const achievements = await syncUserAchievements("logger", "2026-09-30", root, {
+    timezone: "Asia/Shanghai",
+    onRhythm: (value) => { summary = value; },
+  });
+
+  assert.equal(achievements.find((item) => item.id === "steady_cruise").unlocked, true);
+  assert.equal(summary.user_id, "logger");
+  assert.equal(summary.date, "2026-09-30");
+  assert.equal(summary.timezone, "Asia/Shanghai");
+  assert.equal(summary.sample_count, 6);
+  assert.equal(summary.interval_count, 5);
+  assert.equal(summary.coverage_minutes, 300);
+  assert.equal(summary.active_tokens, 30000);
+  assert.equal(summary.mean_rate_tpm, 100);
+  assert.equal(summary.coefficient_of_variation, 0);
+  assert.equal(summary.rhythm_eligible, true);
+  assert.equal(summary.steady_cruise, true);
+  assert.equal(summary.heartbeat_rider, false);
+  assert.deepEqual(summary.playful_timing, {
+    early_bird: false,
+    night_ride: false,
+    deep_night_rider: false,
+    weekend_rider: false,
+  });
+  assert.ok(summary.newly_unlocked.includes("first_ride"));
+  assert.ok(summary.newly_unlocked.includes("steady_cruise"));
+});
