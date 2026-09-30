@@ -31,6 +31,12 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
     message: "蹬了吗插件升级到 0.1.16 · 新增自动上传",
     href: "/plugin#upgrade-0-1-16",
   },
+  {
+    id: "web-2026-09-social-transports",
+    emoji: "💬",
+    message: "蹬了吗更新 · 支持在线 24h 留言和更多交通工具",
+    href: "/plugin#web-social-transports",
+  },
 ];
 
 export const DENGLEMA_ACHIEVEMENTS = [
