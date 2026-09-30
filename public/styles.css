@@ -1890,7 +1890,10 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .track-motion,
   .rider-inner,
+  .transport,
   .wheel,
+  .mini-wheel,
+  .board-wheel,
   .leg,
   .leader-crown,
   .mini-bike,
