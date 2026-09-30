@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 REPO_DIR="${DENGLEMA_DEPLOY_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SERVICE_NAME="${DENGLEMA_DEPLOY_SERVICE:-denglema-dev.service}"
-HEALTH_URL="${DENGLEMA_DEPLOY_HEALTH_URL:-http://127.0.0.1:1600/health}"
+HEALTH_URL="${DENGLEMA_DEPLOY_HEALTH_URL:-http://10.21.5.77:1600/health}"
 REMOTE_URL="${DENGLEMA_DEPLOY_REMOTE_URL:-https://github.com/viviennebla/codex-sync-server.git}"
 BRANCH="${DENGLEMA_DEPLOY_BRANCH:-main}"
 HEALTH_TIMEOUT="${DENGLEMA_DEPLOY_HEALTH_TIMEOUT_SECONDS:-20}"

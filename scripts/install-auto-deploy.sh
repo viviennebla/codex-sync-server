@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 REPO_DIR="${DENGLEMA_DEPLOY_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SERVICE_NAME="${DENGLEMA_DEPLOY_SERVICE:-denglema-dev.service}"
-HEALTH_URL="${DENGLEMA_DEPLOY_HEALTH_URL:-http://127.0.0.1:1600/health}"
+HEALTH_URL="${DENGLEMA_DEPLOY_HEALTH_URL:-http://10.21.5.77:1600/health}"
 INTERVAL="${DENGLEMA_DEPLOY_INTERVAL:-1min}"
 
 if [[ "$REPO_DIR" =~ [[:space:]] ]]; then
