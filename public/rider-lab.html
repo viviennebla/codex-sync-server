@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rider Lab · 蹬了吗</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/rider-lab.js"></script>
+</head>
+<body class="profile-page rider-lab-page">
+  <main class="rider-lab-shell">
+    <header class="rider-lab-topbar">
+      <a href="/me" class="profile-back">← 回我的主页</a>
+      <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
+      <span class="rider-lab-badge">Rider Lab · 实验入口</span>
+    </header>
+
+    <section class="rider-lab-hero">
+      <p class="dialog-kicker">隐藏设置</p>
+      <h1 id="labTitle">把骑手捏得更像你。</h1>
+      <p>这里只放不想挤进主页面的个性化实验。设置只改变赛道表现，不参与排名，也不会影响 usage。</p>
+    </section>
+
+    <section class="rider-lab-grid">
+      <article class="rider-lab-card is-live">
+        <div class="rider-lab-card-head">
+          <h2>💬 随机口号</h2>
+          <span class="rider-lab-status is-live">已开放</span>
+        </div>
+        <p>人物做随机动作时会优先从你的口号池里抽一句。两个人互相打招呼的对白仍保留系统台词。</p>
+        <div class="rider-lab-slogan-editor">
+          <textarea id="sloganInput" placeholder="一行一句，例如：&#10;今天先随缘蹬&#10;CPU 凉一下&#10;下班再说"></textarea>
+          <div class="rider-lab-slogan-meta">
+            <span>最多 8 句 · 每句最多 28 个字符</span>
+            <span id="sloganCount">0 / 8</span>
+          </div>
+          <div id="sloganPreview" class="rider-lab-preview"></div>
+          <div class="rider-lab-actions">
+            <button id="saveSlogans" class="rider-lab-primary" type="button">保存口号</button>
+            <button id="resetSlogans" class="rider-lab-secondary" type="button">恢复默认台词</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="rider-lab-card">
+        <div class="rider-lab-card-head">
+          <h2>🪑 工位</h2>
+          <span class="rider-lab-status is-next">下一步</span>
+        </div>
+        <p>已经拆成独立组件。后续开放桌型、屏幕、植物、咖啡和小摆件组合。</p>
+      </article>
+
+      <article class="rider-lab-card">
+        <div class="rider-lab-card-head">
+          <h2>🛴 载具</h2>
+          <span class="rider-lab-status">已有基础</span>
+        </div>
+        <p>自行车、滑板车、滑板、古法通勤、冲浪、轮滑已经可切换，后续统一迁到这里。</p>
+        <a class="rider-lab-card-link" href="/me">先去我的主页切换 →</a>
+      </article>
+
+      <article class="rider-lab-card">
+        <div class="rider-lab-card-head">
+          <h2>🎬 动作</h2>
+          <span class="rider-lab-status">计划中</span>
+        </div>
+        <p>以后可以选择更常出现的 wave / sip / stretch / coast，也可以关闭不喜欢的动作。</p>
+      </article>
+
+      <article class="rider-lab-card">
+        <div class="rider-lab-card-head">
+          <h2>🧍 人物模型</h2>
+          <span class="rider-lab-status">骨架约束</span>
+        </div>
+        <p>未来允许替换人物模型，但必须能继续复用 transport 和 motion，不接受只有一张静态贴图的模型。</p>
+        <div class="rider-lab-contract">required: head · body · left_arm · right_arm · left_leg · right_leg</div>
+      </article>
+
+      <article class="rider-lab-card">
+        <div class="rider-lab-card-head">
+          <h2>🙂 捏脸</h2>
+          <span class="rider-lab-status">计划中</span>
+        </div>
+        <p>脸型、发型、表情和配件以后放在这里；头像仍可以独立保留，作为最轻量的身份识别。</p>
+      </article>
+    </section>
+  </main>
+  <div id="labToast" class="rider-lab-toast hidden"></div>
+</body>
+</html>
