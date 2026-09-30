@@ -1,6 +1,7 @@
 const DEFAULT_BASE_URL = "https://didcodexreset.com/openapi/v1";
 const DEFAULT_SITE_URL = "https://didcodexreset.com/zh/";
 const DEFAULT_CACHE_MS = 15 * 60 * 1000;
+const RECENT_COMPLETED_MS = 24 * 60 * 60 * 1000;
 
 function trimText(value, max = 220) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
@@ -37,6 +38,14 @@ function normalizeRecord(record) {
   };
 }
 
+function recentCompletedRecord(record, nowMs) {
+  if (!record || record.kind !== "reset_completed") return null;
+  const occurredAt = Date.parse(record.effective_at || record.completed_at || "");
+  if (!Number.isFinite(occurredAt)) return null;
+  const ageMs = nowMs - occurredAt;
+  return ageMs >= 0 && ageMs <= RECENT_COMPLETED_MS ? record : null;
+}
+
 export function createCodexRunwayReader(options = {}) {
   const fetchFn = options.fetch || globalThis.fetch;
   const now = options.now || (() => Date.now());
@@ -60,17 +69,22 @@ export function createCodexRunwayReader(options = {}) {
   }
 
   async function refresh() {
-    const signal = await fetchLatest();
+    const [signal, completed] = await Promise.all([
+      fetchLatest(),
+      fetchLatest("reset_completed"),
+    ]);
+    const currentNow = now();
     const value = {
       ok: true,
       source: "CodexRunway",
       site_url: siteUrl,
-      fetched_at: new Date(now()).toISOString(),
-      generated_at: signal.meta?.generatedAt || null,
+      fetched_at: new Date(currentNow).toISOString(),
+      generated_at: signal.meta?.generatedAt || completed.meta?.generatedAt || null,
       latest_signal: signal.record,
+      latest_completed: recentCompletedRecord(completed.record, currentNow),
     };
     cached = value;
-    expiresAt = now() + cacheMs;
+    expiresAt = currentNow + cacheMs;
     return { ...value, cache: "refresh" };
   }
 
