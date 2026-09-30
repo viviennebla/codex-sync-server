@@ -26,6 +26,11 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "ci-superseded-deploys-2026-09",
+    emoji: "🧹",
+    message: "CI 旧部署被新 main 超车时改为正常跳过 · 红灯终于学会分辨失败和迟到",
+  },
+  {
     id: "plugin-0.1.17-usage-limits",
     emoji: "📦",
     message: "蹬了吗插件升级到 0.1.17 · 新增剩余额度情绪",
