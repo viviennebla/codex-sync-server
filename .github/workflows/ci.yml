@@ -66,13 +66,18 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Deploy tested commit
         env:
           DENGLEMA_EXPECTED_SHA: ${{ github.sha }}
           DENGLEMA_DEPLOY_REPO: /home/feiyan/workspace/codex-sync-server-denglema-feishu
           DENGLEMA_DEPLOY_SERVICE: denglema-dev.service
           DENGLEMA_DEPLOY_HEALTH_URL: http://10.21.5.77:1600/health
-        run: /bin/bash "$DENGLEMA_DEPLOY_REPO/scripts/deploy-production.sh"
+        run: /bin/bash "$GITHUB_WORKSPACE/scripts/deploy-production.sh"
 
       - name: Deployment summary
         run: |
