@@ -662,6 +662,71 @@ function positionPlan(riders) {
   }));
 }
 
+const TRANSPORT_LABELS = Object.freeze({
+  bike: "自行车",
+  scooter: "滑板车",
+  skateboard: "滑板",
+  walk: "古法通勤",
+  surf: "冲浪",
+  skate: "轮滑",
+});
+
+const PERSONALITIES = Object.freeze([
+  { id: "coffee", emoji: "☕", label: "通勤党" },
+  { id: "headphones", emoji: "🎧", label: "摸鱼骑手" },
+  { id: "cat", emoji: "🐈", label: "带猫上班" },
+  { id: "gear", emoji: "🎒", label: "装备党" },
+  { id: "plant", emoji: "🌱", label: "佛系骑手" },
+  { id: "engineer", emoji: "💻", label: "工程师" },
+  { id: "milk-tea", emoji: "🧋", label: "奶茶骑手" },
+  { id: "sleepy", emoji: "💤", label: "困困骑手" },
+]);
+
+function transportFor(rider) {
+  const value = String(rider.transport || "bike");
+  return TRANSPORT_LABELS[value] ? value : "bike";
+}
+
+function personalityFor(rider) {
+  return PERSONALITIES[
+    stableHash(String(rider.user_id || "rider") + ":personality") % PERSONALITIES.length
+  ];
+}
+
+function transportMarkup(transport) {
+  if (transport === "scooter") {
+    return '<div class="transport transport-scooter">' +
+      '<i class="mini-wheel rear"></i><i class="mini-wheel front"></i>' +
+      '<i class="scooter-deck"></i><i class="scooter-stem"></i><i class="scooter-handle"></i>' +
+    '</div>';
+  }
+  if (transport === "skateboard") {
+    return '<div class="transport transport-skateboard">' +
+      '<i class="skateboard-deck"></i><i class="board-wheel rear"></i><i class="board-wheel front"></i>' +
+    '</div>';
+  }
+  if (transport === "walk") {
+    return '<div class="transport transport-walk">' +
+      '<i class="walk-shadow"></i><i class="shoe shoe-a"></i><i class="shoe shoe-b"></i>' +
+    '</div>';
+  }
+  if (transport === "surf") {
+    return '<div class="transport transport-surf">' +
+      '<i class="surf-wave">≈≈</i><i class="surf-board"></i>' +
+    '</div>';
+  }
+  if (transport === "skate") {
+    return '<div class="transport transport-skate">' +
+      '<i class="skate-boot boot-a"></i><i class="skate-boot boot-b"></i>' +
+    '</div>';
+  }
+  return '<div class="bike transport transport-bike">' +
+    '<div class="wheel back"></div>' +
+    '<div class="wheel front"></div>' +
+    '<div class="frame"></div>' +
+  '</div>';
+}
+
 function raceAvatarEmoji(rider) {
   const emoji = String(rider.avatar_emoji || "🙂");
   const transportLike = new Set(["🚴", "🚵", "🚲", "🛴", "🛹", "🏄", "🛼"]);
