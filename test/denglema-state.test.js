@@ -201,6 +201,67 @@ test("schema v2 accepts bounded harness metadata", () => {
   }), /Invalid harness/);
 });
 
+test("schema v2 stores remaining quota and projects user pressure from the tightest window", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-quota-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const sample = validateUsageSample({
+    schema_version: 2,
+    harness: "codex",
+    date: "2026-09-30",
+    observed_at: "2026-09-30T07:00:00Z",
+    total_tokens: 123,
+    models: [],
+    projects: [],
+    usage_limits: {
+      updated_at: "2026-09-30T06:59:59Z",
+      primary: {
+        used_percent: 84,
+        remaining_percent: 16,
+        window_minutes: 300,
+        resets_at: "2026-09-30T09:00:00Z",
+      },
+      secondary: {
+        used_percent: 55,
+        remaining_percent: 45,
+        window_minutes: 10080,
+        resets_at: "2026-10-05T00:00:00Z",
+      },
+    },
+  });
+  assert.equal(sample.usage_limits.primary.remaining_percent, 16);
+
+  await upsertUsageSample({ id: "inst-quota", user_id: "user-quota" }, sample, root);
+  const totals = await readUserTotals("2026-09-30", root);
+  assert.deepEqual(totals, [{
+    user_id: "user-quota",
+    total_tokens: 123,
+    installations: 1,
+    models: [],
+    projects: [],
+    quota_remaining_percent: 16,
+    quota_pressure: 0.84,
+    quota_updated_at: "2026-09-30T06:59:59.000Z",
+  }]);
+
+  assert.throws(() => validateUsageSample({
+    schema_version: 2,
+    harness: "codex",
+    date: "2026-09-30",
+    observed_at: "2026-09-30T07:00:00Z",
+    total_tokens: 123,
+    models: [],
+    projects: [],
+    usage_limits: {
+      updated_at: "2026-09-30T06:59:59Z",
+      primary: {
+        used_percent: 90,
+        remaining_percent: 30,
+      },
+    },
+  }), /used \+ remaining must equal 100/);
+});
+
 test("pairing binds an installation to the internal user id", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "denglema-pair-"));
   t.after(() => rm(root, { recursive: true, force: true }));
