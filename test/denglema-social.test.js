@@ -84,11 +84,19 @@ test("release announcement publishes once, links to upgrade notes, and does not 
   );
 
   let events = await readDenglemaEvents(root, { now: () => now });
-  const release = events.find((item) => item.kind === "release");
-  assert.ok(release);
-  assert.equal(release.message, "蹬了吗插件升级到 0.1.16 · 新增自动上传");
-  assert.equal(release.meta.emoji, "📦");
-  assert.equal(release.meta.href, "/plugin#upgrade-0-1-16");
+  const quotaRelease = events.find((item) => (
+    item.kind === "release"
+    && item.meta?.announcement_id === "plugin-0.1.17-usage-limits"
+  ));
+  const autoUploadRelease = events.find((item) => (
+    item.kind === "release"
+    && item.meta?.announcement_id === "plugin-0.1.16-auto-upload"
+  ));
+  assert.ok(quotaRelease);
+  assert.equal(quotaRelease.message, "蹬了吗插件升级到 0.1.17 · 新增剩余额度情绪");
+  assert.equal(quotaRelease.meta.emoji, "📦");
+  assert.equal(quotaRelease.meta.href, "/plugin#upgrade-0-1-17");
+  assert.ok(autoUploadRelease);
 
   now = new Date("2026-10-02T04:00:00Z");
   events = await readDenglemaEvents(root, { now: () => now });
