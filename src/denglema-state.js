@@ -59,6 +59,23 @@ function cleanAvatarEmoji(value) {
   return emoji;
 }
 
+export const DENGLEMA_TRANSPORTS = Object.freeze([
+  "bike",
+  "scooter",
+  "skateboard",
+  "walk",
+  "surf",
+  "skate",
+]);
+
+export function normalizeDenglemaTransport(value) {
+  const transport = String(value || "bike").trim().toLowerCase();
+  if (!DENGLEMA_TRANSPORTS.includes(transport)) {
+    throw new Error("transport must be one of: " + DENGLEMA_TRANSPORTS.join(", "));
+  }
+  return transport;
+}
+
 export async function createWebUser(profile, stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
   const file = paths(stateDir).users;
@@ -82,6 +99,7 @@ export async function createWebUser(profile, stateDir = "state", options = {}) {
     display_name: cleanDisplayName(profile?.display_name),
     avatar_emoji: cleanAvatarEmoji(profile?.avatar_emoji),
     avatar_url: null,
+    transport: "bike",
     created_at: now.toISOString(),
     last_login_at: now.toISOString(),
   };
@@ -162,6 +180,21 @@ export async function updateWebUserEmoji(userId, avatarEmoji, stateDir = "state"
 
   user.avatar_emoji = cleanAvatarEmoji(avatarEmoji);
   user.avatar_url = null;
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
+export async function updateWebUserTransport(userId, transport, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.transport = normalizeDenglemaTransport(transport);
   user.updated_at = (options.now?.() || new Date()).toISOString();
   store.by_id[id] = user;
   await writeJson(file, store);
