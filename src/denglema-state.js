@@ -92,6 +92,107 @@ export function normalizeDenglemaQuotaEmotion(value) {
   return emotion;
 }
 
+const MAX_PROJECT_PRIVACY_RULES = 128;
+const MAX_PROJECT_ALIAS_LENGTH = 48;
+
+function cleanProjectName(value) {
+  const name = String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").trim();
+  if (!name || name.length > 96) throw new Error("project must be 1-96 characters");
+  return name;
+}
+
+function cleanProjectAlias(value) {
+  const alias = String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!alias || [...alias].length > MAX_PROJECT_ALIAS_LENGTH) {
+    throw new Error("alias must be 1-" + MAX_PROJECT_ALIAS_LENGTH + " characters");
+  }
+  return alias;
+}
+
+export function projectPrivacyForUser(user, projectName) {
+  const rule = user?.project_privacy?.[projectName];
+  if (!rule || typeof rule !== "object") return { mode: "visible", alias: null };
+  if (rule.mode === "hidden") return { mode: "hidden", alias: null };
+  if (rule.mode === "alias" && rule.alias) {
+    return { mode: "alias", alias: String(rule.alias) };
+  }
+  return { mode: "visible", alias: null };
+}
+
+function projectPrivacyProjection(user, rows = []) {
+  const totals = new Map();
+  let hiddenTokens = 0;
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const rawName = String(row?.name || "").trim();
+    const tokens = Number(row?.total_tokens || 0);
+    if (!rawName || !Number.isFinite(tokens) || tokens <= 0) continue;
+    const rule = projectPrivacyForUser(user, rawName);
+    if (rule.mode === "hidden") {
+      hiddenTokens += tokens;
+      continue;
+    }
+    const name = rule.mode === "alias" ? rule.alias : rawName;
+    totals.set(name, (totals.get(name) || 0) + tokens);
+  }
+  return {
+    rows: [...totals.entries()]
+      .map(([name, total_tokens]) => ({ name, total_tokens }))
+      .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name)),
+    hidden_tokens: hiddenTokens,
+  };
+}
+
+export function projectRowsForPublic(user, rows = []) {
+  return projectPrivacyProjection(user, rows).rows;
+}
+
+export async function updateWebUserProjectPrivacy(
+  userId,
+  project,
+  mode,
+  alias,
+  stateDir = "state",
+  options = {},
+) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const name = cleanProjectName(project);
+  const normalizedMode = String(mode || "visible").trim().toLowerCase();
+  if (!["visible", "hidden", "alias"].includes(normalizedMode)) {
+    throw new Error("mode must be visible, hidden, or alias");
+  }
+
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+  user.project_privacy ||= {};
+
+  if (normalizedMode === "visible") {
+    delete user.project_privacy[name];
+  } else if (normalizedMode === "hidden") {
+    user.project_privacy[name] = { mode: "hidden" };
+  } else {
+    user.project_privacy[name] = { mode: "alias", alias: cleanProjectAlias(alias) };
+  }
+
+  if (Object.keys(user.project_privacy).length > MAX_PROJECT_PRIVACY_RULES) {
+    throw new Error("too many project privacy rules");
+  }
+
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return {
+    project: name,
+    ...projectPrivacyForUser(user, name),
+    rules: user.project_privacy,
+  };
+}
+
 export const MAX_DENGLEMA_SLOGANS = 8;
 export const MAX_DENGLEMA_SLOGAN_LENGTH = 28;
 export const DENGLEMA_OFFICE_X_MIN = 22;
@@ -858,6 +959,7 @@ export async function readDimensionLeaderboard(date, stateDir = "state") {
   let coveredTokens = 0;
   let installations = 0;
   let v2Installations = 0;
+  let projectsHavePrivateEntries = false;
 
   const add = (target, rows, userId) => {
     for (const row of Array.isArray(rows) ? rows : []) {
@@ -891,7 +993,12 @@ export async function readDimensionLeaderboard(date, stateDir = "state") {
       v2Installations += 1;
     }
     add(models, row?.max_models || row?.latest?.models, userId);
-    add(projects, row?.max_projects || row?.latest?.projects, userId);
+    const projectProjection = projectPrivacyProjection(
+      profiles.get(userId),
+      row?.max_projects || row?.latest?.projects,
+    );
+    if (projectProjection.hidden_tokens > 0) projectsHavePrivateEntries = true;
+    add(projects, projectProjection.rows, userId);
   }
 
   const rows = (target) => [...target.values()]
@@ -916,6 +1023,7 @@ export async function readDimensionLeaderboard(date, stateDir = "state") {
     coverage_ratio: totalTokens > 0 ? coveredTokens / totalTokens : 0,
     installations,
     v2_installations: v2Installations,
+    projects_have_private_entries: projectsHavePrivateEntries,
     models: rows(models),
     projects: rows(projects),
   };
