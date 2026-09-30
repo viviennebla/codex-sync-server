@@ -39,6 +39,11 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
     href: "/updates",
   },
   {
+    id: "sqlite-events-53-2026-09",
+    emoji: "💾",
+    message: "#53 24h 动态搬进 SQLite · events.json 终于不用每条消息都整本重写了",
+  },
+  {
     id: "daily-routes-52-2026-09",
     emoji: "🗺️",
     message: "#52 燃烧榜改成今日蹬况 · 排名还在地下室，只是终于不坐主席台了",
