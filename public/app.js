@@ -65,6 +65,10 @@ let pairingCodeCurrent = null;
 let pairingCommandMode = "shell";
 let previewMode = false;
 const activeMotion = new Map();
+const shownCommentEventIds = new Set();
+const riderMessageTimers = new Map();
+const COMMENT_BUBBLE_MS = 7000;
+const COMMENT_BUBBLE_RECENCY_MS = 2 * 60 * 1000;
 
 const DENGLEMA_SERVER = "https://vimo-dev-server.taila62aff.ts.net";
 const DENGLEMA_MARKETPLACE = "viviennebla/codex-usage-dashboard";
@@ -338,6 +342,69 @@ function eventKindIcon(event) {
   return "•";
 }
 
+function eventIconNode(event) {
+  const icon = document.createElement("span");
+  icon.className = "event-icon";
+
+  if (event.user) {
+    icon.classList.add("event-avatar");
+    if (event.user.avatar_url) {
+      const image = document.createElement("img");
+      image.src = event.user.avatar_url;
+      image.alt = "";
+      icon.appendChild(image);
+    } else {
+      icon.textContent = event.user.avatar_emoji || "🙂";
+    }
+    return icon;
+  }
+
+  icon.textContent = eventKindIcon(event);
+  return icon;
+}
+
+function showRiderMessage(event) {
+  const riderId = event.user?.user_id;
+  if (!riderId || !event.message) return;
+  const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
+  const bubble = node?.querySelector(".rider-message-bubble");
+  if (!node || !bubble) return;
+
+  bubble.textContent = event.message;
+  node.classList.add("has-message");
+  clearTimeout(riderMessageTimers.get(riderId));
+  riderMessageTimers.set(riderId, window.setTimeout(() => {
+    node.classList.remove("has-message");
+    bubble.textContent = "";
+    riderMessageTimers.delete(riderId);
+  }, COMMENT_BUBBLE_MS));
+}
+
+function syncRiderCommentBubbles(events) {
+  const now = Date.now();
+  const newestByRider = new Map();
+
+  for (const event of Array.isArray(events) ? events : []) {
+    if (event.kind !== "comment" || !event.user?.user_id) continue;
+    const key = event.id || [
+      event.user.user_id,
+      event.created_at,
+      event.message,
+    ].join(":");
+    if (shownCommentEventIds.has(key)) continue;
+    shownCommentEventIds.add(key);
+
+    const createdAt = Date.parse(event.created_at || "");
+    const age = now - createdAt;
+    if (!Number.isFinite(createdAt) || age < 0 || age > COMMENT_BUBBLE_RECENCY_MS) continue;
+    if (!newestByRider.has(event.user.user_id)) {
+      newestByRider.set(event.user.user_id, event);
+    }
+  }
+
+  newestByRider.forEach((event) => showRiderMessage(event));
+}
+
 function renderEvents(rows) {
   if (!eventList) return;
   const values = Array.isArray(rows) ? rows : [];
@@ -361,9 +428,7 @@ function renderEvents(rows) {
       item.setAttribute("aria-label", (event.message || "更新公告") + "，查看详情");
     }
 
-    const icon = document.createElement("span");
-    icon.className = "event-icon";
-    icon.textContent = eventKindIcon(event);
+    const icon = eventIconNode(event);
 
     const body = document.createElement("div");
     body.className = "event-body";
@@ -387,15 +452,16 @@ function renderEvents(rows) {
   });
 
   eventRail.classList.remove("hidden");
+  syncRiderCommentBubbles(values);
 }
 
 async function loadEvents() {
   if (!eventRail) return;
   if (previewMode) {
     renderEvents([
-      { kind: "join", message: "加入了赛道", created_at: new Date().toISOString(), meta: { harness: "cursor" }, user: { display_name: "Alice" } },
-      { kind: "leader", message: "超车成为第一名", created_at: new Date(Date.now() - 5 * 60000).toISOString(), user: { display_name: "Bob" } },
-      { kind: "comment", message: "今天谁先把额度蹬没？", created_at: new Date(Date.now() - 12 * 60000).toISOString(), user: { display_name: "摸鱼中" } },
+      { id: "preview-join", kind: "join", message: "加入了赛道", created_at: new Date().toISOString(), meta: { harness: "cursor" }, user: { user_id: "preview_alice", display_name: "Alice", avatar_url: PREVIEW_RIDERS[1].avatar_url, avatar_emoji: "🙂" } },
+      { id: "preview-leader", kind: "leader", message: "超车成为第一名", created_at: new Date(Date.now() - 5 * 60000).toISOString(), user: { user_id: "preview_bob", display_name: "Bob", avatar_url: PREVIEW_RIDERS[2].avatar_url, avatar_emoji: "🙂" } },
+      { id: "preview-comment", kind: "comment", message: "今天谁先把额度蹬没？", created_at: new Date(Date.now() - 20 * 1000).toISOString(), user: { user_id: "preview_tired", display_name: "摸鱼中", avatar_url: PREVIEW_RIDERS[3].avatar_url, avatar_emoji: "🙂" } },
     ]);
     return;
   }
@@ -790,6 +856,7 @@ function riderMarkup(rider) {
       '<div class="effect-sweat"></div>' +
       '<div class="effect-music">♪</div>' +
       '<div class="effect-burst">嘿!</div>' +
+      '<div class="rider-message-bubble" role="status" aria-live="polite"></div>' +
       (rider.is_leader ? '<div class="leader-crown" aria-label="今日第一" title="今日第一">👑</div>' : '') +
       '<div class="rider-motion">' +
         '<div class="rider-inner">' +
@@ -945,6 +1012,8 @@ function renderRiders(riders) {
   existing.forEach((node, riderId) => {
     if (!liveIds.has(riderId)) {
       activeMotion.delete(riderId);
+      clearTimeout(riderMessageTimers.get(riderId));
+      riderMessageTimers.delete(riderId);
       node.remove();
     }
   });
@@ -1701,4 +1770,6 @@ window.addEventListener("beforeunload", () => {
   clearInterval(refreshTimer);
   clearInterval(ambientTimer);
   stopPairingPoll();
+  riderMessageTimers.forEach((timer) => clearTimeout(timer));
+  riderMessageTimers.clear();
 });
