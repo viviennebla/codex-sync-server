@@ -122,6 +122,8 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#a7c7f4", "#26354b", "smile"),
     today_tokens: 72432,
     recent_rate_tpm: 0,
+    quota_remaining_percent: 82,
+    quota_pressure: 0.18,
     transport: "surf",
     accent: "#4c8ad9"
   },
@@ -131,6 +133,8 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#f7b7c4", "#49323a", "smile"),
     today_tokens: 960000,
     recent_rate_tpm: 15000,
+    quota_remaining_percent: 11,
+    quota_pressure: 0.89,
     transport: "scooter",
     accent: "#dd718e"
   },
@@ -140,6 +144,8 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#b7dfc7", "#29443a", "smile"),
     today_tokens: 640000,
     recent_rate_tpm: 7000,
+    quota_remaining_percent: 42,
+    quota_pressure: 0.58,
     transport: "skateboard",
     accent: "#4ca87c"
   },
@@ -149,6 +155,8 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#d6d5ea", "#3b3a4b", "smile"),
     today_tokens: 220000,
     recent_rate_tpm: 0,
+    quota_remaining_percent: 4,
+    quota_pressure: 0.96,
     mood: "tired",
     transport: "walk",
     accent: "#7b79ac"
@@ -704,10 +712,22 @@ async function openRiderDetail(rider) {
   }
 }
 
+function quotaPressure(rider) {
+  const direct = Number(rider?.quota_pressure);
+  if (Number.isFinite(direct)) return Math.max(0, Math.min(1, direct));
+  const remaining = Number(rider?.quota_remaining_percent);
+  if (!Number.isFinite(remaining)) return 0;
+  return Math.max(0, Math.min(1, (100 - remaining) / 100));
+}
+
 function stateFor(rider) {
-  if (rider.mood === "chill") return ["is-chill"];
-  if (rider.mood === "tired") return ["is-tired"];
-  return [];
+  const states = [];
+  if (rider.mood === "chill") states.push("is-chill");
+  if (rider.mood === "tired") states.push("is-tired");
+  const pressure = quotaPressure(rider);
+  if (pressure >= 0.9) states.push("is-quota-panic");
+  else if (pressure >= 0.7) states.push("is-quota-hurry");
+  return states;
 }
 
 function stableHash(text) {
@@ -843,7 +863,9 @@ function riderMarkup(rider) {
   const transport = transportFor(rider);
   const personality = personalityFor(rider);
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
-  const cadence = rider.mood === "chill" ? 1.14 : 0.78;
+  const pressure = quotaPressure(rider);
+  const cadenceBase = rider.mood === "chill" ? 1.14 : 0.78;
+  const cadence = Math.max(0.44, cadenceBase * (1 - pressure * 0.34)).toFixed(2);
   const edgeClass = Number(rider.x || 0) >= 80 ? " is-near-right" : "";
   return (
     '<div class="rider mode-' + transport + ' ' + classes + edgeClass + '" data-rider-id="' + rider.user_id + '"' +
@@ -893,7 +915,14 @@ function riderMarkup(rider) {
   );
 }
 
-const RIDER_STATE_CLASSES = ["is-fast", "is-burning", "is-chill", "is-tired"];
+const RIDER_STATE_CLASSES = [
+  "is-fast",
+  "is-burning",
+  "is-chill",
+  "is-tired",
+  "is-quota-hurry",
+  "is-quota-panic",
+];
 
 function updateRiderNode(node, rider) {
   node._riderData = rider;
@@ -913,9 +942,15 @@ function updateRiderNode(node, rider) {
   node.style.setProperty("--x", rider.x + "%");
   node.classList.toggle("is-near-right", Number(rider.x || 0) >= 80);
   node.style.setProperty("--accent", rider.accent || "#4c8ad9");
+  const pressure = quotaPressure(rider);
+  const cadenceBase = rider.mood === "chill"
+    ? 1.14
+    : rider.mood === "burning"
+      ? 0.48
+      : 0.72;
   node.style.setProperty(
     "--cadence",
-    (rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72) + "s",
+    Math.max(0.42, cadenceBase * (1 - pressure * 0.34)).toFixed(2) + "s",
   );
 
   const name = node.querySelector(".name-chip .rider-name");
@@ -1099,6 +1134,11 @@ const MOTION_ACTIONS = {
     duration: 1800,
     bursts: ["突然来劲!", "冲两秒!", "腿自己动了"]
   },
+  quotaRush: {
+    className: "is-quota-rushing",
+    duration: 1650,
+    bursts: ["额度告急!", "快 reset 了!", "省着点蹬!", "余额在冒烟!"]
+  },
   wheelie: {
     className: "is-wheelie",
     duration: 1800,
@@ -1117,6 +1157,11 @@ const MOTION_ACTIONS = {
 };
 
 function chooseMotion(rider) {
+  const pressure = quotaPressure(rider);
+  const pressureRoll = Math.random();
+  if (pressure >= 0.9 && pressureRoll < 0.42) return MOTION_ACTIONS.quotaRush;
+  if (pressure >= 0.7 && pressureRoll < 0.18) return MOTION_ACTIONS.quotaRush;
+
   const personality = personalityFor(rider).id;
   const personalityRoll = Math.random();
 
