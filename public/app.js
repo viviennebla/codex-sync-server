@@ -808,9 +808,14 @@ async function openRiderDetail(rider) {
 }
 
 function quotaPressure(rider) {
-  const direct = Number(rider?.quota_pressure);
-  if (Number.isFinite(direct)) return Math.max(0, Math.min(1, direct));
-  const remaining = Number(rider?.quota_remaining_percent);
+  const directRaw = rider?.quota_pressure;
+  if (directRaw !== null && directRaw !== undefined && directRaw !== "") {
+    const direct = Number(directRaw);
+    if (Number.isFinite(direct)) return Math.max(0, Math.min(1, direct));
+  }
+  const remainingRaw = rider?.quota_remaining_percent;
+  if (remainingRaw === null || remainingRaw === undefined || remainingRaw === "") return 0;
+  const remaining = Number(remainingRaw);
   if (!Number.isFinite(remaining)) return 0;
   return Math.max(0, Math.min(1, (100 - remaining) / 100));
 }
@@ -821,7 +826,9 @@ function quotaEmotionFor(rider) {
 }
 
 function quotaLabel(rider) {
-  const remaining = Number(rider?.quota_remaining_percent);
+  const raw = rider?.quota_remaining_percent;
+  if (raw === null || raw === undefined || raw === "") return "";
+  const remaining = Number(raw);
   return Number.isFinite(remaining)
     ? "余粮 " + Math.round(Math.max(0, Math.min(100, remaining))) + "%"
     : "";
