@@ -148,6 +148,23 @@ const PREVIEW_RIDERS = [
     mood: "tired",
     transport: "walk",
     accent: "#7b79ac"
+  },
+  {
+    user_id: "preview_bike",
+    display_name: "古典蹬法",
+    avatar_emoji: "🚴",
+    today_tokens: 0,
+    transport: "bike",
+    accent: "#c98464",
+    equipped_achievement: { emoji: "🧪", name: "模型探险家" }
+  },
+  {
+    user_id: "preview_skate",
+    display_name: "名字有一点点长的同事",
+    avatar_url: avatarSvg("#f1d3a8", "#514334", "smile"),
+    today_tokens: 2380000,
+    transport: "skate",
+    accent: "#9a77b7"
   }
 ];
 
@@ -1219,6 +1236,15 @@ async function bootstrap() {
     await loadRaceData();
     await loadEvents();
     startRaceRuntime();
+
+    const forcedMotion = new URLSearchParams(location.search).get("motion");
+    if (forcedMotion && MOTION_ACTIONS[forcedMotion]) {
+      window.setTimeout(() => {
+        const rider = visibleRiders[0];
+        const node = rider && document.querySelector('[data-rider-id="' + rider.user_id + '"]');
+        if (rider && node) triggerMotion(rider, node, MOTION_ACTIONS[forcedMotion]);
+      }, 120);
+    }
     return;
   }
 
