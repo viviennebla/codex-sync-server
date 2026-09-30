@@ -70,13 +70,13 @@ test("24h event feed prunes old events, enriches users, and rate-limits comments
   assert.equal(comments[0].user.avatar_url, null);
 });
 
-test("release announcement publishes once, links to upgrade notes, and does not reappear", async (t) => {
+test("release announcements publish once, link to notes, and do not reappear", async (t) => {
   const root = await withRoot(t, "denglema-social-release-announcement-");
   let now = new Date("2026-09-30T03:00:00Z");
 
   assert.equal(
     await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
-    1,
+    2,
   );
   assert.equal(
     await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
@@ -84,11 +84,24 @@ test("release announcement publishes once, links to upgrade notes, and does not 
   );
 
   let events = await readDenglemaEvents(root, { now: () => now });
-  const release = events.find((item) => item.kind === "release");
-  assert.ok(release);
-  assert.equal(release.message, "蹬了吗插件升级到 0.1.16 · 新增自动上传");
-  assert.equal(release.meta.emoji, "📦");
-  assert.equal(release.meta.href, "/plugin#upgrade-0-1-16");
+  const releases = events.filter((item) => item.kind === "release");
+  assert.equal(releases.length, 2);
+
+  const pluginRelease = releases.find(
+    (item) => item.meta?.announcement_id === "plugin-0.1.16-auto-upload",
+  );
+  assert.ok(pluginRelease);
+  assert.equal(pluginRelease.message, "蹬了吗插件升级到 0.1.16 · 新增自动上传");
+  assert.equal(pluginRelease.meta.emoji, "📦");
+  assert.equal(pluginRelease.meta.href, "/plugin#upgrade-0-1-16");
+
+  const webRelease = releases.find(
+    (item) => item.meta?.announcement_id === "web-2026-09-social-transports",
+  );
+  assert.ok(webRelease);
+  assert.equal(webRelease.message, "蹬了吗更新 · 支持在线 24h 留言和更多交通工具");
+  assert.equal(webRelease.meta.emoji, "💬");
+  assert.equal(webRelease.meta.href, "/plugin#web-social-transports");
 
   now = new Date("2026-10-02T04:00:00Z");
   events = await readDenglemaEvents(root, { now: () => now });
