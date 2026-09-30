@@ -9,9 +9,16 @@ import {
   readUserTotals,
   readUserUsageHistory,
 } from "./denglema-state.js";
+import {
+  appendStoredEvent,
+  backfillStoredJoinEvents,
+  ensureStoredReleaseAnnouncements,
+  latestStoredComment,
+  readStoredEvents,
+} from "./denglema-event-store.js";
 
 const EVENT_WINDOW_MS = 24 * 60 * 60 * 1000;
-const MAX_EVENTS = 240;
+const MAX_EVENT_READ_LIMIT = 500;
 const COMMENT_COOLDOWN_MS = 3000;
 const WORK_START_MINUTE = 9 * 60;
 const WORK_END_MINUTE = 18 * 60;
@@ -36,6 +43,11 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
     emoji: "📝",
     message: "#51 更新日志独立成页 · 24h 动态终于不用兼职当历史书",
     href: "/updates",
+  },
+  {
+    id: "sqlite-events-53-2026-09",
+    emoji: "💾",
+    message: "#53 24h 动态搬进 SQLite · events.json 终于不用每条消息都整本重写了",
   },
   {
     id: "daily-routes-52-2026-09",
@@ -91,8 +103,6 @@ export const DENGLEMA_ACHIEVEMENTS = [
 function paths(stateDir) {
   const root = join(stateDir, "denglema");
   return {
-    events: join(root, "events.json"),
-    announcements: join(root, "announcements.json"),
     achievements: join(root, "achievements.json"),
     leaders: join(root, "leaders.json"),
   };
@@ -123,133 +133,73 @@ function cleanMessage(value) {
   return text;
 }
 
-function pruneEvents(items, now) {
-  const nowMs = now.getTime();
-  const cutoff = nowMs - EVENT_WINDOW_MS;
-  return (Array.isArray(items) ? items : [])
-    .filter((item) => {
-      const createdAt = Date.parse(item?.created_at || "");
-      const expiresAt = Date.parse(item?.expires_at || "");
-      return Number.isFinite(createdAt)
-        && createdAt >= cutoff
-        && (!Number.isFinite(expiresAt) || expiresAt > nowMs);
-    })
-    .slice(-MAX_EVENTS);
-}
-
-let eventQueue = Promise.resolve();
-
 export async function appendDenglemaEvent(event, stateDir = "state", options = {}) {
-  const run = eventQueue.then(async () => {
-    const now = options.now?.() || new Date();
-    const file = paths(stateDir).events;
-    const store = await readJson(file, { version: 1, items: [] });
-    const items = pruneEvents(store.items, now);
-    const kind = String(event?.kind || "system").slice(0, 32);
-    const userId = String(event?.user_id || "").trim() || null;
-    const message = cleanMessage(event?.message || "");
+  const now = options.now?.() || new Date();
+  const kind = String(event?.kind || "system").slice(0, 32);
+  const userId = String(event?.user_id || "").trim() || null;
+  const message = cleanMessage(event?.message || "");
 
-    if (event?.coalesce_key) {
-      const key = String(event.coalesce_key);
-      const windowMs = Number(event.coalesce_window_ms || 0);
-      const previous = [...items].reverse().find((item) => (
-        item.coalesce_key === key
-        && now.getTime() - Date.parse(item.created_at) <= windowMs
-      ));
-      if (previous) {
-        previous.kind = kind;
-        previous.user_id = userId;
-        previous.message = message;
-        previous.created_at = now.toISOString();
-        previous.meta = event.meta || null;
-        previous.expires_at = event?.expires_at || previous.expires_at || null;
-        await writeJson(file, { version: 1, items: pruneEvents(items, now) });
-        return previous;
-      }
-    }
-
-    const item = {
-      id: "evt_" + randomUUID(),
-      kind,
-      user_id: userId,
-      message,
-      created_at: now.toISOString(),
-      meta: event?.meta || null,
-      expires_at: event?.expires_at || null,
-      coalesce_key: event?.coalesce_key ? String(event.coalesce_key) : null,
-    };
-    items.push(item);
-    await writeJson(file, { version: 1, items: pruneEvents(items, now) });
-    return item;
+  return appendStoredEvent({
+    ...event,
+    kind,
+    user_id: userId,
+    message,
+  }, stateDir, {
+    now: () => now,
+    windowMs: EVENT_WINDOW_MS,
   });
-  eventQueue = run.catch(() => {});
-  return run;
 }
 
 export async function addDenglemaComment(userId, message, stateDir = "state", options = {}) {
   const id = String(userId || "").trim();
   if (!id) throw new Error("Login required");
   const now = options.now?.() || new Date();
-  const existing = await readJson(paths(stateDir).events, { version: 1, items: [] });
-  const recent = pruneEvents(existing.items, now);
-  const latestComment = [...recent].reverse().find((item) => item.kind === "comment" && item.user_id === id);
+  const latestComment = latestStoredComment(id, stateDir, {
+    now: () => now,
+    windowMs: EVENT_WINDOW_MS,
+  });
   if (latestComment && now.getTime() - Date.parse(latestComment.created_at) < COMMENT_COOLDOWN_MS) {
     throw new Error("说慢一点，3 秒后再发");
   }
-  return appendDenglemaEvent({ kind: "comment", user_id: id, message }, stateDir, { now: () => now });
+  return appendDenglemaEvent(
+    { kind: "comment", user_id: id, message },
+    stateDir,
+    { now: () => now },
+  );
 }
 
 export async function backfillHistoricalJoinEvents(stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
-  const run = eventQueue.then(async () => {
-    const eventFile = paths(stateDir).events;
-    const installationFile = join(stateDir, "denglema", "installations.json");
-    const [eventStore, installationStore] = await Promise.all([
-      readJson(eventFile, { version: 1, items: [] }),
-      readJson(installationFile, { version: 1, items: {} }),
-    ]);
-    const items = pruneEvents(eventStore.items, now);
-    const existingUsers = new Set(
-      items.filter((item) => item.kind === "join" && item.user_id).map((item) => item.user_id),
-    );
-    const earliest = new Map();
+  const installationFile = join(stateDir, "denglema", "installations.json");
+  const installationStore = await readJson(
+    installationFile,
+    { version: 1, items: {} },
+  );
+  const earliest = new Map();
 
-    for (const installation of Object.values(installationStore.items || {})) {
-      const userId = String(installation?.user_id || "").trim();
-      const createdAt = installation?.created_at || null;
-      const createdMs = Date.parse(createdAt || "");
-      if (!userId || !Number.isFinite(createdMs)) continue;
-      const previous = earliest.get(userId);
-      if (!previous || createdMs < previous.ms) {
-        earliest.set(userId, { ms: createdMs, created_at: new Date(createdMs).toISOString() });
-      }
-    }
-
-    const cutoff = now.getTime() - EVENT_WINDOW_MS;
-    let added = 0;
-    for (const [userId, value] of earliest) {
-      if (existingUsers.has(userId)) continue;
-      if (value.ms < cutoff || value.ms > now.getTime()) continue;
-      items.push({
-        id: "evt_" + randomUUID(),
-        kind: "join",
+  for (const installation of Object.values(installationStore.items || {})) {
+    const userId = String(installation?.user_id || "").trim();
+    const createdAt = installation?.created_at || null;
+    const createdMs = Date.parse(createdAt || "");
+    if (!userId || !Number.isFinite(createdMs)) continue;
+    const previous = earliest.get(userId);
+    if (!previous || createdMs < previous.ms) {
+      earliest.set(userId, {
+        ms: createdMs,
         user_id: userId,
-        message: "加入了赛道",
-        created_at: value.created_at,
-        meta: { historical: true },
-        coalesce_key: "join:user:" + userId,
+        created_at: new Date(createdMs).toISOString(),
       });
-      added += 1;
     }
+  }
 
-    if (added) {
-      items.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
-      await writeJson(eventFile, { version: 1, items: pruneEvents(items, now) });
-    }
-    return added;
-  });
-  eventQueue = run.catch(() => {});
-  return run;
+  return backfillStoredJoinEvents(
+    [...earliest.values()],
+    stateDir,
+    {
+      now: () => now,
+      windowMs: EVENT_WINDOW_MS,
+    },
+  );
 }
 
 export async function ensureDenglemaReleaseAnnouncements(
@@ -257,62 +207,37 @@ export async function ensureDenglemaReleaseAnnouncements(
   options = {},
 ) {
   const now = options.now?.() || new Date();
-  const run = eventQueue.then(async () => {
-    const p = paths(stateDir);
-    const [eventStore, announcementStore] = await Promise.all([
-      readJson(p.events, { version: 1, items: [] }),
-      readJson(p.announcements, { version: 1, published: {} }),
-    ]);
-
-    announcementStore.published ||= {};
-    const items = pruneEvents(eventStore.items, now);
-    let added = 0;
-
-    for (const announcement of DENGLEMA_RELEASE_ANNOUNCEMENTS) {
-      if (announcementStore.published[announcement.id]) continue;
-
-      const createdAt = now.toISOString();
-      items.push({
-        id: "evt_" + randomUUID(),
-        kind: "release",
-        user_id: null,
-        message: announcement.message,
-        created_at: createdAt,
-        meta: {
-          announcement_id: announcement.id,
-          emoji: announcement.emoji,
-          href: announcement.href,
-        },
-        coalesce_key: null,
-      });
-      announcementStore.published[announcement.id] = createdAt;
-      added += 1;
-    }
-
-    if (added) {
-      await Promise.all([
-        writeJson(p.events, { version: 1, items: pruneEvents(items, now) }),
-        writeJson(p.announcements, announcementStore),
-      ]);
-    }
-
-    return added;
-  });
-  eventQueue = run.catch(() => {});
-  return run;
+  const announcements = DENGLEMA_RELEASE_ANNOUNCEMENTS.map((announcement) => ({
+    ...announcement,
+    message: cleanMessage(announcement.message),
+  }));
+  return ensureStoredReleaseAnnouncements(
+    announcements,
+    stateDir,
+    {
+      now: () => now,
+      windowMs: EVENT_WINDOW_MS,
+    },
+  );
 }
 
 export async function readDenglemaEvents(stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
   await ensureDenglemaReleaseAnnouncements(stateDir, { now: () => now });
   await backfillHistoricalJoinEvents(stateDir, { now: () => now });
-  const limit = Math.min(50, Math.max(1, Number(options.limit || 20)));
-  const file = paths(stateDir).events;
-  const store = await readJson(file, { version: 1, items: [] });
-  const items = pruneEvents(store.items, now);
+  const limit = Math.min(
+    MAX_EVENT_READ_LIMIT,
+    Math.max(1, Number(options.limit || 240)),
+  );
+  const items = readStoredEvents(stateDir, {
+    now: () => now,
+    windowMs: EVENT_WINDOW_MS,
+    limit,
+  });
   const users = await readDenglemaUsers(stateDir);
   const byId = new Map(users.map((user) => [user.id, user]));
-  return items.slice(-limit).reverse().map((item) => {
+
+  return items.map((item) => {
     const user = item.user_id ? byId.get(item.user_id) : null;
     return {
       id: item.id,

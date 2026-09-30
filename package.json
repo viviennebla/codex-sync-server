@@ -12,5 +12,8 @@
     "test": "node --test",
     "preview": "node scripts/preview.mjs"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "12.11.1"
+  }
 }

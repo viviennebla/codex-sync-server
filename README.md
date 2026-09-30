@@ -120,13 +120,16 @@ denglema/
 ├─ users.json
 ├─ installations.json
 ├─ pairing-codes.json
+├─ events.sqlite3
 ├─ reset-beg.json
 ├─ operator.json
 └─ usage/
    └─ YYYY-MM-DD.json
 ```
 
-`usage/YYYY-MM-DD.json` 按天保存，因此新的一天会从 0 开始，但历史文件仍然保留。
+`events.sqlite3` 保存 24h Event Feed、留言和 release announcement 发布状态。首次启动 SQLite 版本时会自动导入旧的 `events.json` / `announcements.json`；旧 JSON 不会被删除，保留作为回滚备份。若回滚版本又写入了新的 legacy event，再次升级时会按文件变化增量导入并按 event / announcement id 去重。
+
+`usage/YYYY-MM-DD.json` 目前仍按天保存，因此新的一天会从 0 开始，但历史文件仍然保留。
 
 ## AI Operator A1
 
