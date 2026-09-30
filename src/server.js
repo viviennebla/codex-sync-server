@@ -21,6 +21,7 @@ import {
   updateWebUserAvatar,
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
+  updateWebUserTransport,
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
 import {
@@ -506,6 +507,26 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── PUT /api/me/transport ── choose a free cosmetic transport
+    if (method === "PUT" && url.pathname === "/api/me/transport") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const updated = await updateWebUserTransport(user.id, body?.transport, STATE_DIR);
+        sendJson(res, 200, {
+          ok: true,
+          transport: updated.transport || "bike",
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Could not update transport");
+      }
+      return;
+    }
+
     // ── GET /api/avatars/:id.jpg ── public rider avatar asset
     const avatarMatch = url.pathname.match(/^\/api\/avatars\/([A-Za-z0-9_-]+)\.jpg$/);
     if (method === "GET" && avatarMatch) {
@@ -542,6 +563,7 @@ const server = createServer(async (req, res) => {
           display_name: user.display_name || "骑手",
           avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
+          transport: user.transport || "bike",
           equipped_achievement: publicEquippedAchievement(user),
           today_tokens: today?.total_tokens || 0,
           has_today_sample: Boolean(today),
@@ -635,6 +657,7 @@ const server = createServer(async (req, res) => {
           display_name: rider.display_name || "骑手",
           avatar_emoji: rider.avatar_emoji || "🚴",
           avatar_url: rider.avatar_url || null,
+          transport: rider.transport || "bike",
           equipped_achievement: publicEquippedAchievement(rider),
         },
         today_tokens: today?.total_tokens || 0,
@@ -788,6 +811,7 @@ const server = createServer(async (req, res) => {
             display_name: user.display_name || "骑手",
             avatar_emoji: user.avatar_emoji || "🚴",
             avatar_url: user.avatar_url || null,
+            transport: user.transport || "bike",
             equipped_achievement: publicEquippedAchievement(user),
             today_tokens: row?.total_tokens || 0,
             installations: row?.installations || 0,
