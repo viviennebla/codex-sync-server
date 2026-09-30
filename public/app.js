@@ -367,8 +367,19 @@ function eventIconNode(event) {
 
 function syncMessageLayer() {
   const stage = document.querySelector(".race-stage");
-  const hasOpenMessage = Boolean(document.querySelector(".rider.has-message"));
-  stage?.classList.toggle("message-layer-active", hasOpenMessage);
+  const hasOpenBubble = Boolean(document.querySelector([
+    ".rider.has-message",
+    ".rider.is-sprinting",
+    ".rider.is-wheelie",
+    ".rider.is-bonking",
+    ".rider.is-celebrating",
+    ".rider.is-waving",
+    ".rider.is-sipping",
+    ".rider.is-stretching",
+    ".rider.is-yawning",
+    ".rider.is-coasting",
+  ].join(",")));
+  stage?.classList.toggle("message-layer-active", hasOpenBubble);
 }
 
 function updateRiderMessageButton(node, riderId) {
@@ -890,7 +901,7 @@ function transportMarkup(transport) {
   }
   if (transport === "walk") {
     return '<div class="transport transport-walk">' +
-      '<i class="walk-shadow"></i><i class="shoe shoe-a"></i><i class="shoe shoe-b"></i>' +
+      '<i class="walk-shadow"></i>' +
     '</div>';
   }
   if (transport === "surf") {
@@ -899,9 +910,7 @@ function transportMarkup(transport) {
     '</div>';
   }
   if (transport === "skate") {
-    return '<div class="transport transport-skate">' +
-      '<i class="skate-boot boot-a"></i><i class="skate-boot boot-b"></i>' +
-    '</div>';
+    return '<div class="transport transport-skate" aria-hidden="true"></div>';
   }
   return '<div class="bike transport transport-bike">' +
     '<div class="wheel back"></div>' +
@@ -1247,6 +1256,7 @@ function triggerMotion(rider, node, action, options = {}) {
 
   activeMotion.set(rider.user_id, action.className);
   node.classList.add(action.className);
+  syncMessageLayer();
   if (action === MOTION_ACTIONS.sprint && Math.random() > 0.86) {
     node.classList.add("effect-heavy");
   }
@@ -1260,6 +1270,7 @@ function triggerMotion(rider, node, action, options = {}) {
     node.classList.remove("has-social-prop");
     if (prop) prop.textContent = "";
     activeMotion.delete(rider.user_id);
+    syncMessageLayer();
   };
 
   const onEnd = (event) => {
