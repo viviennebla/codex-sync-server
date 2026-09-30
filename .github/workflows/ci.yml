@@ -32,11 +32,14 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Validate deploy script
+        run: bash -n scripts/deploy-production.sh
+
       - name: Check whitespace
         run: git diff --check
 
-  deploy:
-    name: Deploy production
+  deploy_family:
+    name: Deploy Family Sync
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: test
     runs-on: [self-hosted, linux, x64, codex-family-prod, codex-sync-server]
@@ -50,7 +53,31 @@ jobs:
 
       - name: Deployment summary
         run: |
-          echo "### Production deployment" >> "$GITHUB_STEP_SUMMARY"
-          echo "- component: codex-sync-server" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Family Sync production" >> "$GITHUB_STEP_SUMMARY"
+          echo "- service: codex-family-sync-server :34777" >> "$GITHUB_STEP_SUMMARY"
           echo "- tested SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- host: vimo-dev-server" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy_denglema:
+    name: Deploy Denglema
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: [self-hosted, linux, x64, codex-family-prod, codex-sync-server]
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy tested commit
+        env:
+          DENGLEMA_EXPECTED_SHA: ${{ github.sha }}
+          DENGLEMA_DEPLOY_REPO: /home/feiyan/workspace/codex-sync-server-denglema-feishu
+          DENGLEMA_DEPLOY_SERVICE: denglema-dev.service
+          DENGLEMA_DEPLOY_HEALTH_URL: http://10.21.5.77:1600/health
+        run: /bin/bash "$DENGLEMA_DEPLOY_REPO/scripts/deploy-production.sh"
+
+      - name: Deployment summary
+        run: |
+          echo "### Denglema production" >> "$GITHUB_STEP_SUMMARY"
+          echo "- service: denglema-dev :1600" >> "$GITHUB_STEP_SUMMARY"
+          echo "- tested SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "- host: vimo-dev-server" >> "$GITHUB_STEP_SUMMARY"
+          echo "- legacy polling timer: $(systemctl --user is-active denglema-auto-deploy.timer 2>/dev/null || true)" >> "$GITHUB_STEP_SUMMARY"
