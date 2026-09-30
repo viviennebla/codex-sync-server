@@ -103,7 +103,7 @@ npm test
 | `STATE_DIR` | `state` | 用户、installation、usage 等运行时状态 |
 | `SKILLS_DIR` | `skills-store` | Skill bundle 存储目录 |
 | `DASHBOARD_TOKEN` | 空 | 旧同步接口的 Bearer token；为空时禁用该层认证 |
-| `DENGLEMA_TIMEZONE` | `UTC` | 日榜 / usage 日期边界 |
+| `DENGLEMA_TIMEZONE` | `Asia/Shanghai` | 日榜 / usage 日期边界；工作节奏 09:00–18:00 也使用此产品时区 |
 | `DENGLEMA_BASE_URL` | 当前 bind/port | 外部访问地址，用于安全 cookie 判断 |
 | `DENGLEMA_SESSION_SECRET` | `DASHBOARD_TOKEN` | Web rider session 签名密钥 |
 | `DENGLEMA_SESSION_TTL_SECONDS` | 90 天 | Web session 有效期 |
