@@ -21,6 +21,7 @@ import {
   updateWebUserAvatar,
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
+  updateWebUserSlogans,
   updateWebUserTransport,
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
@@ -528,6 +529,23 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── PUT /api/me/slogans ── hidden Rider Lab personal catchphrases
+    if (method === "PUT" && url.pathname === "/api/me/slogans") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const updated = await updateWebUserSlogans(user.id, body?.slogans, STATE_DIR);
+        sendJson(res, 200, { ok: true, slogans: updated.slogans || [] });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Could not update slogans");
+      }
+      return;
+    }
+
     // ── GET /api/avatars/:id.jpg ── public rider avatar asset
     const avatarMatch = url.pathname.match(/^\/api\/avatars\/([A-Za-z0-9_-]+)\.jpg$/);
     if (method === "GET" && avatarMatch) {
@@ -565,6 +583,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
           transport: user.transport || "bike",
+          slogans: Array.isArray(user.slogans) ? user.slogans : [],
           equipped_achievement: publicEquippedAchievement(user),
           today_tokens: today?.total_tokens || 0,
           quota_remaining_percent: today?.quota_remaining_percent ?? null,
@@ -662,6 +681,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: rider.avatar_emoji || "🚴",
           avatar_url: rider.avatar_url || null,
           transport: rider.transport || "bike",
+          slogans: Array.isArray(rider.slogans) ? rider.slogans : [],
           equipped_achievement: publicEquippedAchievement(rider),
         },
         today_tokens: today?.total_tokens || 0,
@@ -820,6 +840,7 @@ const server = createServer(async (req, res) => {
             avatar_emoji: user.avatar_emoji || "🚴",
             avatar_url: user.avatar_url || null,
             transport: user.transport || "bike",
+            slogans: Array.isArray(user.slogans) ? user.slogans : [],
             equipped_achievement: publicEquippedAchievement(user),
             today_tokens: row?.total_tokens || 0,
             installations: row?.installations || 0,
@@ -1181,6 +1202,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "plugin.html", "text/html; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/lab") {
+      await sendStatic(res, "rider-lab.html", "text/html; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/leaderboards") {
       await sendStatic(res, "leaderboards.html", "text/html; charset=utf-8");
       return;
@@ -1195,6 +1220,10 @@ const server = createServer(async (req, res) => {
     }
     if (method === "GET" && url.pathname === "/profile.js") {
       await sendStatic(res, "profile.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/rider-lab.js") {
+      await sendStatic(res, "rider-lab.js", "text/javascript; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/styles.css") {
