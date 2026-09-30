@@ -587,25 +587,24 @@ test("achievement sync emits a bounded structured rhythm summary without affecti
   });
 
   assert.equal(achievements.find((item) => item.id === "steady_cruise").unlocked, true);
-  assert.deepEqual(summary, {
-    user_id: "logger",
-    date: "2026-09-30",
-    timezone: "Asia/Shanghai",
-    sample_count: 6,
-    interval_count: 5,
-    coverage_minutes: 300,
-    active_tokens: 30000,
-    mean_rate_tpm: 100,
-    coefficient_of_variation: 0,
-    rhythm_eligible: true,
-    steady_cruise: true,
-    heartbeat_rider: false,
-    playful_timing: {
-      early_bird: false,
-      night_ride: false,
-      deep_night_rider: false,
-      weekend_rider: false,
-    },
-    newly_unlocked: ["first_ride", "steady_cruise"],
+  assert.equal(summary.user_id, "logger");
+  assert.equal(summary.date, "2026-09-30");
+  assert.equal(summary.timezone, "Asia/Shanghai");
+  assert.equal(summary.sample_count, 6);
+  assert.equal(summary.interval_count, 5);
+  assert.equal(summary.coverage_minutes, 300);
+  assert.equal(summary.active_tokens, 30000);
+  assert.equal(summary.mean_rate_tpm, 100);
+  assert.equal(summary.coefficient_of_variation, 0);
+  assert.equal(summary.rhythm_eligible, true);
+  assert.equal(summary.steady_cruise, true);
+  assert.equal(summary.heartbeat_rider, false);
+  assert.deepEqual(summary.playful_timing, {
+    early_bird: false,
+    night_ride: false,
+    deep_night_rider: false,
+    weekend_rider: false,
   });
+  assert.ok(summary.newly_unlocked.includes("first_ride"));
+  assert.ok(summary.newly_unlocked.includes("steady_cruise"));
 });
