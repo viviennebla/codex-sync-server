@@ -86,11 +86,14 @@ async function load() {
     (payload.v2_installations || 0) + "/" + (payload.installations || 0) +
     " 台设备已上传明细 · 覆盖 " + percent + "% 今日 token";
 
+  const privacyNote = payload.projects_have_private_entries
+    ? " 有部分 Project 已按用户隐私设置隐藏。"
+    : "";
   if (percent < 100) {
     footnoteEl.textContent =
-      "还有设备只上传了总量，所以燃烧榜是当前可见明细，不会假装成完整统计。";
+      "还有设备只上传了总量，所以燃烧榜是当前可见明细，不会假装成完整统计。" + privacyNote;
   } else {
-    footnoteEl.textContent = "今天所有有数据的设备都已进入明细统计。";
+    footnoteEl.textContent = "今天所有有数据的设备都已进入明细统计。" + privacyNote;
   }
 }
 
