@@ -15,7 +15,7 @@
       <div class="profile-actions">
         <a class="profile-button" href="/leaderboards">🔥 燃烧榜</a>
         <a class="profile-button" href="/plugin">📖 使用教程</a>
-        <button id="profileUploadButton" class="upload-button" type="button">⬆ 刷新赛道</button>
+        <button id="profileUploadButton" class="manual-refresh-button" type="button">手动刷新</button>
         <button id="profilePairButton" class="bind-button" type="button">＋ 接入新 Agent</button>
       </div>
     </header>
@@ -39,12 +39,27 @@
       </div>
     </section>
 
-    <section id="profileAchievementsPanel" class="profile-panel profile-achievements-panel hidden">
+    <section class="profile-panel profile-appearance-panel">
       <div class="profile-panel-head">
-        <h2>🏆 我的成就</h2>
-        <span>选择一个佩戴</span>
+        <h2>🎭 我的形象</h2>
+        <span>只影响外观，不影响排名</span>
       </div>
-      <div id="profileAchievementList" class="profile-achievement-grid"></div>
+
+      <div class="profile-appearance-group">
+        <div class="profile-appearance-copy">
+          <strong>出行方式</strong>
+          <span>随便选，全部免费。古法通勤也完全合法。</span>
+        </div>
+        <div id="profileTransportList" class="profile-transport-grid" aria-label="选择出行方式"></div>
+      </div>
+
+      <div id="profileAchievementsPanel" class="profile-appearance-group hidden">
+        <div class="profile-appearance-copy">
+          <strong>佩戴成就</strong>
+          <span>只展示你已经解锁的收藏。</span>
+        </div>
+        <div id="profileAchievementList" class="profile-achievement-grid"></div>
+      </div>
     </section>
 
     <section class="profile-grid">
