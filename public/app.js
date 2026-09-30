@@ -978,7 +978,8 @@ const MOTION_ACTIONS = {
   wave: {
     className: "is-waving",
     duration: 3200,
-    bursts: ["嗨～", "还蹬呢?", "早啊", "下班没?"]
+    bursts: ["嗨～", "还蹬呢?", "早啊", "下班没?"],
+    props: ["👋"]
   },
   sip: {
     className: "is-sipping",
@@ -994,7 +995,8 @@ const MOTION_ACTIONS = {
   yawn: {
     className: "is-yawning",
     duration: 3500,
-    bursts: ["哈欠…", "眼睛下班了", "困了"]
+    bursts: ["哈欠…", "眼睛下班了", "困了"],
+    props: ["💤"]
   },
   coast: {
     className: "is-coasting",
