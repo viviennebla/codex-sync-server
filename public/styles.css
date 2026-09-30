@@ -3772,3 +3772,37 @@ body.time-night .workstation-screen { box-shadow: 0 0 9px rgba(145,188,226,.25);
 @media (prefers-reduced-motion: reduce) {
   .rider.is-own-rider::before { transition: none; }
 }
+
+
+/* Project privacy settings */
+.privacy-shell { max-width: 980px; }
+.privacy-badge { justify-self: end; color: #6f7781; font-size: 12px; font-weight: 900; }
+.privacy-hero { grid-template-columns: auto 1fr; }
+.privacy-note { margin: -4px 0 16px; color: #756d66; font-size: 12px; line-height: 1.65; }
+.privacy-project-list { display: grid; gap: 10px; }
+.privacy-project-card {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, auto);
+  gap: 14px; align-items: center; padding: 13px 14px;
+  border: 1.5px solid rgba(39,49,60,.12); border-radius: 15px; background: #fffdf7;
+}
+.privacy-project-head { min-width: 0; }
+.privacy-project-head > div { min-width: 0; display: grid; gap: 3px; }
+.privacy-project-head strong { overflow: hidden; color: #343b45; text-overflow: ellipsis; white-space: nowrap; }
+.privacy-project-head small { color: #8b8179; font-size: 10px; }
+.privacy-project-controls {
+  display: grid; grid-template-columns: 118px minmax(130px, 1fr) auto;
+  gap: 8px; align-items: center;
+}
+.privacy-project-controls select,
+.privacy-project-controls input {
+  min-width: 0; border: 1.5px solid rgba(39,49,60,.16); border-radius: 11px;
+  padding: 9px 10px; background: #fff; color: #343b45; font: inherit; font-size: 11px; outline: none;
+}
+.privacy-project-controls input:focus,
+.privacy-project-controls select:focus { border-color: #7892ca; }
+.privacy-project-controls input[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+@media (max-width: 760px) {
+  .privacy-project-card { grid-template-columns: 1fr; }
+  .privacy-project-controls { grid-template-columns: 1fr; }
+  .privacy-project-controls input[hidden] { display: none !important; }
+}

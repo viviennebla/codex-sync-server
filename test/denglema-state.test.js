@@ -13,6 +13,8 @@ import {
   readDenglemaUser,
   readDenglemaOfficeLayoutVersion,
   readDimensionLeaderboard,
+  projectPrivacyForUser,
+  projectRowsForPublic,
   recoverWebUser,
   readUserInstallations,
   readUserTotals,
@@ -22,6 +24,7 @@ import {
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
   updateWebUserOfficePosition,
+  updateWebUserProjectPrivacy,
   updateWebUserQuotaEmotion,
   updateWebUserSlogans,
   updateWebUserTransport,
@@ -751,4 +754,115 @@ test("dimension leaderboard aggregates v2 breakdowns and reports coverage", asyn
       { user_id: "user-b", display_name: "Bob", avatar_emoji: "🐶", total_tokens: 200 },
     ],
   });
+});
+
+
+test("project privacy hides or aliases only public projections while keeping raw usage intact", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-project-privacy-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  for (const [id, name] of [["u-private", "Private"], ["u-public", "Public"]]) {
+    await createWebUser({ display_name: name, avatar_emoji: "🙂" }, root, {
+      userId: id,
+      recoveryCode: "RECOVERY-" + id,
+      now: () => new Date("2026-09-30T00:00:00Z"),
+    });
+  }
+
+  const privatePair = await createPairingCode("u-private", root, { code: "PRIV-A" });
+  const privateInstallation = await consumePairingCode(privatePair.code, "Private device", root, {
+    token: "private-token",
+    installationId: "private-inst",
+  });
+  const publicPair = await createPairingCode("u-public", root, { code: "PUB-A" });
+  const publicInstallation = await consumePairingCode(publicPair.code, "Public device", root, {
+    token: "public-token",
+    installationId: "public-inst",
+  });
+
+  await upsertUsageSample(
+    { id: privateInstallation.installation_id, user_id: "u-private" },
+    {
+      schema_version: 2,
+      harness: "codex",
+      date: "2026-09-30",
+      observed_at: "2026-09-30T02:00:00Z",
+      total_tokens: 600,
+      models: [],
+      projects: [
+        { name: "secret-project", total_tokens: 200 },
+        { name: "client-alpha", total_tokens: 250 },
+        { name: "client-beta", total_tokens: 150 },
+      ],
+    },
+    root,
+  );
+  await upsertUsageSample(
+    { id: publicInstallation.installation_id, user_id: "u-public" },
+    {
+      schema_version: 2,
+      harness: "cursor",
+      date: "2026-09-30",
+      observed_at: "2026-09-30T02:01:00Z",
+      total_tokens: 300,
+      models: [],
+      projects: [{ name: "client-alpha", total_tokens: 300 }],
+    },
+    root,
+  );
+
+  await updateWebUserProjectPrivacy("u-private", "secret-project", "hidden", null, root);
+  await updateWebUserProjectPrivacy("u-private", "client-alpha", "alias", "客户项目", root);
+  await updateWebUserProjectPrivacy("u-private", "client-beta", "alias", "客户项目", root);
+
+  const user = await readDenglemaUser("u-private", root);
+  assert.deepEqual(projectPrivacyForUser(user, "secret-project"), { mode: "hidden", alias: null });
+  assert.deepEqual(projectPrivacyForUser(user, "client-alpha"), { mode: "alias", alias: "客户项目" });
+
+  const raw = (await readUserTotals("2026-09-30", root))
+    .find((row) => row.user_id === "u-private");
+  assert.deepEqual(raw.projects, [
+    { name: "client-alpha", total_tokens: 250 },
+    { name: "secret-project", total_tokens: 200 },
+    { name: "client-beta", total_tokens: 150 },
+  ]);
+  assert.deepEqual(projectRowsForPublic(user, raw.projects), [
+    { name: "客户项目", total_tokens: 400 },
+  ]);
+
+  const board = await readDimensionLeaderboard("2026-09-30", root);
+  assert.equal(board.projects_have_private_entries, true);
+  const publicRaw = board.projects.find((row) => row.name === "client-alpha");
+  assert.equal(publicRaw.total_tokens, 300);
+  assert.deepEqual(publicRaw.contributors.map((row) => row.user_id), ["u-public"]);
+  const aliased = board.projects.find((row) => row.name === "客户项目");
+  assert.equal(aliased.total_tokens, 400);
+  assert.deepEqual(aliased.contributors.map((row) => row.user_id), ["u-private"]);
+  assert.equal(board.projects.some((row) => row.name === "secret-project"), false);
+
+  await updateWebUserProjectPrivacy("u-private", "secret-project", "visible", null, root);
+  const restored = await readDenglemaUser("u-private", root);
+  assert.deepEqual(projectPrivacyForUser(restored, "secret-project"), { mode: "visible", alias: null });
+});
+
+test("project privacy validation rejects invalid aliases and modes", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-project-privacy-validation-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await createWebUser({ display_name: "Privacy", avatar_emoji: "🔒" }, root, {
+    userId: "u-privacy",
+    recoveryCode: "PRIVACY-RECOVERY",
+  });
+
+  await assert.rejects(
+    updateWebUserProjectPrivacy("u-privacy", "project", "alias", "", root),
+    /alias must be/,
+  );
+  await assert.rejects(
+    updateWebUserProjectPrivacy("u-privacy", "project", "unknown", null, root),
+    /mode must be/,
+  );
+  await assert.rejects(
+    updateWebUserProjectPrivacy("u-privacy", "", "hidden", null, root),
+    /project must be/,
+  );
 });

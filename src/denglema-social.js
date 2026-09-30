@@ -26,6 +26,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "project-privacy-49-2026-09",
+    emoji: "🔒",
+    message: "#49 Project 可隐藏或改名 · 客户代号终于不用在燃烧榜裸奔",
+    href: "/privacy",
+  },
+  {
     id: "ci-superseded-deploys-2026-09",
     emoji: "🧹",
     message: "#50 CI 旧部署被新 main 超车时改为正常跳过 · 红灯终于学会分辨失败和迟到",
