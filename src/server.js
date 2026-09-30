@@ -25,6 +25,11 @@ import {
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
 import {
+  operatorTokenAuthorized,
+  publishOperatorAnnouncement,
+  readOperatorAudit,
+} from "./denglema-operator.js";
+import {
   DENGLEMA_ACHIEVEMENTS,
   DENGLEMA_PRODUCT_TIMEZONE,
   addDenglemaComment,
@@ -50,6 +55,7 @@ const TOKEN = process.env.DASHBOARD_TOKEN || null;
 const DENGLEMA_TIMEZONE = process.env.DENGLEMA_TIMEZONE || DENGLEMA_PRODUCT_TIMEZONE;
 const DENGLEMA_BASE_URL = (process.env.DENGLEMA_BASE_URL || `http://${BIND}:${PORT}`).replace(/\/+$/, "");
 const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || "";
+const DENGLEMA_OPERATOR_TOKEN = process.env.DENGLEMA_OPERATOR_TOKEN || "";
 const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const STARTED_AT = Date.now();
@@ -81,6 +87,10 @@ function bearerToken(req) {
 function checkAuth(req) {
   if (!TOKEN) return true; // auth disabled if no token configured
   return bearerToken(req) === TOKEN;
+}
+
+function checkOperatorAuth(req) {
+  return operatorTokenAuthorized(req.headers.authorization || "", DENGLEMA_OPERATOR_TOKEN);
 }
 
 function requestIsSecure(req) {
@@ -728,6 +738,51 @@ const server = createServer(async (req, res) => {
       sendJson(res, 200, {
         ok: true,
         equipped_achievement: publicEquippedAchievement(updated),
+      });
+      return;
+    }
+
+    // ── AI Operator A1 ── runtime announcements + bounded audit
+    if (url.pathname === "/api/operator/announcements" && method === "POST") {
+      if (!DENGLEMA_OPERATOR_TOKEN) {
+        sendJson(res, 503, { error: "AI Operator is not configured" });
+        return;
+      }
+      if (!checkOperatorAuth(req)) {
+        sendJson(res, 401, { error: "Unauthorized operator" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const result = await publishOperatorAnnouncement(body || {}, STATE_DIR);
+        log("info", "operator_announcement", {
+          event_id: result.event_id,
+          idempotency_key: result.idempotency_key,
+          created: result.created,
+        });
+        sendJson(res, result.created ? 201 : 200, {
+          ok: true,
+          ...result,
+        });
+      } catch (error) {
+        sendJson(res, 400, { error: error?.message || "Could not publish announcement" });
+      }
+      return;
+    }
+
+    if (url.pathname === "/api/operator/audit" && method === "GET") {
+      if (!DENGLEMA_OPERATOR_TOKEN) {
+        sendJson(res, 503, { error: "AI Operator is not configured" });
+        return;
+      }
+      if (!checkOperatorAuth(req)) {
+        sendJson(res, 401, { error: "Unauthorized operator" });
+        return;
+      }
+      const limit = url.searchParams.get("limit");
+      sendJson(res, 200, {
+        actor: "ai_operator",
+        audit: await readOperatorAudit(STATE_DIR, { limit }),
       });
       return;
     }
