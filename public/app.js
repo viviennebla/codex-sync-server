@@ -935,7 +935,7 @@ function renderRiders(riders) {
       lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-      node.style.setProperty("--scale", String(0.94 + sizeJitter));
+      node.style.setProperty("--scale", String(1.18 + sizeJitter));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
