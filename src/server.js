@@ -23,6 +23,7 @@ import {
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
   updateWebUserOfficePosition,
+  updateWebUserQuotaEmotion,
   updateWebUserSlogans,
   updateWebUserTransport,
 } from "./denglema-state.js";
@@ -558,6 +559,26 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── PUT /api/me/quota-emotion ── Rider Lab low-quota expression
+    if (method === "PUT" && url.pathname === "/api/me/quota-emotion") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const updated = await updateWebUserQuotaEmotion(user.id, body?.quota_emotion, STATE_DIR);
+        sendJson(res, 200, {
+          ok: true,
+          quota_emotion: updated.quota_emotion || "sweat",
+        });
+      } catch (error) {
+        sendError(res, 400, error?.message || "Could not update quota emotion");
+      }
+      return;
+    }
+
     // ── PUT /api/me/office-position ── move only the current rider
     if (method === "PUT" && url.pathname === "/api/me/office-position") {
       const user = await webUserFromRequest(req);
@@ -632,6 +653,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
           transport: user.transport || "bike",
+          quota_emotion: user.quota_emotion || "sweat",
           office_position: user.office_position || null,
           slogans: Array.isArray(user.slogans) ? user.slogans : [],
           equipped_achievement: publicEquippedAchievement(user),
@@ -731,6 +753,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: rider.avatar_emoji || "🚴",
           avatar_url: rider.avatar_url || null,
           transport: rider.transport || "bike",
+          quota_emotion: rider.quota_emotion || "sweat",
           office_position: rider.office_position || null,
           slogans: Array.isArray(rider.slogans) ? rider.slogans : [],
           equipped_achievement: publicEquippedAchievement(rider),
@@ -938,6 +961,7 @@ const server = createServer(async (req, res) => {
             avatar_emoji: user.avatar_emoji || "🚴",
             avatar_url: user.avatar_url || null,
             transport: user.transport || "bike",
+            quota_emotion: user.quota_emotion || "sweat",
             office_position: user.office_position || null,
             slogans: Array.isArray(user.slogans) ? user.slogans : [],
             equipped_achievement: publicEquippedAchievement(user),
