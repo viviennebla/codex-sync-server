@@ -2998,3 +2998,264 @@ button { font: inherit; }
     animation: none !important;
   }
 }
+
+
+/* Office stage: riders are coworkers moving through a shared workspace, not racers. */
+.app-shell {
+  grid-template-rows: 82px 0 minmax(560px, 1fr) 116px;
+}
+.office-strip {
+  display: none;
+}
+
+.race-stage {
+  min-height: 560px;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025), rgba(255,255,255,.025)),
+    url("/office-stage.svg");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.72),
+    inset 0 -1px 0 rgba(39,49,60,.06);
+}
+.race-stage::after,
+.track-motion,
+.lane-number,
+.finish-mark {
+  display: none !important;
+}
+.lane,
+.lane:last-of-type {
+  border: 0;
+}
+.lane::after {
+  display: none;
+}
+
+/* Bigger character silhouette and tighter avatar treatment. */
+.rider {
+  width: 172px;
+  height: 142px;
+  filter: drop-shadow(0 4px 3px rgba(53,64,70,.10));
+}
+.rider.is-clickable:hover {
+  filter: drop-shadow(0 7px 8px rgba(53,64,70,.18));
+}
+
+.avatar-ring {
+  left: 52px;
+  top: -2px;
+  width: 62px;
+  height: 62px;
+  border: 2px solid rgba(255,253,246,.96);
+  background: rgba(255,246,214,.92);
+  box-shadow:
+    0 2px 0 rgba(65,57,50,.16),
+    0 0 0 1px rgba(49,61,69,.06);
+}
+.emoji-avatar {
+  font-size: 48px;
+  line-height: .9;
+  background: transparent;
+  transform: translateY(1px) scale(1.03);
+}
+.body {
+  left: 61px;
+  top: 56px;
+  width: 41px;
+  height: 26px;
+}
+.arm {
+  left: 91px;
+  top: 59px;
+  width: 38px;
+  height: 5px;
+}
+.leg {
+  top: 73px;
+  height: 34px;
+}
+
+/* Give personality, achievement and crown separate territories. */
+.personality-accessory,
+.mode-surf .personality-accessory,
+.mode-walk .personality-accessory {
+  left: 27px;
+  top: 23px;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(39,49,60,.10);
+  background: rgba(255,253,247,.96);
+  font-size: 17px;
+  box-shadow: 0 1px 0 rgba(39,49,60,.09);
+  transform: rotate(-8deg);
+}
+
+.rider-achievement,
+.rider.is-near-right .rider-achievement {
+  left: 31px !important;
+  right: auto !important;
+  top: 65px;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(78,88,107,.13);
+  background: rgba(255,253,248,.97);
+  font-size: 14px;
+  box-shadow: 0 1px 0 rgba(39,49,60,.08);
+}
+
+.leader-crown,
+.rider.is-near-right .leader-crown {
+  left: 76px;
+  right: auto;
+  top: -15px;
+  font-size: 16px;
+  transform: rotate(-9deg);
+}
+
+.name-chip {
+  left: 116px;
+  top: 16px;
+  max-width: 148px !important;
+  min-width: 66px;
+  padding: 5px 8px 5px 7px;
+  border-radius: 12px;
+  background: rgba(255,253,248,.95);
+  box-shadow: 0 1px 0 rgba(65,57,50,.10);
+}
+.rider.is-near-right .name-chip {
+  left: auto;
+  right: 109px;
+}
+.name-chip .rider-name,
+.name-chip > span:first-child {
+  max-width: 118px !important;
+  font-size: 12px;
+}
+.name-chip .tokens {
+  font-size: 8px;
+}
+
+/* Scale each vehicle up with the person while preserving distinct leg mechanics. */
+.bike {
+  left: 17px;
+  top: 69px;
+  width: 112px;
+  height: 49px;
+}
+.wheel {
+  width: 39px;
+  height: 39px;
+}
+.frame {
+  left: 37px;
+  bottom: 13px;
+  width: 43px;
+  height: 28px;
+}
+.transport-scooter {
+  left: 21px;
+  top: 79px;
+  width: 108px;
+  height: 43px;
+}
+.mini-wheel {
+  width: 29px;
+  height: 29px;
+}
+.transport-skateboard {
+  left: 26px;
+  top: 91px;
+  width: 100px;
+}
+.transport-walk {
+  left: 39px;
+  top: 87px;
+  width: 84px;
+}
+.transport-surf {
+  left: 15px;
+  top: 84px;
+  width: 124px;
+  height: 42px;
+}
+.transport-skate {
+  left: 34px;
+  top: 86px;
+  width: 90px;
+}
+
+/* Re-anchor legs after character enlargement. */
+.mode-bike .leg { top: 72px; }
+.mode-bike .leg-a { left: 72px; }
+.mode-bike .leg-b { left: 82px; }
+
+.mode-scooter .leg { top: 72px; height: 30px; }
+.mode-scooter .leg-a { left: 72px; }
+.mode-scooter .leg-b { left: 85px; height: 34px; }
+
+.mode-skateboard .leg { top: 71px; height: 32px; }
+.mode-skateboard .leg-a { left: 69px; }
+.mode-skateboard .leg-b { left: 87px; }
+
+.mode-walk .leg { top: 70px; height: 36px; }
+.mode-walk .leg-a { left: 70px; }
+.mode-walk .leg-b { left: 88px; }
+
+.mode-surf .leg { top: 71px; height: 29px; }
+.mode-surf .leg-a { left: 69px; }
+.mode-surf .leg-b { left: 88px; }
+
+.mode-skate .leg { top: 71px; height: 32px; }
+.mode-skate .leg-a { left: 70px; }
+.mode-skate .leg-b { left: 88px; }
+
+/* Keep transient action props away from wearable slots. */
+.social-prop {
+  left: 116px;
+  top: 48px;
+  font-size: 24px;
+}
+.rider.is-sipping .social-prop {
+  left: 112px;
+  top: 46px;
+}
+.effect-burst {
+  left: 110px;
+  top: -36px;
+}
+
+/* Keep the office readable across time themes without tinting riders. */
+body.time-evening .race-stage::before,
+body.time-night .race-stage::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(67,77,101,.05);
+}
+body.time-night .race-stage::before {
+  background: rgba(50,61,86,.09);
+}
+.lane,
+.rider {
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    min-height: 780px;
+    grid-template-rows: 72px 0 520px 100px;
+  }
+  .race-stage {
+    min-height: 520px;
+    background-size: 100% 100%;
+    background-position: center;
+  }
+  .rider {
+    --scale: 1.04;
+  }
+}
