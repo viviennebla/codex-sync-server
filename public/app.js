@@ -67,6 +67,8 @@ let previewMode = false;
 const activeMotion = new Map();
 const shownCommentEventIds = new Set();
 const riderMessageTimers = new Map();
+const latestCommentByRider = new Map();
+let pinnedMessageRiderId = null;
 const COMMENT_BUBBLE_MS = 7000;
 const COMMENT_BUBBLE_RECENCY_MS = 2 * 60 * 1000;
 
@@ -363,46 +365,122 @@ function eventIconNode(event) {
   return icon;
 }
 
-function showRiderMessage(event) {
+function syncMessageLayer() {
+  const stage = document.querySelector(".race-stage");
+  const hasOpenMessage = Boolean(document.querySelector(".rider.has-message"));
+  stage?.classList.toggle("message-layer-active", hasOpenMessage);
+}
+
+function updateRiderMessageButton(node, riderId) {
+  const button = node?.querySelector(".rider-message-button");
+  if (!button) return;
+  const event = latestCommentByRider.get(riderId) || null;
+  button.hidden = !event;
+  button.setAttribute("aria-expanded", String(
+    Boolean(event) && pinnedMessageRiderId === riderId && node.classList.contains("has-message")
+  ));
+  if (event) {
+    button.setAttribute("aria-label", "查看最近留言：" + event.message);
+    button.title = "查看最近留言";
+  } else {
+    button.removeAttribute("title");
+  }
+}
+
+function refreshRiderMessageButtons() {
+  document.querySelectorAll(".rider[data-rider-id]").forEach((node) => {
+    updateRiderMessageButton(node, node.dataset.riderId);
+  });
+}
+
+function closeRiderMessage(riderId, options = {}) {
+  const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
+  if (!node) return;
+  if (!options.force && pinnedMessageRiderId === riderId) return;
+  const bubble = node.querySelector(".rider-message-bubble");
+  node.classList.remove("has-message");
+  if (bubble) bubble.textContent = "";
+  clearTimeout(riderMessageTimers.get(riderId));
+  riderMessageTimers.delete(riderId);
+  if (pinnedMessageRiderId === riderId) pinnedMessageRiderId = null;
+  updateRiderMessageButton(node, riderId);
+  syncMessageLayer();
+}
+
+function showRiderMessage(event, options = {}) {
   const riderId = event.user?.user_id;
   if (!riderId || !event.message) return;
   const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
   const bubble = node?.querySelector(".rider-message-bubble");
   if (!node || !bubble) return;
 
+  if (options.pinned && pinnedMessageRiderId && pinnedMessageRiderId !== riderId) {
+    closeRiderMessage(pinnedMessageRiderId, { force: true });
+  }
+
   bubble.textContent = event.message;
   node.classList.add("has-message");
   clearTimeout(riderMessageTimers.get(riderId));
-  riderMessageTimers.set(riderId, window.setTimeout(() => {
-    node.classList.remove("has-message");
-    bubble.textContent = "";
-    riderMessageTimers.delete(riderId);
-  }, COMMENT_BUBBLE_MS));
+
+  if (options.pinned) {
+    pinnedMessageRiderId = riderId;
+  } else if (pinnedMessageRiderId !== riderId) {
+    riderMessageTimers.set(riderId, window.setTimeout(() => {
+      closeRiderMessage(riderId);
+    }, COMMENT_BUBBLE_MS));
+  }
+
+  updateRiderMessageButton(node, riderId);
+  syncMessageLayer();
+}
+
+function togglePinnedRiderMessage(riderId) {
+  const event = latestCommentByRider.get(riderId);
+  if (!event) return;
+  const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
+  if (!node) return;
+
+  if (pinnedMessageRiderId === riderId && node.classList.contains("has-message")) {
+    closeRiderMessage(riderId, { force: true });
+    return;
+  }
+  showRiderMessage(event, { pinned: true });
 }
 
 function syncRiderCommentBubbles(events) {
   const now = Date.now();
-  const newestByRider = new Map();
+  const newestAutoByRider = new Map();
+  const nextLatest = new Map();
 
   for (const event of Array.isArray(events) ? events : []) {
     if (event.kind !== "comment" || !event.user?.user_id) continue;
-    const key = event.id || [
-      event.user.user_id,
-      event.created_at,
-      event.message,
-    ].join(":");
+    const riderId = event.user.user_id;
+    const createdAt = Date.parse(event.created_at || "");
+    const previous = nextLatest.get(riderId);
+    if (
+      !previous
+      || Date.parse(previous.created_at || "") < createdAt
+    ) {
+      nextLatest.set(riderId, event);
+    }
+
+    const key = event.id || [riderId, event.created_at, event.message].join(":");
     if (shownCommentEventIds.has(key)) continue;
     shownCommentEventIds.add(key);
 
-    const createdAt = Date.parse(event.created_at || "");
     const age = now - createdAt;
     if (!Number.isFinite(createdAt) || age < 0 || age > COMMENT_BUBBLE_RECENCY_MS) continue;
-    if (!newestByRider.has(event.user.user_id)) {
-      newestByRider.set(event.user.user_id, event);
-    }
+    if (!newestAutoByRider.has(riderId)) newestAutoByRider.set(riderId, event);
   }
 
-  newestByRider.forEach((event) => showRiderMessage(event));
+  latestCommentByRider.clear();
+  nextLatest.forEach((event, riderId) => latestCommentByRider.set(riderId, event));
+
+  if (pinnedMessageRiderId && !latestCommentByRider.has(pinnedMessageRiderId)) {
+    closeRiderMessage(pinnedMessageRiderId, { force: true });
+  }
+  refreshRiderMessageButtons();
+  newestAutoByRider.forEach((event) => showRiderMessage(event));
 }
 
 function renderEvents(rows) {
@@ -857,6 +935,7 @@ function riderMarkup(rider) {
       '<div class="effect-music">♪</div>' +
       '<div class="effect-burst">嘿!</div>' +
       '<div class="rider-message-bubble" role="status" aria-live="polite"></div>' +
+      '<button class="rider-message-button" type="button" aria-label="查看最近留言" aria-expanded="false" hidden>…</button>' +
       (rider.is_leader ? '<div class="leader-crown" aria-label="今日第一" title="今日第一">👑</div>' : '') +
       '<div class="rider-motion">' +
         '<div class="rider-inner">' +
@@ -1014,6 +1093,7 @@ function renderRiders(riders) {
       activeMotion.delete(riderId);
       clearTimeout(riderMessageTimers.get(riderId));
       riderMessageTimers.delete(riderId);
+      if (pinnedMessageRiderId === riderId) pinnedMessageRiderId = null;
       node.remove();
     }
   });
@@ -1035,11 +1115,16 @@ function renderRiders(riders) {
           void openRiderDetail(node._riderData);
         }
       });
+      node.querySelector(".rider-message-button")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        togglePinnedRiderMessage(rider.user_id);
+      });
     } else if (node.parentElement !== lane) {
       lane.appendChild(node);
     }
 
     updateRiderNode(node, rider);
+    updateRiderMessageButton(node, rider.user_id);
   });
 
   const total = visibleRiders
@@ -1763,6 +1848,12 @@ enterAfterRecoveryButton.addEventListener("click", async () => {
 bootstrap().catch((error) => {
   statusEl.textContent = "进场失败：" + error.message;
   loginOverlay.classList.remove("hidden");
+});
+
+document.addEventListener("click", (event) => {
+  if (!pinnedMessageRiderId) return;
+  if (event.target.closest?.(".rider-message-button")) return;
+  closeRiderMessage(pinnedMessageRiderId, { force: true });
 });
 
 window.addEventListener("beforeunload", () => {
