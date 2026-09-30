@@ -443,7 +443,10 @@ function resetNotchLabel(runway) {
     }
   }
 
-  const record = runway?.latest_signal || null;
+  const signal = runway?.latest_signal || null;
+  const record = signal?.kind === "reset_scheduled" && signal?.schedule_state === "pending"
+    ? signal
+    : null;
   if (!record) return "🙏 Reset · 暂无排期";
   const confidence = Number.isFinite(Number(record.confidence))
     ? Math.round(Number(record.confidence) * 100) + "%"
