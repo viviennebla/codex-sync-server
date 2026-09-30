@@ -191,7 +191,7 @@ systemctl --user list-timers denglema-auto-deploy.timer --no-pager
 | `DENGLEMA_DEPLOY_REMOTE_URL` | `https://github.com/viviennebla/codex-sync-server.git` |
 | `DENGLEMA_DEPLOY_BRANCH` | `main` |
 | `DENGLEMA_DEPLOY_SERVICE` | `denglema-dev.service` |
-| `DENGLEMA_DEPLOY_HEALTH_URL` | `http://127.0.0.1:1600/health` |
+| `DENGLEMA_DEPLOY_HEALTH_URL` | `http://10.21.5.77:1600/health` |
 | `DENGLEMA_DEPLOY_HEALTH_TIMEOUT_SECONDS` | `20` |
 | `DENGLEMA_DEPLOY_INTERVAL` | `1min`（安装 timer 时读取） |
 
