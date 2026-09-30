@@ -2051,6 +2051,7 @@ button { font: inherit; }
 }
 @media (prefers-reduced-motion: reduce) {
   .track-motion,
+  .rider-motion,
   .rider-inner,
   .transport,
   .wheel,
@@ -2063,10 +2064,12 @@ button { font: inherit; }
   .social-prop,
   .leader-crown,
   .mini-bike,
+  .effect-speed,
   .effect-fire,
   .effect-dust,
   .effect-sweat,
-  .effect-music {
+  .effect-music,
+  .effect-burst {
     animation: none !important;
   }
   .rider { transition: none !important; }
