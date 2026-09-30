@@ -142,60 +142,66 @@ https://vimo-dev-server.taila62aff.ts.net/
 
 当前线上服务由 `denglema-dev.service` 运行；部署工作区与个人开发 worktree 分开。
 
-### Pull-based 自动部署
+### Runner-based 自动部署
 
-不依赖 GitHub Actions / Runner。部署机自己用 systemd user timer 检查 GitHub `main`，默认每分钟一次；SHA 没变化时什么都不做。
-
-发现新 commit 后：
+正式部署由 GitHub Actions 驱动，不再由服务器每分钟 polling GitHub。
 
 ```text
-fetch main
+PR
   ↓
-切到新 commit
+GitHub-hosted Node.js tests
+
+merge main
   ↓
-依赖变化时 npm ci / npm install
+GitHub-hosted Node.js tests
+  ↓ success
+10.21.5.77 self-hosted runner
+  ├─ Deploy Family Sync :34777
+  └─ Deploy Denglema :1600
+```
+
+Denglema deploy job 使用已经通过 CI 的精确 `GITHUB_SHA`：
+
+```text
+fetch origin/main
   ↓
-npm test
+校验 origin/main == 当前 pipeline SHA
+  ↓
+checkout 精确 SHA 到独立 production worktree
+  ↓
+依赖 manifest 变化时 npm ci / npm install
   ↓
 restart denglema-dev.service
   ↓
 GET /health
+  ↓
+成功后关闭 legacy polling timer
 ```
 
-部署 worktree 必须保持干净。测试、restart 或健康检查失败时，会切回上一个 commit，并重新启动旧版本。
+生产部署 worktree：
 
-首次在部署机安装 timer：
+```text
+/home/feiyan/workspace/codex-sync-server-denglema-feishu
+```
+
+生产服务：
+
+```text
+denglema-dev.service
+http://10.21.5.77:1600
+```
+
+如果 restart、依赖安装或健康检查失败，部署脚本会切回上一个 production SHA 并重新启动旧版本。
+
+部署脚本与旧 polling 脚本共用同一个 deploy lock，因此首次切换期间也不会并发覆盖生产 worktree。首次 runner deploy 健康检查成功后会执行：
 
 ```bash
-cd /home/feiyan/workspace/codex-sync-server-denglema-feishu
-bash scripts/install-auto-deploy.sh
+systemctl --user disable --now denglema-auto-deploy.timer
 ```
 
-安装后可手动触发一次检查：
+旧的 `scripts/pull-deploy.sh` / `scripts/install-auto-deploy.sh` 仅保留作回滚工具，不再是正式部署入口。
 
-```bash
-systemctl --user start denglema-auto-deploy.service
-journalctl --user -u denglema-auto-deploy.service -n 100 --no-pager
-```
-
-查看 timer：
-
-```bash
-systemctl --user list-timers denglema-auto-deploy.timer --no-pager
-```
-
-默认配置：
-
-| 变量 | 默认值 |
-| --- | --- |
-| `DENGLEMA_DEPLOY_REMOTE_URL` | `https://github.com/viviennebla/codex-sync-server.git` |
-| `DENGLEMA_DEPLOY_BRANCH` | `main` |
-| `DENGLEMA_DEPLOY_SERVICE` | `denglema-dev.service` |
-| `DENGLEMA_DEPLOY_HEALTH_URL` | `http://10.21.5.77:1600/health` |
-| `DENGLEMA_DEPLOY_HEALTH_TIMEOUT_SECONDS` | `20` |
-| `DENGLEMA_DEPLOY_INTERVAL` | `1min`（安装 timer 时读取） |
-
-首次启用自动部署时，仍建议人工完成一次当前版本的 fetch / checkout / service restart / health check；之后 main 的更新由 timer 接管。
+正式 pipeline 可直接在 GitHub Actions 中查看 test、deploy、health check、rollback 错误和耗时。
 
 ## 项目结构
 
