@@ -3012,7 +3012,7 @@ button { font: inherit; }
   min-height: 560px;
   background-image:
     linear-gradient(rgba(255,255,255,.045), rgba(255,255,255,.045)),
-    url("/office-stage.webp");
+    url("/office-stage.svg");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
