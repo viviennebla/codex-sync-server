@@ -842,6 +842,14 @@ function riderMetaLabel(rider) {
   return parts.join(" · ");
 }
 
+function quotaCadence(rider, base) {
+  const pressure = quotaPressure(rider);
+  if (quotaEmotionFor(rider) === "sleepy") {
+    return Math.min(1.35, base * (1 + pressure * 0.18));
+  }
+  return Math.max(0.42, base * (1 - pressure * 0.34));
+}
+
 function stateFor(rider) {
   const states = [];
   if (rider.mood === "chill") states.push("is-chill");
@@ -1104,9 +1112,8 @@ function riderMarkup(rider) {
   const transport = transportFor(rider);
   const personality = personalityFor(rider);
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
-  const pressure = quotaPressure(rider);
   const cadenceBase = rider.mood === "chill" ? 1.14 : 0.78;
-  const cadence = Math.max(0.44, cadenceBase * (1 - pressure * 0.34)).toFixed(2);
+  const cadence = quotaCadence(rider, cadenceBase).toFixed(2);
   const workstation = workstationFor(rider);
   const edgeClass = Number(rider.x || 0) >= 70 ? " is-near-right" : "";
   return (
@@ -1202,7 +1209,6 @@ function updateRiderNode(node, rider) {
     node.insertAdjacentHTML("afterbegin", workstationMarkup(rider));
     node.dataset.workstation = nextWorkstation;
   }
-  const pressure = quotaPressure(rider);
   const cadenceBase = rider.mood === "chill"
     ? 1.14
     : rider.mood === "burning"
@@ -1210,7 +1216,7 @@ function updateRiderNode(node, rider) {
       : 0.72;
   node.style.setProperty(
     "--cadence",
-    Math.max(0.42, cadenceBase * (1 - pressure * 0.34)).toFixed(2) + "s",
+    quotaCadence(rider, cadenceBase).toFixed(2) + "s",
   );
 
   const name = node.querySelector(".name-chip .rider-name");
