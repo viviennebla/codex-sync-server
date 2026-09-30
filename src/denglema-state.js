@@ -78,6 +78,31 @@ export function normalizeDenglemaTransport(value) {
   return transport;
 }
 
+export const MAX_DENGLEMA_SLOGANS = 8;
+export const MAX_DENGLEMA_SLOGAN_LENGTH = 28;
+
+export function normalizeDenglemaSlogans(value) {
+  if (value == null) return [];
+  if (!Array.isArray(value)) throw new Error("slogans must be an array");
+  if (value.length > MAX_DENGLEMA_SLOGANS) {
+    throw new Error("slogans supports at most " + MAX_DENGLEMA_SLOGANS + " lines");
+  }
+
+  const seen = new Set();
+  const slogans = [];
+  for (const item of value) {
+    const slogan = String(item ?? "").replace(/\s+/g, " ").trim();
+    if (!slogan) continue;
+    if ([...slogan].length > MAX_DENGLEMA_SLOGAN_LENGTH) {
+      throw new Error("each slogan must be at most " + MAX_DENGLEMA_SLOGAN_LENGTH + " characters");
+    }
+    if (seen.has(slogan)) continue;
+    seen.add(slogan);
+    slogans.push(slogan);
+  }
+  return slogans;
+}
+
 export async function createWebUser(profile, stateDir = "state", options = {}) {
   const now = options.now?.() || new Date();
   const file = paths(stateDir).users;
@@ -197,6 +222,21 @@ export async function updateWebUserTransport(userId, transport, stateDir = "stat
   if (!user) return null;
 
   user.transport = normalizeDenglemaTransport(transport);
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
+export async function updateWebUserSlogans(userId, slogans, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.slogans = normalizeDenglemaSlogans(slogans);
   user.updated_at = (options.now?.() || new Date()).toISOString();
   store.by_id[id] = user;
   await writeJson(file, store);
