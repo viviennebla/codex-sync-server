@@ -12,6 +12,7 @@ import {
   readPairingCodeStatus,
   readDenglemaUser,
   readDenglemaUsers,
+  readDenglemaOfficeLayoutVersion,
   readDimensionLeaderboard,
   recoverWebUser,
   readUserInstallations,
@@ -21,6 +22,7 @@ import {
   updateWebUserAvatar,
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
+  updateWebUserOfficePosition,
   updateWebUserSlogans,
   updateWebUserTransport,
 } from "./denglema-state.js";
@@ -546,6 +548,43 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── PUT /api/me/office-position ── move only the current rider
+    if (method === "PUT" && url.pathname === "/api/me/office-position") {
+      const user = await webUserFromRequest(req);
+      if (!user) {
+        sendJson(res, 401, { error: "Not logged in" });
+        return;
+      }
+      const body = await readBody(req);
+      try {
+        const updated = await updateWebUserOfficePosition(
+          user.id,
+          { lane: body?.lane, x: body?.x },
+          body?.expected_layout_version,
+          STATE_DIR,
+        );
+        if (!updated) {
+          sendError(res, 404, "Rider not found");
+          return;
+        }
+        sendJson(res, 200, {
+          ok: true,
+          office_position: updated.user.office_position,
+          layout_version: updated.layout_version,
+        });
+      } catch (error) {
+        if (error?.code === "DENGLEMA_LAYOUT_CONFLICT") {
+          sendJson(res, 409, {
+            error: "office_layout_changed",
+            layout_version: error.layout_version,
+          });
+          return;
+        }
+        sendError(res, 400, error?.message || "Could not update office position");
+      }
+      return;
+    }
+
     // ── GET /api/avatars/:id.jpg ── public rider avatar asset
     const avatarMatch = url.pathname.match(/^\/api\/avatars\/([A-Za-z0-9_-]+)\.jpg$/);
     if (method === "GET" && avatarMatch) {
@@ -583,6 +622,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
           transport: user.transport || "bike",
+          office_position: user.office_position || null,
           slogans: Array.isArray(user.slogans) ? user.slogans : [],
           equipped_achievement: publicEquippedAchievement(user),
           today_tokens: today?.total_tokens || 0,
@@ -681,6 +721,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: rider.avatar_emoji || "🚴",
           avatar_url: rider.avatar_url || null,
           transport: rider.transport || "bike",
+          office_position: rider.office_position || null,
           slogans: Array.isArray(rider.slogans) ? rider.slogans : [],
           equipped_achievement: publicEquippedAchievement(rider),
         },
@@ -825,13 +866,15 @@ const server = createServer(async (req, res) => {
         sendError(res, 400, "Invalid date");
         return;
       }
-      const [totals, users] = await Promise.all([
+      const [totals, users, layoutVersion] = await Promise.all([
         readUserTotals(date, STATE_DIR),
         readDenglemaUsers(STATE_DIR),
+        readDenglemaOfficeLayoutVersion(STATE_DIR),
       ]);
       const totalsByUser = new Map(totals.map((row) => [row.user_id, row]));
       sendJson(res, 200, {
         date,
+        layout_version: layoutVersion,
         riders: users.map((user) => {
           const row = totalsByUser.get(user.id) || null;
           return {
@@ -840,6 +883,7 @@ const server = createServer(async (req, res) => {
             avatar_emoji: user.avatar_emoji || "🚴",
             avatar_url: user.avatar_url || null,
             transport: user.transport || "bike",
+            office_position: user.office_position || null,
             slogans: Array.isArray(user.slogans) ? user.slogans : [],
             equipped_achievement: publicEquippedAchievement(user),
             today_tokens: row?.total_tokens || 0,
