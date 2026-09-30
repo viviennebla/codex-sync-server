@@ -424,7 +424,26 @@ async function postEventMessage() {
 }
 
 
-function resetNotchLabel(record) {
+function resetNotchLabel(runway) {
+  const completed = runway?.latest_completed || null;
+  if (completed) {
+    const occurredAt = completed.effective_at || completed.completed_at;
+    const date = occurredAt ? new Date(occurredAt) : null;
+    if (date && !Number.isNaN(date.getTime())) {
+      const resetTime = date.toLocaleTimeString("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      });
+      const resetDate = date.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" });
+      const dayLabel = resetDate === today ? "今天 " : "";
+      return "🎉 Reset · " + dayLabel + resetTime + " 已重置";
+    }
+  }
+
+  const record = runway?.latest_signal || null;
   if (!record) return "🙏 Reset · 暂无排期";
   const confidence = Number.isFinite(Number(record.confidence))
     ? Math.round(Number(record.confidence) * 100) + "%"
@@ -447,7 +466,7 @@ async function loadResetNotch() {
       jsonFetch("/api/reset-beg"),
     ]);
     if (resetNotchStatus) {
-      resetNotchStatus.textContent = resetNotchLabel(runway?.latest_signal || null);
+      resetNotchStatus.textContent = resetNotchLabel(runway);
       if (runway?.site_url) resetNotchStatus.href = runway.site_url;
     }
     if (resetBegCount) resetBegCount.textContent = Number(beg?.count || 0).toLocaleString("en-US");
