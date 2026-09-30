@@ -71,7 +71,17 @@ Content-Type: application/json
   ],
   "projects": [
     { "name": "vimo-flow", "total_tokens": 80000 }
-  ]
+  ],
+  "usage_limits": {
+    "updated_at": "2026-09-29T07:00:00.000Z",
+    "primary": {
+      "used_percent": 82.5,
+      "remaining_percent": 17.5,
+      "window_minutes": 300,
+      "resets_at": "2026-09-29T09:00:00.000Z"
+    },
+    "secondary": null
+  }
 }
 ```
 
@@ -86,6 +96,9 @@ Content-Type: application/json
 | `total_tokens` | 是 | 当前 installation 在该日期的**累计** token |
 | `models` | 是 | model-name → cumulative token；无明细可传 `[]` |
 | `projects` | 是 | workspace basename → cumulative token；无明细可传 `[]` |
+| `usage_limits` | 否 | Harness 能可信读取额度窗口时上传；记录百分比剩余额度、窗口和 reset 时间，不猜绝对 token quota |
+
+`usage_limits.primary/secondary` 是可选窗口。窗口至少应有 `used_percent` 或 `remaining_percent`，服务端会校验到 0–100%，并将两者规范化为互补百分比。额度未知时整个字段省略，不要猜。
 
 `harness` 是短标识，不得包含用户身份、路径或设备秘密。
 
@@ -109,8 +122,9 @@ Adapter 必须：
 2. 统计“当前日期累计值”，而不是只统计当前会话。
 3. `projects[].name` 只使用 workspace basename，不上传完整路径。
 4. 不为了填满 breakdown 而猜测 model/project；未知时传空数组。
-5. 上传前验证数值为非负整数。
-6. 普通“上传蹬了吗”应复用最新快照；只有明确要求 fresh refresh 时才重新扫描重数据源。
+5. 上传前验证 token 数值为非负整数。
+6. 如果 Harness 有可信 usage-limit API，可附带 `usage_limits`；只传百分比、窗口和 reset 时间，不推测账户的绝对 token quota。
+7. 普通“上传蹬了吗”应复用最新快照；只有明确要求 fresh refresh 时才重新扫描重数据源。
 
 Adapter 不得上传：
 

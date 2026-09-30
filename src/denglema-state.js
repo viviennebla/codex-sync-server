@@ -301,6 +301,74 @@ function mergeUsageHistory(existing = [], incoming = null) {
     .slice(-MAX_USAGE_HISTORY_SAMPLES);
 }
 
+function normalizeUsageLimitPercent(value, field) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0 || number > 100) {
+    throw new Error(`Invalid ${field}`);
+  }
+  return number;
+}
+
+function normalizeUsageLimitWindow(window, field) {
+  if (window === null || window === undefined) return null;
+  if (typeof window !== "object" || Array.isArray(window)) {
+    throw new Error(`Invalid ${field}`);
+  }
+
+  let used = normalizeUsageLimitPercent(window.used_percent, `${field}.used_percent`);
+  let remaining = normalizeUsageLimitPercent(window.remaining_percent, `${field}.remaining_percent`);
+  if (used === null && remaining === null) {
+    throw new Error(`Invalid ${field}: missing quota percentage`);
+  }
+  if (used !== null && remaining !== null && Math.abs((used + remaining) - 100) > 0.5) {
+    throw new Error(`Invalid ${field}: used + remaining must equal 100`);
+  }
+  if (used === null) used = 100 - remaining;
+  if (remaining === null) remaining = 100 - used;
+
+  const windowMinutesRaw = window.window_minutes;
+  const windowMinutes = windowMinutesRaw === null || windowMinutesRaw === undefined
+    ? null
+    : Number(windowMinutesRaw);
+  if (windowMinutes !== null && (!Number.isFinite(windowMinutes) || windowMinutes < 0)) {
+    throw new Error(`Invalid ${field}.window_minutes`);
+  }
+
+  let resetsAt = null;
+  if (window.resets_at !== null && window.resets_at !== undefined) {
+    const parsed = Date.parse(window.resets_at);
+    if (!Number.isFinite(parsed)) throw new Error(`Invalid ${field}.resets_at`);
+    resetsAt = new Date(parsed).toISOString();
+  }
+
+  return {
+    used_percent: used,
+    remaining_percent: remaining,
+    window_minutes: windowMinutes,
+    resets_at: resetsAt,
+  };
+}
+
+function normalizeUsageLimits(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Invalid usage_limits");
+  }
+
+  const updatedAt = Date.parse(value.updated_at || "");
+  if (!Number.isFinite(updatedAt)) throw new Error("Invalid usage_limits.updated_at");
+  const primary = normalizeUsageLimitWindow(value.primary, "usage_limits.primary");
+  const secondary = normalizeUsageLimitWindow(value.secondary, "usage_limits.secondary");
+  if (!primary && !secondary) throw new Error("usage_limits must include a quota window");
+
+  return {
+    updated_at: new Date(updatedAt).toISOString(),
+    primary,
+    secondary,
+  };
+}
+
 export function validateUsageSample(sample) {
   const version = Number(sample?.schema_version);
   if (version !== 1 && version !== 2) throw new Error("Unsupported usage sample schema");
@@ -309,6 +377,7 @@ export function validateUsageSample(sample) {
   if (!Number.isFinite(observed)) throw new Error("Invalid observed_at");
   const total = Number(sample.total_tokens);
   if (!Number.isSafeInteger(total) || total < 0) throw new Error("Invalid total_tokens");
+  const usageLimits = version === 2 ? normalizeUsageLimits(sample.usage_limits) : null;
 
   return {
     schema_version: version,
@@ -319,6 +388,7 @@ export function validateUsageSample(sample) {
       harness: normalizeHarness(sample.harness),
       models: normalizeUsageBreakdown(sample.models, "models"),
       projects: normalizeUsageBreakdown(sample.projects, "projects"),
+      ...(usageLimits ? { usage_limits: usageLimits } : {}),
     } : {}),
   };
 }
@@ -516,6 +586,7 @@ export async function readUserInstallations(userId, date, stateDir = "state") {
         harness: usage?.latest?.harness || null,
         models: usage?.max_models || [],
         projects: usage?.max_projects || [],
+        usage_limits: usage?.latest?.usage_limits || null,
         has_today_sample: Boolean(usage),
       };
     })
@@ -538,11 +609,34 @@ export async function readUserTotals(date, stateDir = "state") {
       installations: 0,
       modelTotals: new Map(),
       projectTotals: new Map(),
+      quota_remaining_percent: null,
+      quota_updated_at: null,
     };
     current.total_tokens += Number(row.max_total_tokens || 0);
     current.installations += 1;
     addBreakdown(current.modelTotals, row.max_models || row.latest?.models);
     addBreakdown(current.projectTotals, row.max_projects || row.latest?.projects);
+
+    const usageLimits = row.latest?.usage_limits || null;
+    const remainingValues = [
+      usageLimits?.primary?.remaining_percent,
+      usageLimits?.secondary?.remaining_percent,
+    ].map(Number).filter(Number.isFinite);
+    if (remainingValues.length) {
+      const remaining = Math.min(...remainingValues);
+      const updatedAt = Date.parse(usageLimits?.updated_at || "");
+      const currentUpdatedAt = Date.parse(current.quota_updated_at || "");
+      if (Number.isFinite(updatedAt)) {
+        if (!Number.isFinite(currentUpdatedAt) || updatedAt > currentUpdatedAt) {
+          current.quota_remaining_percent = remaining;
+          current.quota_updated_at = new Date(updatedAt).toISOString();
+        } else if (updatedAt === currentUpdatedAt) {
+          current.quota_remaining_percent = current.quota_remaining_percent === null
+            ? remaining
+            : Math.min(current.quota_remaining_percent, remaining);
+        }
+      }
+    }
     totals.set(userId, current);
   }
   return [...totals.values()]
@@ -552,6 +646,11 @@ export async function readUserTotals(date, stateDir = "state") {
       installations: row.installations,
       models: breakdownRows(row.modelTotals),
       projects: breakdownRows(row.projectTotals),
+      ...(Number.isFinite(row.quota_remaining_percent) ? {
+        quota_remaining_percent: row.quota_remaining_percent,
+        quota_pressure: Math.max(0, Math.min(1, (100 - row.quota_remaining_percent) / 100)),
+        quota_updated_at: row.quota_updated_at,
+      } : {}),
     }))
     .sort((a, b) => b.total_tokens - a.total_tokens);
 }

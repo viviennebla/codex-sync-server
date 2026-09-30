@@ -26,6 +26,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "plugin-0.1.17-usage-limits",
+    emoji: "📦",
+    message: "蹬了吗插件升级到 0.1.17 · 新增剩余额度情绪",
+    href: "/plugin#upgrade-0-1-17",
+  },
+  {
     id: "plugin-0.1.16-auto-upload",
     emoji: "📦",
     message: "蹬了吗插件升级到 0.1.16 · 新增自动上传",
