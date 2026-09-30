@@ -1290,9 +1290,16 @@ function triggerMotion(rider, node, action, options = {}) {
   const burst = node.querySelector(".effect-burst");
   const motion = node.querySelector(".rider-motion");
   const prop = node.querySelector(".social-prop");
-  const text = options.text || randomFrom(action.bursts || ["嘿"]);
+  const personalSlogans = Array.isArray(rider.slogans)
+    ? rider.slogans.filter((value) => typeof value === "string" && value.trim())
+    : [];
+  const usesPersonalSlogan = !options.text && personalSlogans.length > 0;
+  const text = options.text || randomFrom(
+    usesPersonalSlogan ? personalSlogans : (action.bursts || ["嘿"])
+  );
 
   if (burst) burst.textContent = text;
+  node.classList.toggle("has-personal-slogan", usesPersonalSlogan);
   if (prop) {
     const propText = options.prop || (action.props?.length ? randomFrom(action.props) : "");
     prop.textContent = propText;
@@ -1312,6 +1319,7 @@ function triggerMotion(rider, node, action, options = {}) {
     node.classList.remove(action.className);
     node.classList.remove("effect-heavy");
     node.classList.remove("has-social-prop");
+    node.classList.remove("has-personal-slogan");
     if (prop) prop.textContent = "";
     activeMotion.delete(rider.user_id);
   };
