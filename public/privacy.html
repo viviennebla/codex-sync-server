@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project 隐私 · 蹬了吗</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/privacy.js"></script>
+</head>
+<body class="profile-page">
+  <main class="profile-shell privacy-shell">
+    <header class="profile-topbar">
+      <a href="/me" class="profile-back">← 回我的主页</a>
+      <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
+      <span class="privacy-badge">Project Privacy</span>
+    </header>
+
+    <section class="profile-hero-card privacy-hero">
+      <div class="profile-avatar">🔒</div>
+      <div class="profile-identity">
+        <p class="dialog-kicker">展示层隐私</p>
+        <h1>项目名你说了算。</h1>
+        <p>隐藏或改名只影响别人看到的 Project 信息；原始 usage、历史统计和成就不会被改写。</p>
+      </div>
+    </section>
+
+    <section class="profile-panel">
+      <div class="profile-panel-head">
+        <h2>我的 Project</h2>
+        <span id="privacySummary">正在读取…</span>
+      </div>
+      <p class="privacy-note">
+        <strong>公开</strong>：显示原始 workspace basename；
+        <strong>隐藏</strong>：不出现在人物详情和 Project 燃烧榜；
+        <strong>改名</strong>：对外统一显示你设置的别名。
+      </p>
+      <div id="privacyProjects" class="privacy-project-list"></div>
+    </section>
+
+    <section class="profile-panel recovery-panel">
+      <div>
+        <h2>原始数据不会被改名</h2>
+        <p>这里只保存展示规则。以后同名 Project 再上传时会继续套用当前隐私设置；恢复为“公开”即可回到原名。</p>
+      </div>
+      <a class="profile-button" href="/leaderboards">看看公开 Project 榜 →</a>
+    </section>
+  </main>
+
+  <div id="privacyToast" class="toast hidden"></div>
+</body>
+</html>
