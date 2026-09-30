@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import net from "node:net";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -103,4 +104,13 @@ test("update log page and API are public and consistent", async (t) => {
   const payload = await api.json();
   assert.deepEqual(payload.updates, DENGLEMA_UPDATES);
   assert.equal(payload.updates[0].id, "update-log");
+});
+
+
+test("top navigation exposes exactly one update log entry per page", async () => {
+  for (const file of ["index.html", "profile.html", "plugin.html"]) {
+    const html = await readFile(new URL("../public/" + file, import.meta.url), "utf8");
+    const matches = html.match(/href="\/updates"/g) || [];
+    assert.equal(matches.length, 1, file + " should contain exactly one /updates link");
+  }
 });
