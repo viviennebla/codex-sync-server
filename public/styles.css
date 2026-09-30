@@ -1083,6 +1083,33 @@ button { font: inherit; }
   transform: skew(18deg) rotate(-55deg);
 }
 
+.rider-message-button {
+  position: absolute;
+  z-index: 19;
+  left: 116px;
+  top: 53px;
+  min-width: 25px;
+  height: 19px;
+  padding: 0 6px 3px;
+  border: 1px solid rgba(39,49,60,.15);
+  border-radius: 999px;
+  background: rgba(255,253,247,.96);
+  color: #69717b;
+  box-shadow: 0 1px 0 rgba(39,49,60,.08);
+  cursor: pointer;
+  font: 900 15px/1 system-ui, sans-serif;
+  letter-spacing: 1px;
+}
+.rider-message-button:hover,
+.rider-message-button[aria-expanded="true"] {
+  border-color: rgba(84,121,198,.42);
+  background: #f3f6ff;
+  color: #405a92;
+}
+.rider-message-button[hidden] {
+  display: none !important;
+}
+
 .effect-burst::before {
   content: "";
   position: absolute;
@@ -2566,6 +2593,7 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .event-rail { transition: none; }
   .rider.has-message .rider-message-bubble { animation: none; }
+  .rider-message-button { transition: none; }
 }
 
 /* Hidden achievement collection + wearing */
@@ -3094,6 +3122,10 @@ button { font: inherit; }
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.72),
     inset 0 -1px 0 rgba(39,49,60,.06);
+}
+
+.race-stage.message-layer-active {
+  z-index: 40;
 }
 .race-stage::after,
 .track-motion,
