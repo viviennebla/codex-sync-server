@@ -20,6 +20,7 @@ import {
   updateWebUserAvatar,
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
+  updateWebUserSlogans,
   updateWebUserTransport,
   validateUsageSample,
 } from "../src/denglema-state.js";
@@ -148,6 +149,41 @@ test("rider transport is cosmetic, validated, and persisted", async (t) => {
   await assert.rejects(
     updateWebUserTransport("usr-transport", "rocket", root),
     /transport must be one of/,
+  );
+});
+
+test("rider slogans are bounded, deduplicated, and persisted", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-slogans-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  await createWebUser({
+    display_name: "Catchphrase",
+    avatar_emoji: "🙂",
+  }, root, {
+    userId: "usr-slogans",
+    recoveryCode: "SLOGAN-1234",
+    now: () => new Date("2026-09-30T00:00:00Z"),
+  });
+
+  const updated = await updateWebUserSlogans(
+    "usr-slogans",
+    [" 今天不卷 ", "先蹬两下", "今天不卷", ""],
+    root,
+    { now: () => new Date("2026-09-30T00:01:00Z") },
+  );
+  assert.deepEqual(updated.slogans, ["今天不卷", "先蹬两下"]);
+  assert.deepEqual((await readDenglemaUser("usr-slogans", root)).slogans, ["今天不卷", "先蹬两下"]);
+
+  const cleared = await updateWebUserSlogans("usr-slogans", [], root);
+  assert.deepEqual(cleared.slogans, []);
+
+  await assert.rejects(
+    updateWebUserSlogans("usr-slogans", Array.from({ length: 9 }, (_, i) => "s" + i), root),
+    /at most 8/,
+  );
+  await assert.rejects(
+    updateWebUserSlogans("usr-slogans", ["太".repeat(29)], root),
+    /at most 28 characters/,
   );
 });
 
