@@ -28,6 +28,8 @@ const useShellCommandButton = $("useShellCommandButton");
 const usePowerShellCommandButton = $("usePowerShellCommandButton");
 const useAgentPromptButton = $("useAgentPromptButton");
 const bindHelpText = $("bindHelpText");
+const autoUploadConsent = $("autoUploadConsent");
+const autoUploadInterval = $("autoUploadInterval");
 const todayTotalEl = $("todayTotal");
 const todayFreshnessEl = $("todayFreshness");
 const resetNotchStatus = $("resetNotchStatus");
@@ -1054,8 +1056,15 @@ async function bootstrap() {
   }
 }
 
+function selectedAutoUploadInterval() {
+  return autoUploadConsent?.checked
+    ? (autoUploadInterval?.value || "3h")
+    : "off";
+}
+
 function buildAgentConnectPrompt(code) {
   if (!code) return "";
+  const autoInterval = selectedAutoUploadInterval();
   return [
     "接入蹬了吗。请把当前 Agent Harness 作为一个独立 installation 绑定并上传第一次 usage。",
     "",
@@ -1071,6 +1080,9 @@ function buildAgentConnectPrompt(code) {
     "5. 收集当前日期的累计 usage，不是只统计当前会话。生成 schema v2：schema_version=2、harness、date、observed_at、total_tokens、models[]、projects[]。projects 只用 workspace basename；拿不到 breakdown 就传 []，不要猜。",
     "6. 用 Authorization: Bearer <token> POST /api/usage/sample 上传第一次快照。",
     "7. 完成后只告诉我 harness、installation_id、日期和 total_tokens；不要回显 token。",
+    autoInterval === "off"
+      ? "8. 用户未授权自动上传：不要创建后台上传任务。"
+      : "8. 用户已明确授权自动上传，周期为 " + autoInterval + "。如果当前 harness 有可靠的本地 scheduler / 常驻进程，请按该周期上传；如果没有，不要假装已配置成功，要明确说明限制。",
     "",
     "以后我说「上传蹬了吗」时，复用同一 connection，并按同一 Usage Contract 上传当前 harness 的累计 usage。"
   ].join("\n");
@@ -1078,13 +1090,16 @@ function buildAgentConnectPrompt(code) {
 
 function buildOneStepCommand(code, mode = pairingCommandMode) {
   if (!code) return "";
+  const autoInterval = selectedAutoUploadInterval();
   if (mode === "agent") return buildAgentConnectPrompt(code);
   if (mode === "powershell") {
     return [
       "codex plugin marketplace add " + DENGLEMA_MARKETPLACE + " 2>$null | Out-Null",
       "codex plugin marketplace upgrade denglema | Out-Null",
       "$p = codex plugin add --json denglema@denglema | ConvertFrom-Json",
-      "node (Join-Path $p.installedPath 'src/cli.js') denglema bind --server " + DENGLEMA_SERVER + " --code " + code
+      "$cli = Join-Path $p.installedPath 'src/cli.js'",
+      "node $cli denglema bind --server " + DENGLEMA_SERVER + " --code " + code,
+      "node $cli denglema auto-upload --interval " + autoInterval
     ].join("; ");
   }
 
@@ -1094,7 +1109,8 @@ function buildOneStepCommand(code, mode = pairingCommandMode) {
     "codex plugin marketplace add " + DENGLEMA_MARKETPLACE + " >/dev/null 2>&1 || true",
     "codex plugin marketplace upgrade denglema >/dev/null",
     "ROOT=$(codex plugin add --json denglema@denglema | " + readRoot + ")",
-    "node \"$ROOT/src/cli.js\" denglema bind --server " + DENGLEMA_SERVER + " --code " + code
+    "node \"$ROOT/src/cli.js\" denglema bind --server " + DENGLEMA_SERVER + " --code " + code,
+    "node \"$ROOT/src/cli.js\" denglema auto-upload --interval " + autoInterval
   ].join("; ");
 }
 
@@ -1106,9 +1122,12 @@ function renderOneStepCommand() {
   useAgentPromptButton?.classList.toggle("is-selected", isAgent);
   copyBindCommandButton.textContent = isAgent ? "复制 Agent Prompt" : "复制命令";
   if (bindHelpText) {
+    const autoInterval = selectedAutoUploadInterval();
     bindHelpText.textContent = isAgent
-      ? "把 Prompt 发给当前 Agent；它会自己识别 harness、绑定并上传第一份 usage。"
-      : "执行完后不用再操作网页；Agent 会自动出现，第一次快照也会自动上传。";
+      ? "把 Prompt 发给当前 Agent；它会绑定并上传第一份 usage。" +
+        (autoInterval === "off" ? " 自动上传保持关闭。" : " 已授权自动更新：" + autoInterval + "。")
+      : "执行完后不用再操作网页；第一次快照会自动上传。" +
+        (autoInterval === "off" ? " 后续保持手动刷新。" : " 后续自动更新：" + autoInterval + "。");
   }
 }
 
@@ -1311,6 +1330,11 @@ pairButton.addEventListener("click", () => {
   stopPairingPoll();
   pairingCodeCurrent = null;
   pairingCommandMode = "shell";
+  if (autoUploadConsent) autoUploadConsent.checked = false;
+  if (autoUploadInterval) {
+    autoUploadInterval.value = "3h";
+    autoUploadInterval.disabled = true;
+  }
   pairingResult.classList.add("hidden");
   pairDialog.showModal();
 });
@@ -1357,6 +1381,15 @@ usePowerShellCommandButton.addEventListener("click", () => {
 
 useAgentPromptButton?.addEventListener("click", () => {
   pairingCommandMode = "agent";
+  renderOneStepCommand();
+});
+
+autoUploadConsent?.addEventListener("change", () => {
+  if (autoUploadInterval) autoUploadInterval.disabled = !autoUploadConsent.checked;
+  renderOneStepCommand();
+});
+
+autoUploadInterval?.addEventListener("change", () => {
   renderOneStepCommand();
 });
 
