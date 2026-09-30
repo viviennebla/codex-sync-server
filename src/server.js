@@ -31,6 +31,7 @@ import {
   updateWebUserTransport,
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
+import { publicDenglemaUpdates } from "./denglema-updates.js";
 import {
   operatorTokenAuthorized,
   publishOperatorAnnouncement,
@@ -890,6 +891,12 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── GET /api/updates ── durable public product changelog
+    if (method === "GET" && url.pathname === "/api/updates") {
+      sendJson(res, 200, { updates: publicDenglemaUpdates() });
+      return;
+    }
+
     // ── AI Operator A1 ── runtime announcements + bounded audit
     if (url.pathname === "/api/operator/announcements" && method === "POST") {
       if (!DENGLEMA_OPERATOR_TOKEN) {
@@ -1395,6 +1402,14 @@ const server = createServer(async (req, res) => {
     }
     if (method === "GET" && url.pathname === "/plugin") {
       await sendStatic(res, "plugin.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/updates") {
+      await sendStatic(res, "updates.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/updates.js") {
+      await sendStatic(res, "updates.js", "text/javascript; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/lab") {
