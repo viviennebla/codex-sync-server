@@ -890,7 +890,7 @@ function transportMarkup(transport) {
   }
   if (transport === "walk") {
     return '<div class="transport transport-walk">' +
-      '<i class="walk-shadow"></i><i class="shoe shoe-a"></i><i class="shoe shoe-b"></i>' +
+      '<i class="walk-shadow"></i>' +
     '</div>';
   }
   if (transport === "surf") {
@@ -899,9 +899,7 @@ function transportMarkup(transport) {
     '</div>';
   }
   if (transport === "skate") {
-    return '<div class="transport transport-skate">' +
-      '<i class="skate-boot boot-a"></i><i class="skate-boot boot-b"></i>' +
-    '</div>';
+    return '<div class="transport transport-skate" aria-hidden="true"></div>';
   }
   return '<div class="bike transport transport-bike">' +
     '<div class="wheel back"></div>' +
