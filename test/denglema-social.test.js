@@ -76,7 +76,7 @@ test("release announcement publishes once, links to upgrade notes, and does not 
 
   assert.equal(
     await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
-    1,
+    2,
   );
   assert.equal(
     await ensureDenglemaReleaseAnnouncements(root, { now: () => now }),
