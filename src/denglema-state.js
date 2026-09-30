@@ -70,12 +70,26 @@ export const DENGLEMA_TRANSPORTS = Object.freeze([
   "skate",
 ]);
 
+export const DENGLEMA_QUOTA_EMOTIONS = Object.freeze([
+  "sweat",
+  "gloom",
+  "sleepy",
+]);
+
 export function normalizeDenglemaTransport(value) {
   const transport = String(value || "bike").trim().toLowerCase();
   if (!DENGLEMA_TRANSPORTS.includes(transport)) {
     throw new Error("transport must be one of: " + DENGLEMA_TRANSPORTS.join(", "));
   }
   return transport;
+}
+
+export function normalizeDenglemaQuotaEmotion(value) {
+  const emotion = String(value || "sweat").trim().toLowerCase();
+  if (!DENGLEMA_QUOTA_EMOTIONS.includes(emotion)) {
+    throw new Error("quota_emotion must be one of: " + DENGLEMA_QUOTA_EMOTIONS.join(", "));
+  }
+  return emotion;
 }
 
 export const MAX_DENGLEMA_SLOGANS = 8;
@@ -148,6 +162,7 @@ export async function createWebUser(profile, stateDir = "state", options = {}) {
     avatar_emoji: cleanAvatarEmoji(profile?.avatar_emoji),
     avatar_url: null,
     transport: "bike",
+    quota_emotion: "sweat",
     created_at: now.toISOString(),
     last_login_at: now.toISOString(),
   };
@@ -243,6 +258,21 @@ export async function updateWebUserTransport(userId, transport, stateDir = "stat
   if (!user) return null;
 
   user.transport = normalizeDenglemaTransport(transport);
+  user.updated_at = (options.now?.() || new Date()).toISOString();
+  store.by_id[id] = user;
+  await writeJson(file, store);
+  return user;
+}
+
+export async function updateWebUserQuotaEmotion(userId, quotaEmotion, stateDir = "state", options = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const file = paths(stateDir).users;
+  const store = await readJson(file, { version: 1, by_id: {} });
+  const user = store.by_id?.[id];
+  if (!user) return null;
+
+  user.quota_emotion = normalizeDenglemaQuotaEmotion(quotaEmotion);
   user.updated_at = (options.now?.() || new Date()).toISOString();
   store.by_id[id] = user;
   await writeJson(file, store);

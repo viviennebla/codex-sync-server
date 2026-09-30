@@ -886,6 +886,7 @@ button { font: inherit; }
 .effect-fire,
 .effect-dust,
 .effect-sweat,
+.quota-emotion-mark,
 .effect-music,
 .effect-burst {
   position: absolute;
@@ -967,17 +968,61 @@ button { font: inherit; }
 }
 .rider.is-tired .effect-sweat,
 .rider.is-sprinting .effect-sweat,
-.rider.is-bonking .effect-sweat,
-.rider.is-quota-rushing .effect-sweat { display: block; animation: sweatPop .8s ease-in-out infinite; }
-.rider.is-quota-hurry .effect-sweat {
+.rider.is-bonking .effect-sweat { display: block; animation: sweatPop .8s ease-in-out infinite; }
+.rider.quota-emotion-sweat.is-quota-rushing .effect-sweat {
+  display: block;
+  animation: sweatPop .8s ease-in-out infinite;
+}
+.rider.quota-emotion-sweat.is-quota-hurry .effect-sweat {
   display: block;
   opacity: .55;
   animation: sweatPop 1.25s ease-in-out infinite;
 }
-.rider.is-quota-panic .effect-sweat {
+.rider.quota-emotion-sweat.is-quota-panic .effect-sweat {
   display: block;
   opacity: .95;
   animation: sweatPop .62s ease-in-out infinite;
+}
+
+.quota-emotion-mark {
+  display: none;
+  left: 91px;
+  top: -10px;
+  min-width: 38px;
+  color: #343940;
+  font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px rgba(255,255,255,.72);
+  transform-origin: 50% 100%;
+}
+.rider.quota-emotion-gloom.is-quota-hurry .quota-emotion-mark,
+.rider.quota-emotion-gloom.is-quota-panic .quota-emotion-mark,
+.rider.quota-emotion-gloom.is-quota-rushing .quota-emotion-mark {
+  display: block;
+}
+.rider.quota-emotion-gloom .quota-emotion-mark::before {
+  content: "╱╱╱";
+  font-size: 21px;
+  letter-spacing: -5px;
+}
+.rider.quota-emotion-gloom.is-quota-panic .quota-emotion-mark {
+  animation: quotaGloomPulse .62s ease-in-out infinite alternate;
+}
+.rider.quota-emotion-sleepy.is-quota-hurry .quota-emotion-mark,
+.rider.quota-emotion-sleepy.is-quota-panic .quota-emotion-mark,
+.rider.quota-emotion-sleepy.is-quota-rushing .quota-emotion-mark {
+  display: block;
+  color: #59699a;
+}
+.rider.quota-emotion-sleepy .quota-emotion-mark::before {
+  content: "Zzz";
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: -1px;
+}
+.rider.quota-emotion-sleepy.is-quota-panic .quota-emotion-mark {
+  animation: quotaSleepFloat 1.15s ease-in-out infinite alternate;
 }
 
 .effect-music {
@@ -2062,6 +2107,7 @@ button { font: inherit; }
   .effect-fire,
   .effect-dust,
   .effect-sweat,
+  .quota-emotion-mark,
   .effect-music,
   .effect-burst {
     animation: none !important;
@@ -3056,6 +3102,15 @@ button { font: inherit; }
   opacity: .78;
 }
 
+@keyframes quotaGloomPulse {
+  from { opacity: .48; transform: translateY(1px) rotate(-7deg); }
+  to { opacity: 1; transform: translateY(-2px) rotate(-11deg); }
+}
+@keyframes quotaSleepFloat {
+  from { opacity: .55; transform: translate(0, 2px) rotate(-5deg); }
+  to { opacity: 1; transform: translate(6px, -5px) rotate(2deg); }
+}
+
 @keyframes scooterKick {
   from { transform: rotate(-18deg) translateY(0); }
   to { transform: rotate(-42deg) translate(5px, 4px); }
@@ -3580,6 +3635,53 @@ body.time-night .workstation-screen { box-shadow: 0 0 9px rgba(145,188,226,.25);
 }
 .rider-lab-status.is-live { background: #e8f5e9; color: #4e7756; }
 .rider-lab-status.is-next { background: #fff0c8; color: #8a6a20; }
+.rider-lab-emotion-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+}
+.rider-lab-emotion-option {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1.5px solid rgba(39,49,60,.11);
+  border-radius: 14px;
+  background: #fffdf7;
+  color: #343b45;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.rider-lab-emotion-option:hover {
+  border-color: rgba(84,121,198,.34);
+  transform: translateY(-1px);
+}
+.rider-lab-emotion-option.is-selected {
+  border-color: rgba(84,121,198,.46);
+  background: #eef3ff;
+  box-shadow: inset 0 0 0 1px rgba(84,121,198,.10);
+}
+.rider-lab-emotion-option:disabled { cursor: wait; opacity: .62; }
+.rider-lab-emotion-emoji {
+  font-size: 25px;
+  line-height: 1;
+  text-align: center;
+}
+.rider-lab-emotion-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.rider-lab-emotion-copy strong { font-size: 12px; }
+.rider-lab-emotion-copy small {
+  color: #8d837b;
+  font-size: 9px;
+  white-space: nowrap;
+}
 .rider-lab-slogan-editor { display: grid; gap: 10px; margin-top: 14px; }
 .rider-lab-slogan-editor textarea {
   width: 100%; min-height: 132px; resize: vertical;
@@ -3623,6 +3725,7 @@ body.time-night .workstation-screen { box-shadow: 0 0 9px rgba(145,188,226,.25);
 @media (max-width: 720px) {
   .rider-lab-grid { grid-template-columns: 1fr; }
   .rider-lab-card.is-live { grid-column: auto; }
+  .rider-lab-emotion-grid { grid-template-columns: 1fr; }
 }
 
 

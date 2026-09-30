@@ -22,6 +22,7 @@ import {
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
   updateWebUserOfficePosition,
+  updateWebUserQuotaEmotion,
   updateWebUserSlogans,
   updateWebUserTransport,
   validateUsageSample,
@@ -151,6 +152,40 @@ test("rider transport is cosmetic, validated, and persisted", async (t) => {
   await assert.rejects(
     updateWebUserTransport("usr-transport", "rocket", root),
     /transport must be one of/,
+  );
+});
+
+test("quota emotion is cosmetic, defaults to sweat, and persists", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-quota-emotion-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const created = await createWebUser({
+    display_name: "Anxious Rider",
+    avatar_emoji: "😪",
+  }, root, {
+    userId: "usr-quota-emotion",
+    recoveryCode: "QUOTA-EMOTION-1234",
+    now: () => new Date("2026-09-30T08:00:00Z"),
+  });
+  assert.equal(created.user.quota_emotion, "sweat");
+
+  for (const quotaEmotion of ["sweat", "gloom", "sleepy"]) {
+    const updated = await updateWebUserQuotaEmotion(
+      "usr-quota-emotion",
+      quotaEmotion,
+      root,
+      { now: () => new Date("2026-09-30T08:01:00Z") },
+    );
+    assert.equal(updated.quota_emotion, quotaEmotion);
+    assert.equal(
+      (await readDenglemaUser("usr-quota-emotion", root)).quota_emotion,
+      quotaEmotion,
+    );
+  }
+
+  await assert.rejects(
+    updateWebUserQuotaEmotion("usr-quota-emotion", "rage", root),
+    /quota_emotion must be one of/,
   );
 });
 

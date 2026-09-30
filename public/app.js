@@ -796,6 +796,7 @@ async function openRiderDetail(rider) {
     riderDetailTitle.textContent = payload.user?.display_name || rider.display_name || "骑手";
     riderDetailSummary.textContent =
       "今日 " + formatTokens(payload.today_tokens || 0) +
+      (quotaLabel(payload) ? " · " + quotaLabel(payload) : "") +
       " · " + (payload.installations || []).length + " 个 Agent 环境";
     renderBreakdown(riderModels, payload.models);
     renderBreakdown(riderProjects, payload.projects);
@@ -807,11 +808,46 @@ async function openRiderDetail(rider) {
 }
 
 function quotaPressure(rider) {
-  const direct = Number(rider?.quota_pressure);
-  if (Number.isFinite(direct)) return Math.max(0, Math.min(1, direct));
-  const remaining = Number(rider?.quota_remaining_percent);
+  const directRaw = rider?.quota_pressure;
+  if (directRaw !== null && directRaw !== undefined && directRaw !== "") {
+    const direct = Number(directRaw);
+    if (Number.isFinite(direct)) return Math.max(0, Math.min(1, direct));
+  }
+  const remainingRaw = rider?.quota_remaining_percent;
+  if (remainingRaw === null || remainingRaw === undefined || remainingRaw === "") return 0;
+  const remaining = Number(remainingRaw);
   if (!Number.isFinite(remaining)) return 0;
   return Math.max(0, Math.min(1, (100 - remaining) / 100));
+}
+
+function quotaEmotionFor(rider) {
+  const value = String(rider?.quota_emotion || "sweat");
+  return ["sweat", "gloom", "sleepy"].includes(value) ? value : "sweat";
+}
+
+function quotaLabel(rider) {
+  const raw = rider?.quota_remaining_percent;
+  if (raw === null || raw === undefined || raw === "") return "";
+  const remaining = Number(raw);
+  return Number.isFinite(remaining)
+    ? "余粮 " + Math.round(Math.max(0, Math.min(100, remaining))) + "%"
+    : "";
+}
+
+function riderMetaLabel(rider) {
+  const parts = [];
+  if (Number(rider?.today_tokens || 0) > 0) parts.push(formatTokens(rider.today_tokens));
+  const quota = quotaLabel(rider);
+  if (quota) parts.push(quota);
+  return parts.join(" · ");
+}
+
+function quotaCadence(rider, base) {
+  const pressure = quotaPressure(rider);
+  if (quotaEmotionFor(rider) === "sleepy") {
+    return Math.min(1.35, base * (1 + pressure * 0.18));
+  }
+  return Math.max(0.42, base * (1 - pressure * 0.34));
 }
 
 function stateFor(rider) {
@@ -1071,13 +1107,13 @@ function raceAvatarEmoji(rider) {
 }
 
 function riderMarkup(rider) {
-  const classes = stateFor(rider).join(" ");
+  const quotaEmotion = quotaEmotionFor(rider);
+  const classes = [...stateFor(rider), "quota-emotion-" + quotaEmotion].join(" ");
   const transport = transportFor(rider);
   const personality = personalityFor(rider);
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
-  const pressure = quotaPressure(rider);
   const cadenceBase = rider.mood === "chill" ? 1.14 : 0.78;
-  const cadence = Math.max(0.44, cadenceBase * (1 - pressure * 0.34)).toFixed(2);
+  const cadence = quotaCadence(rider, cadenceBase).toFixed(2);
   const workstation = workstationFor(rider);
   const edgeClass = Number(rider.x || 0) >= 70 ? " is-near-right" : "";
   return (
@@ -1091,6 +1127,7 @@ function riderMarkup(rider) {
       '<div class="effect-fire"></div>' +
       '<div class="effect-dust"></div>' +
       '<div class="effect-sweat"></div>' +
+      '<div class="quota-emotion-mark" aria-hidden="true"></div>' +
       '<div class="effect-music">♪</div>' +
       '<div class="effect-burst">嘿!</div>' +
       '<div class="rider-message-bubble" role="status" aria-live="polite"></div>' +
@@ -1123,8 +1160,8 @@ function riderMarkup(rider) {
       '<div class="name-chip" title="' + escapeHtml(TRANSPORT_LABELS[transport]) + '">' +
         '<span class="rider-name">' + escapeHtml(rider.display_name || "同事") + '</span>' +
         '<small class="tokens"' +
-          (Number(rider.today_tokens || 0) > 0 ? "" : " hidden") + ">" +
-          (Number(rider.today_tokens || 0) > 0 ? formatTokens(rider.today_tokens) : "") +
+          (riderMetaLabel(rider) ? "" : " hidden") + ">" +
+          escapeHtml(riderMetaLabel(rider)) +
         '</small>' +
       '</div>' +
     '</div>'
@@ -1139,6 +1176,11 @@ const RIDER_STATE_CLASSES = [
   "is-quota-hurry",
   "is-quota-panic",
 ];
+const RIDER_QUOTA_EMOTION_CLASSES = [
+  "quota-emotion-sweat",
+  "quota-emotion-gloom",
+  "quota-emotion-sleepy",
+];
 
 function updateRiderNode(node, rider) {
   node._riderData = rider;
@@ -1147,6 +1189,8 @@ function updateRiderNode(node, rider) {
   stateFor(rider).forEach((className) => {
     if (className !== "effect-heavy") node.classList.add(className);
   });
+  RIDER_QUOTA_EMOTION_CLASSES.forEach((className) => node.classList.remove(className));
+  node.classList.add("quota-emotion-" + quotaEmotionFor(rider));
 
   const baselineHeavy = stateFor(rider).includes("effect-heavy");
   if (baselineHeavy) {
@@ -1165,7 +1209,6 @@ function updateRiderNode(node, rider) {
     node.insertAdjacentHTML("afterbegin", workstationMarkup(rider));
     node.dataset.workstation = nextWorkstation;
   }
-  const pressure = quotaPressure(rider);
   const cadenceBase = rider.mood === "chill"
     ? 1.14
     : rider.mood === "burning"
@@ -1173,15 +1216,15 @@ function updateRiderNode(node, rider) {
       : 0.72;
   node.style.setProperty(
     "--cadence",
-    Math.max(0.42, cadenceBase * (1 - pressure * 0.34)).toFixed(2) + "s",
+    quotaCadence(rider, cadenceBase).toFixed(2) + "s",
   );
 
   const name = node.querySelector(".name-chip .rider-name");
   const tokens = node.querySelector(".name-chip .tokens");
   if (name) name.textContent = rider.display_name || "同事";
   if (tokens) {
-    tokens.textContent = Number(rider.today_tokens || 0) > 0 ? formatTokens(rider.today_tokens) : "";
-    tokens.hidden = Number(rider.today_tokens || 0) <= 0;
+    tokens.textContent = riderMetaLabel(rider);
+    tokens.hidden = !tokens.textContent;
   }
 
   const nextTransport = transportFor(rider);
@@ -1551,8 +1594,13 @@ const MOTION_ACTIONS = {
 function chooseMotion(rider) {
   const pressure = quotaPressure(rider);
   const pressureRoll = Math.random();
-  if (pressure >= 0.9 && pressureRoll < 0.42) return MOTION_ACTIONS.quotaRush;
-  if (pressure >= 0.7 && pressureRoll < 0.18) return MOTION_ACTIONS.quotaRush;
+  const quotaEmotion = quotaEmotionFor(rider);
+  if (pressure >= 0.9 && pressureRoll < 0.42) {
+    return quotaEmotion === "sleepy" ? MOTION_ACTIONS.yawn : MOTION_ACTIONS.quotaRush;
+  }
+  if (pressure >= 0.7 && pressureRoll < 0.18) {
+    return quotaEmotion === "sleepy" ? MOTION_ACTIONS.yawn : MOTION_ACTIONS.quotaRush;
+  }
 
   const personality = personalityFor(rider).id;
   const personalityRoll = Math.random();
