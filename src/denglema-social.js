@@ -26,6 +26,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "daily-routes-52-2026-09",
+    emoji: "🗺️",
+    message: "#52 燃烧榜改成今日蹬况 · 排名还在地下室，只是终于不坐主席台了",
+    href: "/leaderboards",
+  },
+  {
     id: "project-privacy-49-2026-09",
     emoji: "🔒",
     message: "#49 Project 可隐藏或改名 · 客户代号终于不用在燃烧榜裸奔",
