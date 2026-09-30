@@ -1191,8 +1191,8 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "styles.css", "text/css; charset=utf-8");
       return;
     }
-    if (method === "GET" && url.pathname === "/office-stage.webp") {
-      await sendStatic(res, "office-stage.webp", "image/webp");
+    if (method === "GET" && url.pathname === "/office-stage.svg") {
+      await sendStatic(res, "office-stage.svg", "image/svg+xml; charset=utf-8");
       return;
     }
 
