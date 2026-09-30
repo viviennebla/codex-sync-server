@@ -392,6 +392,7 @@ async function loadProfile() {
 
   const user = me.user;
   renderProfileAvatar(user);
+  renderTransportOptions(user.transport || "bike");
   profileName.textContent = user.display_name || "骑手";
 
   const [detail, achievementPayload] = await Promise.all([
