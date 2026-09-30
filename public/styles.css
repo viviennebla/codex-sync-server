@@ -3624,3 +3624,48 @@ body.time-night .workstation-screen { box-shadow: 0 0 9px rgba(145,188,226,.25);
   .rider-lab-grid { grid-template-columns: 1fr; }
   .rider-lab-card.is-live { grid-column: auto; }
 }
+
+
+/* Own rider can be repositioned. A little visual overlap is intentional. */
+.rider.is-own-rider {
+  cursor: grab;
+  touch-action: none;
+}
+.rider.is-own-rider::before {
+  content: "拖";
+  position: absolute;
+  z-index: 18;
+  left: 72px;
+  bottom: -8px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(255,253,247,.82);
+  color: #9a918a;
+  font-size: 8px;
+  font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .16s ease;
+}
+.rider.is-own-rider:hover::before { opacity: .72; }
+.rider.is-own-rider.is-dragging {
+  cursor: grabbing;
+  z-index: 24;
+  transition: none !important;
+  filter: drop-shadow(0 8px 8px rgba(53,64,70,.18));
+}
+.rider.is-own-rider.is-dragging::before {
+  content: "放这里";
+  opacity: .92;
+}
+.rider.is-own-rider.is-drag-blocked {
+  filter: saturate(.75) drop-shadow(0 0 0 rgba(0,0,0,0));
+}
+.rider.is-own-rider.is-drag-blocked::before {
+  content: "太挤了";
+  background: rgba(255,240,224,.94);
+  color: #a06046;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rider.is-own-rider::before { transition: none; }
+}
