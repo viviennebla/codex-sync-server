@@ -940,7 +940,13 @@ const server = createServer(async (req, res) => {
               coalesce_key: "upload:" + installation.id,
               coalesce_window_ms: 10 * 60 * 1000,
             }, STATE_DIR);
-            await syncUserAchievements(installation.user_id, body.date, STATE_DIR, { timezone: DENGLEMA_TIMEZONE });
+            await syncUserAchievements(installation.user_id, body.date, STATE_DIR, {
+              timezone: DENGLEMA_TIMEZONE,
+              onRhythm: (summary) => log("info", "work_rhythm", {
+                ...summary,
+                installation_id: installation.id,
+              }),
+            });
             await syncLeaderboardLeader(body.date, STATE_DIR);
           } catch (socialError) {
             log("warn", "social_event_failed", {
