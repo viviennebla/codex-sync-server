@@ -34,9 +34,10 @@
       </article>
 
       <article class="profile-panel">
-        <div class="profile-panel-head"><h2>2. 日常刷新</h2><span>只说一句</span></div>
+        <div class="profile-panel-head"><h2>2. 日常刷新</h2><span>自动或手动</span></div>
+        <p class="plugin-doc-copy">接入时可以明确授权自动更新，并选择每 1 小时 / 3 小时 / 6 小时 / 每天。默认关闭，不会未经允许在后台上传。</p>
         <pre class="plugin-command">上传蹬了吗</pre>
-        <p class="plugin-doc-copy">之后想刷新赛道时，把这句话发给当前已接入的 Agent 即可。每个 harness 只读取自己的 usage 数据源，不会偷偷上传对话内容。</p>
+        <p class="plugin-doc-copy">手动刷新始终保留。每个 harness 只读取自己的 usage 数据源，不会上传 Prompt、代码或完整路径。</p>
       </article>
 
       <article class="profile-panel">
@@ -91,7 +92,7 @@ codex plugin add denglema@denglema</pre>
     <section class="profile-panel recovery-panel">
       <div>
         <h2>记住就这两件事</h2>
-        <p>第一次：点「接入这个 Agent」。以后：对当前 Agent 说「上传蹬了吗」。</p>
+        <p>第一次：接入 Agent，并决定要不要自动更新。以后：自动更新，或者随时说「上传蹬了吗」。</p>
       </div>
       <a class="profile-button plugin-doc-cta" href="/">回赛道 →</a>
     </section>

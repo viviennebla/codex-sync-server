@@ -33,7 +33,7 @@
         <a class="profile-button" href="/leaderboards">🔥 燃烧榜</a>
         <a class="profile-button" href="/me">👤 我的主页</a>
         <a class="profile-button" href="/plugin">📖 使用教程</a>
-        <button id="uploadPromptButton" class="upload-button" type="button">⬆ 刷新赛道</button>
+        <button id="uploadPromptButton" class="manual-refresh-button" type="button">手动刷新</button>
         <button id="devicesButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">我的设备</button>
         <button id="pairButton" class="hidden" type="button" aria-hidden="true" tabindex="-1">接入 Agent</button>
       </div>
@@ -97,6 +97,19 @@
           <button id="useShellCommandButton" type="button" class="auth-link">Codex · WSL/macOS/Linux</button>
           <button id="usePowerShellCommandButton" type="button" class="auth-link">Codex · Windows</button>
           <button id="useAgentPromptButton" type="button" class="auth-link">Cursor / Claude / Other</button>
+        </div>
+        <div class="auto-upload-consent">
+          <label class="auto-upload-toggle">
+            <input id="autoUploadConsent" type="checkbox">
+            <span>允许自动更新 usage</span>
+          </label>
+          <select id="autoUploadInterval" disabled aria-label="自动上传周期">
+            <option value="1h">每 1 小时</option>
+            <option value="3h" selected>每 3 小时（推荐）</option>
+            <option value="6h">每 6 小时</option>
+            <option value="1d">每天</option>
+          </select>
+          <p>只有勾选后才会开启；上传内容仍然只有聚合 usage，不包含 Prompt、代码或完整路径。</p>
         </div>
         <pre id="bindCommand"></pre>
         <button id="copyBindCommandButton" type="button" class="dialog-primary">复制命令</button>

@@ -233,6 +233,20 @@ button { font: inherit; }
 }
 .upload-button:hover { transform: translateY(-1px); }
 
+.manual-refresh-button {
+  border: 0;
+  background: transparent;
+  color: #7d766f;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.manual-refresh-button:hover {
+  color: #4d5968;
+  text-decoration: underline;
+}
+
 .profile-button {
   border: 1.5px solid #8c7ac6;
   background: #f4f0ff;
@@ -879,6 +893,45 @@ button { font: inherit; }
 .onboarding-platforms { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
 .onboarding-platforms .auth-link { color: #aebbd3; }
 .onboarding-platforms .auth-link.is-selected { color: #f6d65d; text-decoration: underline; }
+
+.auto-upload-consent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  margin: 12px 0 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 12px;
+  background: rgba(255,255,255,.06);
+}
+.auto-upload-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f2f3f5;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.auto-upload-toggle input { accent-color: #f3cf4d; }
+.auto-upload-consent select {
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 9px;
+  padding: 6px 8px;
+  background: #303844;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+.auto-upload-consent select:disabled { opacity: .42; }
+.auto-upload-consent p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #aeb7c4;
+  font-size: 10px;
+  line-height: 1.45;
+}
 
 .upload-prompt-box {
   margin: 18px 0;
