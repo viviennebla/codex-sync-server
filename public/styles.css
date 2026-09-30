@@ -764,18 +764,6 @@ button { font: inherit; }
   border-radius: 50%;
   background: rgba(66,55,47,.13);
 }
-.shoe {
-  position: absolute;
-  bottom: 5px;
-  width: 29px;
-  height: 11px;
-  border: 2px solid #27313c;
-  border-radius: 60% 45% 45% 35%;
-  background: var(--accent);
-}
-.shoe-a { left: 10px; transform: rotate(5deg); }
-.shoe-b { right: 5px; transform: rotate(-6deg); }
-
 /* Surfing through the office because rules are optional. */
 .transport-surf {
   left: 14px;
@@ -814,27 +802,6 @@ button { font: inherit; }
   width: 82px;
   height: 34px;
 }
-.skate-boot {
-  position: absolute;
-  bottom: 7px;
-  width: 31px;
-  height: 18px;
-  border: 2px solid #27313c;
-  border-radius: 6px 12px 7px 5px;
-  background: var(--accent);
-}
-.skate-boot::after {
-  content: "••";
-  position: absolute;
-  left: 2px;
-  bottom: -11px;
-  color: #27313c;
-  font-size: 15px;
-  letter-spacing: 6px;
-}
-.boot-a { left: 7px; transform: rotate(5deg); }
-.boot-b { right: 4px; transform: rotate(-7deg); }
-
 /* Adjust the same little person to each mode instead of drawing six avatars. */
 .mode-scooter .body { top: 47px; transform: rotate(4deg); }
 .mode-scooter .arm { top: 48px; left: 84px; transform: rotate(15deg); }
@@ -3311,6 +3278,22 @@ button { font: inherit; }
 .mode-walk .leg-a { left: 70px; }
 .mode-walk .leg-b { left: 88px; }
 
+/* Shoes live on the animated legs so every stride carries the feet with it. */
+.mode-walk .leg::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  bottom: -8px;
+  width: 20px;
+  height: 9px;
+  border: 2px solid #27313c;
+  border-radius: 60% 45% 45% 35%;
+  background: var(--accent);
+  transform-origin: 20% 50%;
+}
+.mode-walk .leg-a::after { transform: rotate(6deg); }
+.mode-walk .leg-b::after { transform: rotate(-6deg); }
+
 .mode-surf .leg { top: 71px; height: 29px; }
 .mode-surf .leg-a { left: 69px; }
 .mode-surf .leg-b { left: 88px; }
@@ -3318,6 +3301,38 @@ button { font: inherit; }
 .mode-skate .leg { top: 71px; height: 32px; }
 .mode-skate .leg-a { left: 70px; }
 .mode-skate .leg-b { left: 88px; }
+
+/* Roller skates are foot-mounted, not a separate ground prop. */
+.mode-skate .leg::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: -10px;
+  width: 21px;
+  height: 14px;
+  border: 2px solid #27313c;
+  border-radius: 6px 11px 6px 5px;
+  background: var(--accent);
+  transform-origin: 20% 50%;
+}
+.mode-skate .leg::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  bottom: -15px;
+  width: 18px;
+  height: 6px;
+  background:
+    radial-gradient(circle at 25% 50%, #27313c 0 2.4px, transparent 2.6px),
+    radial-gradient(circle at 75% 50%, #27313c 0 2.4px, transparent 2.6px);
+}
+.mode-skate .leg-a::after { transform: rotate(7deg); }
+.mode-skate .leg-b::after { transform: rotate(-7deg); }
+.mode-skate.is-sprinting .leg { animation-duration: .52s; }
+.mode-skate.is-wheelie .rider-motion {
+  animation: skateTwirl 1.8s cubic-bezier(.22,.72,.22,1) both;
+}
+.mode-skate.is-wheelie .transport-skate { animation: none; }
 
 /* Keep transient action props away from wearable slots. */
 .social-prop {
