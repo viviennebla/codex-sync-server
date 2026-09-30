@@ -262,6 +262,42 @@ test("schema v2 stores remaining quota and projects user pressure from the tight
   }), /used \+ remaining must equal 100/);
 });
 
+test("freshest installation limit wins over a stale lower remaining quota", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-quota-freshness-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const base = {
+    schema_version: 2,
+    harness: "codex",
+    date: "2026-09-30",
+    models: [],
+    projects: [],
+  };
+  await upsertUsageSample({ id: "inst-old", user_id: "user-quota-fresh" }, {
+    ...base,
+    observed_at: "2026-09-30T06:00:00Z",
+    total_tokens: 100,
+    usage_limits: {
+      updated_at: "2026-09-30T05:59:59Z",
+      primary: { remaining_percent: 2 },
+    },
+  }, root);
+  await upsertUsageSample({ id: "inst-new", user_id: "user-quota-fresh" }, {
+    ...base,
+    observed_at: "2026-09-30T07:00:00Z",
+    total_tokens: 100,
+    usage_limits: {
+      updated_at: "2026-09-30T06:59:59Z",
+      primary: { remaining_percent: 64 },
+    },
+  }, root);
+
+  const [total] = await readUserTotals("2026-09-30", root);
+  assert.equal(total.quota_remaining_percent, 64);
+  assert.equal(total.quota_pressure, 0.36);
+  assert.equal(total.quota_updated_at, "2026-09-30T06:59:59.000Z");
+});
+
 test("pairing binds an installation to the internal user id", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "denglema-pair-"));
   t.after(() => rm(root, { recursive: true, force: true }));
