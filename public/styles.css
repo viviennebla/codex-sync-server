@@ -1470,6 +1470,13 @@ button { font: inherit; }
   line-height: 1.7;
 }
 .plugin-doc-cta { display: inline-block; }
+.plugin-upgrade-note {
+  scroll-margin-top: 18px;
+}
+.plugin-upgrade-note:target {
+  border-color: rgba(84,121,198,.34);
+  box-shadow: 0 0 0 4px rgba(84,121,198,.10);
+}
 .plugin-repo-list {
   display: grid;
   gap: 9px;
