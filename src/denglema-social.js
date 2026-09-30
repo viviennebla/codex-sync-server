@@ -28,7 +28,7 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "update-log-dedupe-2026-09",
     emoji: "🪞",
-    message: "更新日志入口去重 · 一个入口已经够负责了",
+    message: "#54 更新日志入口去重 · 一个入口已经够负责了",
     href: "/updates",
   },
   {
