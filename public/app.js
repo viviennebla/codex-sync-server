@@ -118,6 +118,7 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#a7c7f4", "#26354b", "smile"),
     today_tokens: 72432,
     recent_rate_tpm: 0,
+    transport: "surf",
     accent: "#4c8ad9"
   },
   {
@@ -126,6 +127,7 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#f7b7c4", "#49323a", "smile"),
     today_tokens: 960000,
     recent_rate_tpm: 15000,
+    transport: "scooter",
     accent: "#dd718e"
   },
   {
@@ -134,6 +136,7 @@ const PREVIEW_RIDERS = [
     avatar_url: avatarSvg("#b7dfc7", "#29443a", "smile"),
     today_tokens: 640000,
     recent_rate_tpm: 7000,
+    transport: "skateboard",
     accent: "#4ca87c"
   },
   {
@@ -143,6 +146,7 @@ const PREVIEW_RIDERS = [
     today_tokens: 220000,
     recent_rate_tpm: 0,
     mood: "tired",
+    transport: "walk",
     accent: "#7b79ac"
   }
 ];
@@ -596,12 +600,8 @@ async function openRiderDetail(rider) {
 }
 
 function stateFor(rider) {
-  if (rider.mood === "burning") return ["is-fast", "is-burning", "effect-heavy"];
   if (rider.mood === "chill") return ["is-chill"];
   if (rider.mood === "tired") return ["is-tired"];
-  const rate = Number(rider.recent_rate_tpm || 0);
-  if (rate >= 30000) return ["is-fast", "is-burning", "effect-heavy"];
-  if (rate >= 10000) return ["is-fast"];
   return [];
 }
 
@@ -637,29 +637,33 @@ function lanePlan(riders) {
 }
 
 function positionPlan(riders) {
-  const ranked = [...riders].sort((a, b) => b.today_tokens - a.today_tokens);
-  const count = Math.max(ranked.length - 1, 1);
   const targetById = new Map();
+  const maxTokens = Math.max(0, ...riders.map((rider) => Number(rider.today_tokens || 0)));
+  const maxLog = maxTokens > 0 ? Math.log1p(maxTokens) : 1;
 
-  ranked.forEach((rider, index) => {
-    const rankRatio = 1 - index / count;
-    const jitter = ((stableHash(rider.user_id + ":x") % 17) - 8) * 0.65;
-    const x = 21 + rankRatio * 61 + jitter;
-    targetById.set(rider.user_id, Math.max(14, Math.min(88, x)));
+  riders.forEach((rider) => {
+    const stableBase = 26 + (stableHash(rider.user_id + ":club-x") % 47);
+    const usageNudge = maxTokens > 0
+      ? (Math.log1p(Number(rider.today_tokens || 0)) / maxLog - 0.5) * 8
+      : 0;
+    targetById.set(
+      rider.user_id,
+      Math.max(16, Math.min(84, stableBase + usageNudge)),
+    );
   });
 
-  // Resolve near-overlaps inside each lane while keeping ranking visible.
+  // Keep nearby club members readable without restoring a strict leaderboard order.
   for (let lane = 1; lane <= 4; lane += 1) {
     const laneRiders = riders
       .filter((rider) => rider.lane === lane)
       .sort((a, b) => (targetById.get(a.user_id) || 50) - (targetById.get(b.user_id) || 50));
 
-    let previous = 5;
+    let previous = 6;
     laneRiders.forEach((rider, index) => {
       const raw = targetById.get(rider.user_id) || 50;
-      const stagger = ((stableHash(rider.user_id + ":stagger") % 5) - 2) * 1.2;
-      let x = Math.max(raw + stagger, previous + (index ? 17 : 0));
-      x = Math.min(90, x);
+      const stagger = ((stableHash(rider.user_id + ":stagger") % 5) - 2) * 1.1;
+      let x = Math.max(raw + stagger, previous + (index ? 15 : 0));
+      x = Math.min(88, x);
       targetById.set(rider.user_id, x);
       previous = x;
     });
@@ -671,14 +675,81 @@ function positionPlan(riders) {
   }));
 }
 
+const TRANSPORT_LABELS = Object.freeze({
+  bike: "自行车",
+  scooter: "滑板车",
+  skateboard: "滑板",
+  walk: "古法通勤",
+  surf: "冲浪",
+  skate: "轮滑",
+});
+
+const PERSONALITIES = Object.freeze([
+  { id: "coffee", emoji: "☕", label: "通勤党" },
+  { id: "headphones", emoji: "🎧", label: "摸鱼骑手" },
+  { id: "cat", emoji: "🐈", label: "带猫上班" },
+  { id: "gear", emoji: "🎒", label: "装备党" },
+  { id: "plant", emoji: "🌱", label: "佛系骑手" },
+  { id: "engineer", emoji: "💻", label: "工程师" },
+  { id: "milk-tea", emoji: "🧋", label: "奶茶骑手" },
+  { id: "sleepy", emoji: "💤", label: "困困骑手" },
+]);
+
+function transportFor(rider) {
+  const value = String(rider.transport || "bike");
+  return TRANSPORT_LABELS[value] ? value : "bike";
+}
+
+function personalityFor(rider) {
+  return PERSONALITIES[
+    stableHash(String(rider.user_id || "rider") + ":personality") % PERSONALITIES.length
+  ];
+}
+
+function transportMarkup(transport) {
+  if (transport === "scooter") {
+    return '<div class="transport transport-scooter">' +
+      '<i class="mini-wheel rear"></i><i class="mini-wheel front"></i>' +
+      '<i class="scooter-deck"></i><i class="scooter-stem"></i><i class="scooter-handle"></i>' +
+    '</div>';
+  }
+  if (transport === "skateboard") {
+    return '<div class="transport transport-skateboard">' +
+      '<i class="skateboard-deck"></i><i class="board-wheel rear"></i><i class="board-wheel front"></i>' +
+    '</div>';
+  }
+  if (transport === "walk") {
+    return '<div class="transport transport-walk">' +
+      '<i class="walk-shadow"></i><i class="shoe shoe-a"></i><i class="shoe shoe-b"></i>' +
+    '</div>';
+  }
+  if (transport === "surf") {
+    return '<div class="transport transport-surf">' +
+      '<i class="surf-wave">≈≈</i><i class="surf-board"></i>' +
+    '</div>';
+  }
+  if (transport === "skate") {
+    return '<div class="transport transport-skate">' +
+      '<i class="skate-boot boot-a"></i><i class="skate-boot boot-b"></i>' +
+    '</div>';
+  }
+  return '<div class="bike transport transport-bike">' +
+    '<div class="wheel back"></div>' +
+    '<div class="wheel front"></div>' +
+    '<div class="frame"></div>' +
+  '</div>';
+}
+
 function riderMarkup(rider) {
   const classes = stateFor(rider).join(" ");
+  const transport = transportFor(rider);
+  const personality = personalityFor(rider);
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
-  const cadence = rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72;
-  const burst = rider.mood === "burning" ? "冲啊!!" : "蹬!";
+  const cadence = rider.mood === "chill" ? 1.14 : 0.78;
   const edgeClass = Number(rider.x || 0) >= 80 ? " is-near-right" : "";
   return (
-    '<div class="rider ' + classes + edgeClass + '" data-rider-id="' + rider.user_id + '"' +
+    '<div class="rider mode-' + transport + ' ' + classes + edgeClass + '" data-rider-id="' + rider.user_id + '"' +
+      ' data-transport="' + transport + '"' +
       ' style="--x:' + rider.x + '%;--accent:' + (rider.accent || "#4c8ad9") +
       ';--phase:' + phase + 's;--cadence:' + cadence + 's">' +
       '<div class="effect-speed"></div>' +
@@ -686,8 +757,8 @@ function riderMarkup(rider) {
       '<div class="effect-dust"></div>' +
       '<div class="effect-sweat"></div>' +
       '<div class="effect-music">♪</div>' +
-      '<div class="effect-burst">' + burst + '</div>' +
-      (rider.is_leader ? '<div class="leader-crown" aria-label="第一名">👑</div>' : '') +
+      '<div class="effect-burst">嘿!</div>' +
+      (rider.is_leader ? '<div class="leader-crown" aria-label="今日第一" title="今日第一">👑</div>' : '') +
       '<div class="rider-motion">' +
         '<div class="rider-inner">' +
           '<div class="avatar-ring">' +
@@ -695,15 +766,14 @@ function riderMarkup(rider) {
               ? '<img src="' + escapeHtml(rider.avatar_url) + '" alt="">'
               : '<span class="emoji-avatar">' + escapeHtml(rider.avatar_emoji || "🚴") + '</span>') +
           '</div>' +
+          '<span class="personality-accessory" title="' + escapeHtml(personality.label) + '">' +
+            personality.emoji +
+          '</span>' +
           '<div class="body"></div>' +
           '<div class="arm"></div>' +
           '<div class="leg leg-a"></div>' +
           '<div class="leg leg-b"></div>' +
-          '<div class="bike">' +
-            '<div class="wheel back"></div>' +
-            '<div class="wheel front"></div>' +
-            '<div class="frame"></div>' +
-          '</div>' +
+          transportMarkup(transport) +
         '</div>' +
       '</div>' +
       (rider.equipped_achievement
@@ -712,9 +782,9 @@ function riderMarkup(rider) {
             escapeHtml(rider.equipped_achievement.name || "") +
           '</div>'
         : '') +
-      '<div class="name-chip">' +
-        '<span>' + escapeHtml(rider.display_name || "同事") + '</span>' +
-        '<span class="tokens">' + formatTokens(rider.today_tokens) + '</span>' +
+      '<div class="name-chip" title="' + escapeHtml(TRANSPORT_LABELS[transport]) + '">' +
+        '<span class="rider-name">' + escapeHtml(rider.display_name || "同事") + '</span>' +
+        '<small class="tokens">' + formatTokens(rider.today_tokens) + ' today</small>' +
       '</div>' +
     '</div>'
   );
@@ -745,10 +815,22 @@ function updateRiderNode(node, rider) {
     (rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72) + "s",
   );
 
-  const name = node.querySelector(".name-chip > span:first-child");
+  const name = node.querySelector(".name-chip .rider-name");
   const tokens = node.querySelector(".name-chip .tokens");
   if (name) name.textContent = rider.display_name || "同事";
-  if (tokens) tokens.textContent = formatTokens(rider.today_tokens);
+  if (tokens) tokens.textContent = formatTokens(rider.today_tokens) + " today";
+
+  const nextTransport = transportFor(rider);
+  if (node.dataset.transport !== nextTransport) {
+    const currentTransport = node.querySelector(".transport");
+    currentTransport?.insertAdjacentHTML("afterend", transportMarkup(nextTransport));
+    currentTransport?.remove();
+    Object.keys(TRANSPORT_LABELS).forEach((key) => node.classList.remove("mode-" + key));
+    node.classList.add("mode-" + nextTransport);
+    node.dataset.transport = nextTransport;
+    const chip = node.querySelector(".name-chip");
+    if (chip) chip.title = TRANSPORT_LABELS[nextTransport];
+  }
 
   const equipped = rider.equipped_achievement || null;
   let achievement = node.querySelector(".rider-achievement");
@@ -877,46 +959,31 @@ async function loadRaceData() {
 const MOTION_ACTIONS = {
   sprint: {
     className: "is-sprinting",
-    duration: 2200,
-    bursts: ["冲啊!!", "腿冒烟了!", "加班腿!"]
+    duration: 1800,
+    bursts: ["突然来劲!", "冲两秒!", "腿自己动了"]
   },
   wheelie: {
     className: "is-wheelie",
-    duration: 1900,
-    bursts: ["芜湖!", "起飞!", "别翻!"]
+    duration: 1800,
+    bursts: ["小整一下", "芜湖!", "别摔!"]
   },
   bonk: {
     className: "is-bonking",
-    duration: 2300,
-    bursts: ["腿呢…", "没电了", "CPU 过热"]
+    duration: 2200,
+    bursts: ["歇会儿", "摸会鱼", "CPU 凉一下"]
   },
   celebrate: {
     className: "is-celebrating",
-    duration: 2000,
-    bursts: ["领先!", "今天猛!", "嘿嘿!"]
+    duration: 1900,
+    bursts: ["嘿!", "今天也行", "下班!"]
   }
 };
 
-function chooseMotion(rider) {
+function chooseMotion(_rider) {
   const roll = Math.random();
-  if (rider.mood === "burning") {
-    if (roll < 0.68) return MOTION_ACTIONS.sprint;
-    if (roll < 0.84) return MOTION_ACTIONS.wheelie;
-    return MOTION_ACTIONS.celebrate;
-  }
-  if (rider.mood === "tired") {
-    if (roll < 0.62) return MOTION_ACTIONS.bonk;
-    if (roll < 0.78) return MOTION_ACTIONS.sprint;
-    return MOTION_ACTIONS.wheelie;
-  }
-  if (rider.mood === "chill") {
-    if (roll < 0.42) return MOTION_ACTIONS.wheelie;
-    if (roll < 0.7) return MOTION_ACTIONS.celebrate;
-    return MOTION_ACTIONS.sprint;
-  }
-  if (roll < 0.48) return MOTION_ACTIONS.sprint;
-  if (roll < 0.67) return MOTION_ACTIONS.wheelie;
-  if (roll < 0.84) return MOTION_ACTIONS.bonk;
+  if (roll < 0.22) return MOTION_ACTIONS.sprint;
+  if (roll < 0.46) return MOTION_ACTIONS.wheelie;
+  if (roll < 0.72) return MOTION_ACTIONS.bonk;
   return MOTION_ACTIONS.celebrate;
 }
 
@@ -929,7 +996,7 @@ function triggerMotion(rider, node, action) {
 
   activeMotion.set(rider.user_id, action.className);
   node.classList.add(action.className);
-  if (action === MOTION_ACTIONS.sprint && Math.random() > 0.38) {
+  if (action === MOTION_ACTIONS.sprint && Math.random() > 0.78) {
     node.classList.add("effect-heavy");
   }
 
