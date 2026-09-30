@@ -831,11 +831,13 @@ function positionPlan(riders) {
       ));
     const count = laneRiders.length;
     laneRiders.forEach((rider, index) => {
-      const x = count <= 1
-        ? 50
-        : 20 + index * (60 / Math.max(1, count - 1));
-      const jitter = ((stableHash(rider.user_id + ":club-jitter") % 7) - 3) * 0.7;
-      targetById.set(rider.user_id, Math.max(16, Math.min(84, x + jitter)));
+      // Keep coworkers in a centered office cluster instead of stretching a
+      // two-person lane from one side of the room to the other.
+      const spacing = count >= 5 ? 14 : count === 4 ? 17 : 18;
+      const center = (count - 1) / 2;
+      const x = 50 + (index - center) * spacing;
+      const jitter = ((stableHash(rider.user_id + ":club-jitter") % 5) - 2) * 0.55;
+      targetById.set(rider.user_id, Math.max(22, Math.min(78, x + jitter)));
     });
   }
 
@@ -864,6 +866,46 @@ const PERSONALITIES = Object.freeze([
   { id: "milk-tea", emoji: "🧋", label: "奶茶骑手" },
   { id: "sleepy", emoji: "💤", label: "困困骑手" },
 ]);
+
+const WORKSTATION_STYLES = Object.freeze([
+  "minimal",
+  "plant",
+  "coffee",
+  "dual",
+  "cozy",
+]);
+
+function workstationFor(rider) {
+  const requested = String(
+    rider.workstation_style
+      || rider.workstation?.style
+      || rider.workstation
+      || ""
+  );
+  if (WORKSTATION_STYLES.includes(requested)) return requested;
+  return WORKSTATION_STYLES[
+    stableHash(String(rider.user_id || "rider") + ":workstation") % WORKSTATION_STYLES.length
+  ];
+}
+
+function workstationMarkup(rider) {
+  const style = workstationFor(rider);
+  const extras = [];
+  if (style === "plant") extras.push('<i class="workstation-plant">●</i>');
+  if (style === "coffee") extras.push('<i class="workstation-mug">☕</i>');
+  if (style === "dual") extras.push('<i class="workstation-screen workstation-screen-secondary"></i>');
+  if (style === "cozy") extras.push('<i class="workstation-lamp"></i>');
+  return (
+    '<div class="rider-workstation workstation-' + style + '" aria-hidden="true">' +
+      '<i class="workstation-screen"></i>' +
+      '<i class="workstation-screen-stand"></i>' +
+      '<i class="workstation-desk-top"></i>' +
+      '<i class="workstation-desk-leg leg-left"></i>' +
+      '<i class="workstation-desk-leg leg-right"></i>' +
+      extras.join("") +
+    '</div>'
+  );
+}
 
 function transportFor(rider) {
   const value = String(rider.transport || "bike");
@@ -922,12 +964,15 @@ function riderMarkup(rider) {
   const personality = personalityFor(rider);
   const phase = -((stableHash(rider.user_id) % 90) / 100).toFixed(2);
   const cadence = rider.mood === "chill" ? 1.14 : 0.78;
-  const edgeClass = Number(rider.x || 0) >= 80 ? " is-near-right" : "";
+  const workstation = workstationFor(rider);
+  const edgeClass = Number(rider.x || 0) >= 70 ? " is-near-right" : "";
   return (
     '<div class="rider mode-' + transport + ' ' + classes + edgeClass + '" data-rider-id="' + rider.user_id + '"' +
       ' data-transport="' + transport + '"' +
+      ' data-workstation="' + workstation + '"' +
       ' style="--x:' + rider.x + '%;--accent:' + (rider.accent || "#4c8ad9") +
       ';--phase:' + phase + 's;--cadence:' + cadence + 's">' +
+      workstationMarkup(rider) +
       '<div class="effect-speed"></div>' +
       '<div class="effect-fire"></div>' +
       '<div class="effect-dust"></div>' +
@@ -990,8 +1035,15 @@ function updateRiderNode(node, rider) {
   }
 
   node.style.setProperty("--x", rider.x + "%");
-  node.classList.toggle("is-near-right", Number(rider.x || 0) >= 80);
+  node.classList.toggle("is-near-right", Number(rider.x || 0) >= 70);
   node.style.setProperty("--accent", rider.accent || "#4c8ad9");
+
+  const nextWorkstation = workstationFor(rider);
+  if (node.dataset.workstation !== nextWorkstation) {
+    node.querySelector(".rider-workstation")?.remove();
+    node.insertAdjacentHTML("afterbegin", workstationMarkup(rider));
+    node.dataset.workstation = nextWorkstation;
+  }
   node.style.setProperty(
     "--cadence",
     (rider.mood === "chill" ? 1.14 : rider.mood === "burning" ? 0.48 : 0.72) + "s",
