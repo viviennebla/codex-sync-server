@@ -713,9 +713,10 @@ function riderMarkup(rider) {
         : '') +
       '<div class="name-chip" title="' + escapeHtml(TRANSPORT_LABELS[transport]) + '">' +
         '<span class="rider-name">' + escapeHtml(rider.display_name || "同事") + '</span>' +
-        (Number(rider.today_tokens || 0) > 0
-          ? '<small class="tokens">' + formatTokens(rider.today_tokens) + '</small>'
-          : '') +
+        '<small class="tokens"' +
+          (Number(rider.today_tokens || 0) > 0 ? "" : " hidden") + ">" +
+          (Number(rider.today_tokens || 0) > 0 ? formatTokens(rider.today_tokens) : "") +
+        '</small>' +
       '</div>' +
     '</div>'
   );
