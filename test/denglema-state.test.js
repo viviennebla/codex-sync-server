@@ -20,6 +20,7 @@ import {
   updateWebUserAvatar,
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
+  updateWebUserTransport,
   validateUsageSample,
 } from "../src/denglema-state.js";
 
@@ -109,6 +110,45 @@ test("rider can change emoji and persist an equipped achievement preference", as
   assert.equal(equipped.equipped_achievement_id, "million_day");
   const cleared = await updateWebUserEquippedAchievement("usr-prefs", null, root);
   assert.equal(cleared.equipped_achievement_id, null);
+});
+
+test("rider transport is cosmetic, validated, and persisted", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-transport-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  const created = await createWebUser({
+    display_name: "Surfer",
+    avatar_emoji: "🏄",
+  }, root, {
+    userId: "usr-transport",
+    recoveryCode: "TRANSPORT-1234",
+    now: () => new Date("2026-09-30T00:00:00Z"),
+  });
+  assert.equal(created.user.transport, "bike");
+
+  const updated = await updateWebUserTransport(
+    "usr-transport",
+    "surf",
+    root,
+    { now: () => new Date("2026-09-30T00:01:00Z") },
+  );
+  assert.equal(updated.transport, "surf");
+  assert.equal(
+    (await readDenglemaUser("usr-transport", root)).transport,
+    "surf",
+  );
+
+  for (const transport of ["bike", "scooter", "skateboard", "walk", "surf", "skate"]) {
+    assert.equal(
+      (await updateWebUserTransport("usr-transport", transport, root)).transport,
+      transport,
+    );
+  }
+
+  await assert.rejects(
+    updateWebUserTransport("usr-transport", "rocket", root),
+    /transport must be one of/,
+  );
 });
 
 test("pairing marks only the rider's first installation as first", async (t) => {

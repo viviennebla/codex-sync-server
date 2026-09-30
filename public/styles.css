@@ -386,7 +386,7 @@ button { font: inherit; }
   left: 26px;
   top: 50%;
   transform: translateY(-50%) rotate(-4deg);
-  color: rgba(255,248,229,.88);
+  color: rgba(255,248,229,.48);
   font-size: clamp(34px, 4vw, 60px);
   font-weight: 900;
   font-family: ui-rounded, system-ui, sans-serif;
@@ -400,7 +400,7 @@ button { font: inherit; }
   z-index: 3;
   width: 22px;
   height: 100%;
-  opacity: .78;
+  opacity: .26;
   background:
     repeating-linear-gradient(
       180deg,
@@ -592,6 +592,214 @@ button { font: inherit; }
   opacity: .82;
 }
 
+.transport {
+  position: absolute;
+  z-index: 4;
+  transform-origin: 50% 80%;
+}
+.personality-accessory {
+  position: absolute;
+  z-index: 10;
+  left: 31px;
+  top: 26px;
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 0 rgba(39,49,60,.14));
+  transform: rotate(-8deg);
+  user-select: none;
+}
+.mode-surf .personality-accessory { left: 30px; top: 22px; }
+.mode-walk .personality-accessory { left: 36px; top: 25px; }
+
+/* Scooter */
+.transport-scooter {
+  left: 22px;
+  top: 66px;
+  width: 98px;
+  height: 39px;
+}
+.mini-wheel {
+  position: absolute;
+  bottom: 0;
+  width: 25px;
+  height: 25px;
+  border: 4px solid #27313c;
+  border-radius: 50%;
+  background: rgba(255,255,255,.22);
+  animation: wheelSpin var(--cadence) linear infinite;
+}
+.mini-wheel.rear { left: 4px; }
+.mini-wheel.front { right: 0; }
+.scooter-deck {
+  position: absolute;
+  left: 22px;
+  bottom: 8px;
+  width: 55px;
+  height: 6px;
+  border: 2px solid #27313c;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.scooter-stem {
+  position: absolute;
+  right: 15px;
+  bottom: 10px;
+  width: 4px;
+  height: 40px;
+  border-radius: 999px;
+  background: #27313c;
+  transform: rotate(-7deg);
+  transform-origin: bottom;
+}
+.scooter-handle {
+  position: absolute;
+  right: 5px;
+  top: -4px;
+  width: 25px;
+  height: 4px;
+  border-radius: 999px;
+  background: #27313c;
+}
+
+/* Skateboard */
+.transport-skateboard {
+  left: 25px;
+  top: 78px;
+  width: 91px;
+  height: 25px;
+}
+.skateboard-deck {
+  position: absolute;
+  left: 8px;
+  bottom: 9px;
+  width: 73px;
+  height: 8px;
+  border: 2px solid #27313c;
+  border-radius: 45% 45% 40% 40%;
+  background: var(--accent);
+  transform: rotate(-2deg);
+}
+.board-wheel {
+  position: absolute;
+  bottom: 1px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #27313c;
+  border-radius: 50%;
+  background: #f6d65d;
+}
+.board-wheel.rear { left: 19px; }
+.board-wheel.front { right: 14px; }
+
+/* Old-school walking */
+.transport-walk {
+  left: 32px;
+  top: 75px;
+  width: 77px;
+  height: 31px;
+}
+.walk-shadow {
+  position: absolute;
+  left: 5px;
+  right: 0;
+  bottom: 0;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(66,55,47,.13);
+}
+.shoe {
+  position: absolute;
+  bottom: 5px;
+  width: 29px;
+  height: 11px;
+  border: 2px solid #27313c;
+  border-radius: 60% 45% 45% 35%;
+  background: var(--accent);
+}
+.shoe-a { left: 10px; transform: rotate(5deg); }
+.shoe-b { right: 5px; transform: rotate(-6deg); }
+
+/* Surfing through the office because rules are optional. */
+.transport-surf {
+  left: 14px;
+  top: 72px;
+  width: 112px;
+  height: 38px;
+}
+.surf-board {
+  position: absolute;
+  z-index: 2;
+  left: 10px;
+  bottom: 11px;
+  width: 88px;
+  height: 12px;
+  border: 2px solid #27313c;
+  border-radius: 60% 70% 55% 65%;
+  background: var(--accent);
+  transform: rotate(-3deg);
+}
+.surf-wave {
+  position: absolute;
+  left: 1px;
+  bottom: -2px;
+  color: #70b8dc;
+  font-size: 29px;
+  line-height: 1;
+  letter-spacing: -7px;
+  font-style: normal;
+  transform: rotate(-2deg);
+}
+
+/* Roller skates */
+.transport-skate {
+  left: 29px;
+  top: 74px;
+  width: 82px;
+  height: 34px;
+}
+.skate-boot {
+  position: absolute;
+  bottom: 7px;
+  width: 31px;
+  height: 18px;
+  border: 2px solid #27313c;
+  border-radius: 6px 12px 7px 5px;
+  background: var(--accent);
+}
+.skate-boot::after {
+  content: "••";
+  position: absolute;
+  left: 2px;
+  bottom: -11px;
+  color: #27313c;
+  font-size: 15px;
+  letter-spacing: 6px;
+}
+.boot-a { left: 7px; transform: rotate(5deg); }
+.boot-b { right: 4px; transform: rotate(-7deg); }
+
+/* Adjust the same little person to each mode instead of drawing six avatars. */
+.mode-scooter .body { top: 47px; transform: rotate(4deg); }
+.mode-scooter .arm { top: 48px; left: 84px; transform: rotate(15deg); }
+.mode-scooter .leg { top: 66px; height: 28px; }
+.mode-skateboard .body { top: 49px; transform: rotate(6deg); }
+.mode-skateboard .leg { top: 65px; height: 27px; }
+.mode-walk .body { top: 48px; transform: rotate(0deg); }
+.mode-walk .arm { top: 56px; left: 87px; transform: rotate(-15deg); }
+.mode-walk .leg { top: 66px; height: 31px; }
+.mode-surf .body { top: 48px; transform: rotate(-4deg); }
+.mode-surf .arm { top: 54px; left: 85px; width: 38px; transform: rotate(-12deg); }
+.mode-surf .leg { top: 65px; height: 26px; }
+.mode-skate .body { top: 49px; transform: rotate(3deg); }
+.mode-skate .leg { top: 65px; height: 28px; }
+
+/* Existing random comic motions get mode-specific physical jokes. */
+.mode-scooter.is-wheelie .transport-scooter { animation: scooterWobble 1.8s ease-in-out both; }
+.mode-skateboard.is-wheelie .transport-skateboard { animation: tinyOllie 1.8s ease-in-out both; }
+.mode-walk.is-wheelie .transport-walk { animation: walkHop 1.8s ease-in-out both; }
+.mode-surf.is-wheelie .transport-surf { animation: surfSplash 1.8s ease-in-out both; }
+.mode-skate.is-wheelie .transport-skate { animation: skateTwirl 1.8s ease-in-out both; }
+
 .leg {
   position: absolute;
   z-index: 6;
@@ -612,29 +820,41 @@ button { font: inherit; }
   position: absolute;
   z-index: 12;
   left: 103px;
-  top: 16px;
-  display: inline-flex;
+  top: 13px;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  column-gap: 6px;
+  row-gap: 0;
   align-items: center;
-  gap: 6px;
+  max-width: 118px;
   padding: 5px 9px 5px 7px;
-  border-radius: 999px;
-  background: rgba(255,250,240,.93);
+  border-radius: 13px;
+  background: rgba(255,250,240,.92);
   color: #313946;
-  font-size: 13px;
-  font-weight: 850;
   white-space: nowrap;
-  box-shadow: 0 1px 0 rgba(88,48,34,.15);
+  box-shadow: 0 1px 0 rgba(88,48,34,.12);
 }
 .name-chip::before {
   content: "";
-  width: 8px;
-  height: 8px;
+  grid-row: 1 / span 2;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--accent);
 }
+.name-chip .rider-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 900;
+}
 .name-chip .tokens {
-  color: #7a665e;
-  font-weight: 700;
+  color: #8e837b;
+  font-size: 8px;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: .01em;
 }
 
 .effect-speed,
@@ -660,8 +880,7 @@ button { font: inherit; }
   clip-path: polygon(0 12%, 100% 0, 84% 100%, 0 82%);
   z-index: 3;
 }
-.rider.is-fast .effect-speed,
-.rider.is-sprinting .effect-speed { opacity: 1; animation: speedFlicker .22s steps(2) infinite; }
+.rider.is-sprinting .effect-speed { opacity: .72; animation: speedFlicker .26s steps(2) infinite; }
 
 .effect-fire {
   opacity: 0;
@@ -692,7 +911,6 @@ button { font: inherit; }
   right: 8px;
   background: #ffd954;
 }
-.rider.is-burning .effect-fire,
 .rider.is-sprinting.effect-heavy .effect-fire {
   opacity: 1;
   animation: flameFlicker .18s steps(2) infinite;
@@ -1100,13 +1318,16 @@ button { font: inherit; }
 .leader-crown {
   position: absolute;
   z-index: 18;
-  left: 62px;
-  top: -28px;
-  font-size: 31px;
+  left: 99px;
+  top: 2px;
+  padding: 2px 4px;
+  border: 1px solid rgba(177,137,40,.24);
+  border-radius: 999px;
+  background: rgba(255,244,190,.92);
+  font-size: 13px;
   line-height: 1;
-  transform: rotate(-8deg);
-  filter: drop-shadow(0 2px 0 rgba(39,49,60,.16));
-  animation: crownBob 1.5s ease-in-out infinite;
+  transform: rotate(7deg);
+  filter: drop-shadow(0 1px 0 rgba(39,49,60,.12));
 }
 
 .login-overlay {
@@ -1199,6 +1420,25 @@ button { font: inherit; }
 @keyframes burstPop { from { transform: scale(.5) rotate(-10deg); opacity: 0; } to { transform: scale(1) rotate(-5deg); opacity: 1; } }
 @keyframes miniRide { 50% { transform: translateY(-4px) rotate(-3deg); } }
 @keyframes crownBob { 50% { transform: translateY(-4px) rotate(4deg) scale(1.06); } }
+@keyframes scooterWobble {
+  35% { transform: rotate(-6deg) translateY(-2px); }
+  65% { transform: rotate(5deg) translateY(0); }
+}
+@keyframes tinyOllie {
+  42% { transform: translateY(-12px) rotate(-5deg); }
+  62% { transform: translateY(-8px) rotate(4deg); }
+}
+@keyframes walkHop {
+  45% { transform: translateY(-7px) rotate(-2deg); }
+}
+@keyframes surfSplash {
+  35% { transform: translateY(-7px) rotate(-5deg); }
+  65% { transform: translateY(-3px) rotate(4deg); }
+}
+@keyframes skateTwirl {
+  45% { transform: translateY(-5px) rotate(-9deg); }
+  70% { transform: rotate(6deg); }
+}
 
 
 .profile-page {
@@ -1650,7 +1890,10 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .track-motion,
   .rider-inner,
+  .transport,
   .wheel,
+  .mini-wheel,
+  .board-wheel,
   .leg,
   .leader-crown,
   .mini-bike,
