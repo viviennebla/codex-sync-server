@@ -11,6 +11,7 @@ import {
   createWebUser,
   readPairingCodeStatus,
   readDenglemaUser,
+  readDenglemaOfficeLayoutVersion,
   readDimensionLeaderboard,
   recoverWebUser,
   readUserInstallations,
@@ -20,6 +21,7 @@ import {
   updateWebUserAvatar,
   updateWebUserEmoji,
   updateWebUserEquippedAchievement,
+  updateWebUserOfficePosition,
   updateWebUserSlogans,
   updateWebUserTransport,
   validateUsageSample,
@@ -182,6 +184,59 @@ test("rider slogans are bounded, deduplicated, and persisted", async (t) => {
   await assert.rejects(
     updateWebUserSlogans("usr-slogans", ["太".repeat(29)], root),
     /at most 28 characters/,
+  );
+});
+
+test("rider office anchors use a simple optimistic layout version", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "denglema-office-position-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+
+  for (const [id, code] of [["usr-drag-a", "DRAG-A"], ["usr-drag-b", "DRAG-B"]]) {
+    await createWebUser({
+      display_name: id,
+      avatar_emoji: "🙂",
+    }, root, {
+      userId: id,
+      recoveryCode: code,
+      now: () => new Date("2026-09-30T00:00:00Z"),
+    });
+  }
+
+  assert.equal(await readDenglemaOfficeLayoutVersion(root), 0);
+
+  const first = await updateWebUserOfficePosition(
+    "usr-drag-a",
+    { lane: 2, x: 50 },
+    0,
+    root,
+  );
+  assert.deepEqual(first.user.office_position, { lane: 2, x: 50 });
+  assert.equal(first.layout_version, 1);
+
+  await assert.rejects(
+    updateWebUserOfficePosition("usr-drag-b", { lane: 2, x: 51 }, 0, root),
+    (error) => error?.code === "DENGLEMA_LAYOUT_CONFLICT" && error.layout_version === 1,
+  );
+
+  // Slight overlap is allowed by persistence; the client only blocks very
+  // close centers. The version, not a heavyweight transaction, arbitrates races.
+  const second = await updateWebUserOfficePosition(
+    "usr-drag-b",
+    { lane: 2, x: 51 },
+    1,
+    root,
+  );
+  assert.deepEqual(second.user.office_position, { lane: 2, x: 51 });
+  assert.equal(second.layout_version, 2);
+  assert.equal(await readDenglemaOfficeLayoutVersion(root), 2);
+
+  await assert.rejects(
+    updateWebUserOfficePosition("usr-drag-a", { lane: 5, x: 50 }, 2, root),
+    /lane must be 1-4/,
+  );
+  await assert.rejects(
+    updateWebUserOfficePosition("usr-drag-a", { lane: 1, x: 90 }, 2, root),
+    /x must be between/,
   );
 });
 
