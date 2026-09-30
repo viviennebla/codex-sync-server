@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+if [[ "${DENGLEMA_ENABLE_LEGACY_POLLING:-0}" != "1" ]]; then
+  echo "Legacy polling deployment is disabled. Production now deploys through GitHub Actions runner CD." >&2
+  echo "For emergency rollback only, re-run with DENGLEMA_ENABLE_LEGACY_POLLING=1." >&2
+  exit 2
+fi
+
 REPO_DIR="${DENGLEMA_DEPLOY_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SERVICE_NAME="${DENGLEMA_DEPLOY_SERVICE:-denglema-dev.service}"
 HEALTH_URL="${DENGLEMA_DEPLOY_HEALTH_URL:-http://10.21.5.77:1600/health}"
