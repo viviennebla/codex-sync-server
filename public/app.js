@@ -826,22 +826,36 @@ function stableHash(text) {
   }
   return Math.abs(hash);
 }
-function lanePlan(riders) {
-  // Stable pseudo-random order, then round-robin across all four lanes.
-  // This keeps the layout playful between identities while preventing the
-  // leaderboard leaders from permanently crowding the top lanes.
-  const ordered = [...riders].sort((a, b) => {
-    const ah = stableHash(a.user_id + ":lane");
-    const bh = stableHash(b.user_id + ":lane");
-    return ah - bh || String(a.user_id).localeCompare(String(b.user_id));
-  });
-  const laneById = new Map();
-  const offset = ordered.length
-    ? stableHash(ordered.map((rider) => rider.user_id).join("|")) % 4
-    : 0;
+function stableUnit(text) {
+  return (stableHash(text) % 10000) / 9999;
+}
 
-  ordered.forEach((rider, index) => {
-    laneById.set(rider.user_id, ((index + offset) % 4) + 1);
+function lanePlan(riders) {
+  // Give each rider a stable preference for all four office areas, then apply
+  // only a soft crowding penalty. Unlike round-robin this deliberately allows
+  // an empty lane or a small coworker cluster when the hashes line up.
+  const ordered = [...riders].sort((a, b) => (
+    stableHash(a.user_id + ":lane-order")
+    - stableHash(b.user_id + ":lane-order")
+    || String(a.user_id).localeCompare(String(b.user_id))
+  ));
+  const laneById = new Map();
+  const counts = [0, 0, 0, 0];
+
+  ordered.forEach((rider) => {
+    let chosenLane = 1;
+    let bestScore = -Infinity;
+    for (let lane = 1; lane <= 4; lane += 1) {
+      const preference = stableUnit(rider.user_id + ":lane:" + lane) * 10000;
+      const crowdingPenalty = counts[lane - 1] * 2200;
+      const score = preference - crowdingPenalty;
+      if (score > bestScore) {
+        bestScore = score;
+        chosenLane = lane;
+      }
+    }
+    laneById.set(rider.user_id, chosenLane);
+    counts[chosenLane - 1] += 1;
   });
 
   return riders.map((rider) => ({
@@ -861,14 +875,36 @@ function positionPlan(riders) {
         - stableHash(b.user_id + ":club-order")
       ));
     const count = laneRiders.length;
+    if (!count) continue;
+
+    // Build unequal gaps so coworkers form a loose cluster instead of sitting
+    // on evenly spaced slots. Wider gaps are allowed when a lane is sparse.
+    const minGap = count <= 2 ? 13 : count <= 4 ? 11 : 9;
+    const maxGap = count <= 2 ? 24 : count <= 4 ? 19 : 14;
+    const offsets = [0];
+    for (let index = 1; index < count; index += 1) {
+      const left = laneRiders[index - 1];
+      const right = laneRiders[index];
+      const pairKey = [left.user_id, right.user_id].sort().join("|");
+      const gap = minGap + stableUnit(pairKey + ":office-gap") * (maxGap - minGap);
+      offsets.push(offsets[index - 1] + gap);
+    }
+
+    const span = offsets.at(-1) || 0;
+    const laneBias = (stableUnit("lane:" + lane + ":" + laneRiders.map((r) => r.user_id).join("|")) - 0.5) * 12;
+    let start = 50 + laneBias - span / 2;
+
+    // Shift the whole group back into the safe office area without changing
+    // the intentionally uneven gaps.
+    if (start < 22) start = 22;
+    if (start + span > 78) start -= (start + span - 78);
+
     laneRiders.forEach((rider, index) => {
-      const spacing = count <= 1
-        ? 0
-        : Math.min(18, 56 / Math.max(1, count - 1));
-      const center = (count - 1) / 2;
-      const x = 50 + (index - center) * spacing;
-      const jitter = ((stableHash(rider.user_id + ":club-jitter") % 5) - 2) * 0.55;
-      targetById.set(rider.user_id, Math.max(22, Math.min(78, x + jitter)));
+      const microJitter = (stableUnit(rider.user_id + ":office-jitter") - 0.5) * 1.8;
+      targetById.set(
+        rider.user_id,
+        Math.max(22, Math.min(78, start + offsets[index] + microJitter)),
+      );
     });
   }
 
