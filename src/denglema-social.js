@@ -7,11 +7,22 @@ import {
   readDenglemaUsers,
   readUserInstallations,
   readUserTotals,
+  readUserUsageHistory,
 } from "./denglema-state.js";
 
 const EVENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_EVENTS = 240;
 const COMMENT_COOLDOWN_MS = 3000;
+const WORK_START_MINUTE = 9 * 60;
+const WORK_END_MINUTE = 18 * 60;
+const EARLY_BIRD_START_MINUTE = 5 * 60;
+const DEEP_NIGHT_END_MINUTE = 5 * 60;
+const MIN_RHYTHM_INTERVALS = 5;
+const MIN_RHYTHM_COVERAGE_MINUTES = 3 * 60;
+const STEADY_RATE_CV_MAX = 0.25;
+const HEARTBEAT_RATE_CV_MIN = 0.9;
+
+export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
@@ -30,6 +41,16 @@ export const DENGLEMA_ACHIEVEMENTS = [
   { id: "project_hopper", emoji: "🛠️", name: "项目穿梭机", description: "一天蹬过 3 个项目" },
   { id: "multi_harness", emoji: "🤹", name: "多 Agent 骑手", description: "同一天用过 2 种 Agent Harness" },
   { id: "took_the_crown", emoji: "👑", name: "戴过皇冠", description: "拿过一次今日第一" },
+  { id: "precise_rider", emoji: "🎯", name: "精准骑手", description: "有真实 usage 的一天，主要沿一条项目路线前进" },
+  { id: "light_multitasker", emoji: "🧳", name: "轻装多面手", description: "有真实 usage 的一天，在多个项目间均衡穿梭" },
+  { id: "all_round_route", emoji: "🧭", name: "全能路线", description: "同一天留下多 Agent、模型和项目足迹" },
+  { id: "three_day_streak", emoji: "🗓️", name: "三日连蹬", description: "连续 3 个自然日都有 usage 足迹" },
+  { id: "steady_cruise", emoji: "🧘", name: "匀速巡航", description: "工作时段 burn rate 很稳定" },
+  { id: "heartbeat_rider", emoji: "📈", name: "心电图骑手", description: "工作时段 burn rate 大起大落，纯属节奏梗" },
+  { id: "early_bird", emoji: "🌅", name: "早鸟", description: "工作日 05:00–09:00 留下过 usage 足迹" },
+  { id: "night_ride", emoji: "🌙", name: "夜骑", description: "工作日 18:00 之后留下过 usage 足迹" },
+  { id: "deep_night_rider", emoji: "🦉", name: "深夜选手", description: "00:00–05:00 留下过 usage 足迹" },
+  { id: "weekend_rider", emoji: "🏖️", name: "周末还在蹬", description: "周末留下过 usage 足迹，只是趣味记录" },
 ];
 
 function paths(stateDir) {
@@ -303,6 +324,150 @@ export async function syncLeaderboardLeader(date, stateDir = "state", options = 
   return { changed: true, current, previous };
 }
 
+function dateKeyOffset(date, offsetDays) {
+  const anchor = new Date(`${date}T12:00:00Z`);
+  if (!Number.isFinite(anchor.getTime())) return null;
+  anchor.setUTCDate(anchor.getUTCDate() + offsetDays);
+  return anchor.toISOString().slice(0, 10);
+}
+
+function localTimeParts(value, timezone) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(value));
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    date: `${byType.year}-${byType.month}-${byType.day}`,
+    weekday: byType.weekday,
+    minute: Number(byType.hour) * 60 + Number(byType.minute),
+  };
+}
+
+function isWeekday(weekday) {
+  return weekday !== "Sat" && weekday !== "Sun";
+}
+
+function isWeekend(weekday) {
+  return weekday === "Sat" || weekday === "Sun";
+}
+
+export function analyzeDenglemaUsageRhythm(samples, options = {}) {
+  const timezone = options.timezone || DENGLEMA_PRODUCT_TIMEZONE;
+  const workIntervals = [];
+  let earlyBird = false;
+  let nightRide = false;
+  let deepNight = false;
+  let weekendRide = false;
+
+  const rows = Array.isArray(samples) ? samples : [];
+  for (let index = 1; index < rows.length; index += 1) {
+    const previous = rows[index - 1];
+    const current = rows[index];
+    if (current?.introduced_installation) continue;
+
+    const startMs = Date.parse(previous?.observed_at || "");
+    const endMs = Date.parse(current?.observed_at || "");
+    const startTotal = Number(previous?.total_tokens);
+    const endTotal = Number(current?.total_tokens);
+    const minutes = (endMs - startMs) / 60_000;
+    const delta = endTotal - startTotal;
+    if (!Number.isFinite(minutes) || minutes <= 0 || !Number.isFinite(delta) || delta < 0) continue;
+
+    const start = localTimeParts(startMs, timezone);
+    const end = localTimeParts(endMs, timezone);
+    if (start.date !== end.date) continue;
+
+    const active = delta > 0;
+    const weekday = isWeekday(start.weekday) && isWeekday(end.weekday);
+    const weekend = isWeekend(start.weekday) && isWeekend(end.weekday);
+
+    if (
+      weekday
+      && start.minute >= WORK_START_MINUTE
+      && end.minute <= WORK_END_MINUTE
+    ) {
+      workIntervals.push({
+        start_at: new Date(startMs).toISOString(),
+        end_at: new Date(endMs).toISOString(),
+        minutes,
+        token_delta: delta,
+        rate_tpm: delta / minutes,
+      });
+    }
+
+    if (
+      active
+      && weekday
+      && start.minute >= EARLY_BIRD_START_MINUTE
+      && end.minute <= WORK_START_MINUTE
+    ) earlyBird = true;
+
+    if (
+      active
+      && weekday
+      && start.minute >= WORK_END_MINUTE
+    ) nightRide = true;
+
+    if (
+      active
+      && start.minute < DEEP_NIGHT_END_MINUTE
+      && end.minute <= DEEP_NIGHT_END_MINUTE
+    ) deepNight = true;
+
+    if (active && weekend) weekendRide = true;
+  }
+
+  const coverageMinutes = workIntervals.reduce((sum, item) => sum + item.minutes, 0);
+  const activeTokens = workIntervals.reduce((sum, item) => sum + item.token_delta, 0);
+  const rates = workIntervals.map((item) => item.rate_tpm);
+  const meanRate = rates.length
+    ? rates.reduce((sum, rate) => sum + rate, 0) / rates.length
+    : 0;
+  const variance = rates.length
+    ? rates.reduce((sum, rate) => sum + (rate - meanRate) ** 2, 0) / rates.length
+    : 0;
+  const coefficientOfVariation = meanRate > 0 ? Math.sqrt(variance) / meanRate : null;
+  const rhythmEligible = (
+    workIntervals.length >= MIN_RHYTHM_INTERVALS
+    && coverageMinutes >= MIN_RHYTHM_COVERAGE_MINUTES
+    && activeTokens > 0
+    && meanRate > 0
+  );
+
+  return {
+    timezone,
+    work_intervals: workIntervals,
+    interval_count: workIntervals.length,
+    coverage_minutes: coverageMinutes,
+    active_tokens: activeTokens,
+    mean_rate_tpm: meanRate,
+    coefficient_of_variation: coefficientOfVariation,
+    rhythm_eligible: rhythmEligible,
+    steady_cruise: rhythmEligible && coefficientOfVariation <= STEADY_RATE_CV_MAX,
+    heartbeat_rider: rhythmEligible && coefficientOfVariation >= HEARTBEAT_RATE_CV_MIN,
+    early_bird: earlyBird,
+    night_ride: nightRide,
+    deep_night_rider: deepNight,
+    weekend_rider: weekendRide,
+  };
+}
+
+function balancedProjectSpread(projects) {
+  const rows = (Array.isArray(projects) ? projects : [])
+    .filter((item) => Number(item?.total_tokens) > 0);
+  if (rows.length < 3) return false;
+  const total = rows.reduce((sum, item) => sum + Number(item.total_tokens), 0);
+  const largest = Math.max(...rows.map((item) => Number(item.total_tokens)));
+  return total > 0 && largest / total <= 0.7;
+}
+
 function achievementMap(store, userId) {
   store.by_user ||= {};
   store.by_user[userId] ||= {};
@@ -313,10 +478,16 @@ export async function syncUserAchievements(userId, date, stateDir = "state", opt
   const id = String(userId || "").trim();
   if (!id) return [];
   const now = options.now?.() || new Date();
-  const [totals, installations, user] = await Promise.all([
+  const timezone = options.timezone || DENGLEMA_PRODUCT_TIMEZONE;
+  const previousDate = dateKeyOffset(date, -1);
+  const twoDaysAgo = dateKeyOffset(date, -2);
+  const [totals, installations, user, usageHistory, previousTotals, twoDaysAgoTotals] = await Promise.all([
     readUserTotals(date, stateDir),
     readUserInstallations(id, date, stateDir),
     readDenglemaUser(id, stateDir),
+    readUserUsageHistory(id, date, stateDir),
+    previousDate ? readUserTotals(previousDate, stateDir) : [],
+    twoDaysAgo ? readUserTotals(twoDaysAgo, stateDir) : [],
   ]);
   if (!user) return [];
 
@@ -329,14 +500,36 @@ export async function syncUserAchievements(userId, date, stateDir = "state", opt
     installations.map((item) => item.harness).filter(Boolean),
   );
   const leader = totals.length > 0 && totals[0].user_id === id && totals[0].total_tokens > 0;
+  const rhythm = analyzeDenglemaUsageRhythm(usageHistory, { timezone });
+  const realActivity = row.total_tokens > 0;
+  const currentProjects = (row.projects || []).filter((item) => Number(item.total_tokens) > 0);
+  const currentModels = (row.models || []).filter((item) => Number(item.total_tokens) > 0);
+  const hadUsage = (dayTotals) => (
+    dayTotals.find((item) => item.user_id === id)?.total_tokens > 0
+  );
   const conditions = {
-    first_ride: row.total_tokens > 0,
+    first_ride: realActivity,
     million_day: row.total_tokens >= 1_000_000,
     ten_million_day: row.total_tokens >= 10_000_000,
-    model_explorer: (row.models || []).length >= 3,
-    project_hopper: (row.projects || []).length >= 3,
+    model_explorer: currentModels.length >= 3,
+    project_hopper: currentProjects.length >= 3,
     multi_harness: harnesses.size >= 2,
     took_the_crown: leader,
+    precise_rider: realActivity && currentProjects.length === 1,
+    light_multitasker: realActivity && balancedProjectSpread(currentProjects),
+    all_round_route: (
+      realActivity
+      && harnesses.size >= 2
+      && currentModels.length >= 2
+      && currentProjects.length >= 2
+    ),
+    three_day_streak: realActivity && hadUsage(previousTotals) && hadUsage(twoDaysAgoTotals),
+    steady_cruise: rhythm.steady_cruise,
+    heartbeat_rider: rhythm.heartbeat_rider,
+    early_bird: rhythm.early_bird,
+    night_ride: rhythm.night_ride,
+    deep_night_rider: rhythm.deep_night_rider,
+    weekend_rider: rhythm.weekend_rider,
   };
 
   const file = paths(stateDir).achievements;
