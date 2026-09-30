@@ -47,13 +47,31 @@ jobs:
 
     steps:
       - name: Deploy tested commit
+        id: deploy
         env:
           CODEX_FAMILY_EXPECTED_SHA: ${{ github.sha }}
-        run: /bin/bash /home/feiyan/workspace/codex-family/deploy/deploy.sh codex-sync-server
+        run: |
+          set -uo pipefail
+          output_file="$(mktemp)"
+          set +e
+          /bin/bash /home/feiyan/workspace/codex-family/deploy/deploy.sh codex-sync-server 2>&1 | tee "$output_file"
+          status=${PIPESTATUS[0]}
+          set -e
+          if (( status == 0 )); then
+            echo "result=deployed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -Fq "main moved:" "$output_file" && grep -Fq "refusing to deploy an untested newer commit" "$output_file"; then
+            echo "result=superseded" >> "$GITHUB_OUTPUT"
+            echo "::notice::A newer main commit superseded this tested deployment; skipping the stale deploy."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Deployment summary
         run: |
           echo "### Family Sync production" >> "$GITHUB_STEP_SUMMARY"
+          echo "- result: ${{ steps.deploy.outputs.result }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- service: codex-family-sync-server :34777" >> "$GITHUB_STEP_SUMMARY"
           echo "- tested SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- host: vimo-dev-server" >> "$GITHUB_STEP_SUMMARY"
@@ -72,14 +90,32 @@ jobs:
           persist-credentials: false
 
       - name: Deploy tested commit
+        id: deploy
         env:
           DENGLEMA_EXPECTED_SHA: ${{ github.sha }}
           DENGLEMA_DEPLOY_REPO: /home/feiyan/workspace/codex-sync-server-denglema-feishu
           DENGLEMA_DEPLOY_SERVICE: denglema-dev.service
           DENGLEMA_DEPLOY_HEALTH_URL: http://10.21.5.77:1600/health
-        run: /bin/bash "$GITHUB_WORKSPACE/scripts/deploy-production.sh"
+        run: |
+          set -uo pipefail
+          output_file="$(mktemp)"
+          set +e
+          /bin/bash "$GITHUB_WORKSPACE/scripts/deploy-production.sh" 2>&1 | tee "$output_file"
+          status=${PIPESTATUS[0]}
+          set -e
+          if (( status == 0 )); then
+            echo "result=deployed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if grep -Fq "main moved:" "$output_file" && grep -Fq "refusing to deploy an untested newer commit" "$output_file"; then
+            echo "result=superseded" >> "$GITHUB_OUTPUT"
+            echo "::notice::A newer main commit superseded this tested deployment; skipping the stale deploy."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Verify runner cutover
+        if: steps.deploy.outputs.result == 'deployed'
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --max-time 3 http://10.21.5.77:1600/health >/dev/null
@@ -91,6 +127,7 @@ jobs:
       - name: Deployment summary
         run: |
           echo "### Denglema production" >> "$GITHUB_STEP_SUMMARY"
+          echo "- result: ${{ steps.deploy.outputs.result }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- service: denglema-dev :1600" >> "$GITHUB_STEP_SUMMARY"
           echo "- tested SHA: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- host: vimo-dev-server" >> "$GITHUB_STEP_SUMMARY"
