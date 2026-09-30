@@ -3854,3 +3854,109 @@ body.time-night .workstation-screen { box-shadow: 0 0 9px rgba(145,188,226,.25);
   .privacy-project-controls { grid-template-columns: 1fr; }
   .privacy-project-controls input[hidden] { display: none !important; }
 }
+
+
+/* Durable update log */
+.update-log-shell { max-width: 920px; }
+.update-log-hero { grid-template-columns: auto 1fr; }
+.update-log-toolbar { margin-bottom: 14px; }
+.update-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.update-filter-chip {
+  border: 1.5px solid rgba(39,49,60,.12);
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: #fffdf7;
+  color: #746c65;
+  font: 850 11px/1 system-ui,sans-serif;
+  cursor: pointer;
+}
+.update-filter-chip:hover,
+.update-filter-chip.is-active {
+  border-color: rgba(84,121,198,.38);
+  background: #eef3ff;
+  color: #405a92;
+}
+.update-log-list { display: grid; gap: 10px; padding-bottom: 42px; }
+.update-log-date {
+  margin: 10px 4px 0;
+  color: #92877e;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .02em;
+}
+.update-log-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr);
+  gap: 13px;
+  margin-top: 0;
+  scroll-margin-top: 18px;
+}
+.update-log-card:target {
+  border-color: rgba(84,121,198,.38);
+  box-shadow: 0 0 0 4px rgba(84,121,198,.09), 5px 6px 0 rgba(39,49,60,.08);
+}
+.update-log-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(39,49,60,.11);
+  border-radius: 14px;
+  background: #fffdf7;
+  font-size: 23px;
+}
+.update-log-body { min-width: 0; }
+.update-log-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.update-log-card-head h2 {
+  margin: 1px 0 0;
+  color: #343b45;
+  font-size: 17px;
+}
+.update-log-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.update-log-category,
+.update-log-pr {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f1ede5;
+  color: #756d66;
+  font-size: 9px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.update-log-pr:hover { background: #e9f0ff; color: #405a92; }
+.update-log-body p {
+  margin: 8px 0 0;
+  color: #746c65;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.update-log-action {
+  display: inline-block;
+  margin-top: 9px;
+  color: #5479c6;
+  font-size: 11px;
+  font-weight: 850;
+  text-decoration: none;
+}
+.update-log-action:hover { text-decoration: underline; }
+.update-log-empty { color: #8b8179; text-align: center; }
+@media (max-width: 640px) {
+  .update-log-card { grid-template-columns: 36px minmax(0,1fr); gap: 10px; }
+  .update-log-icon { width: 34px; height: 34px; border-radius: 11px; font-size: 19px; }
+  .update-log-card-head { display: grid; gap: 7px; }
+  .update-log-badges { justify-content: flex-start; }
+}

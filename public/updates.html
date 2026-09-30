@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>更新日志 · 蹬了吗</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/updates.js"></script>
+</head>
+<body class="profile-page update-log-page">
+  <main class="profile-shell update-log-shell">
+    <header class="profile-topbar">
+      <a href="/" class="profile-back">← 回赛道</a>
+      <div class="brand"><span class="brand-title">蹬了吗</span><span class="brand-spark">〽</span></div>
+      <div class="profile-actions">
+        <a href="/me" class="profile-button">👤 我的主页</a>
+        <a href="/plugin" class="profile-button">📖 使用教程</a>
+      </div>
+    </header>
+
+    <section class="profile-hero-card update-log-hero">
+      <div class="profile-avatar">📝</div>
+      <div class="profile-identity">
+        <p class="dialog-kicker">Changelog</p>
+        <h1>蹬了吗最近又折腾了什么。</h1>
+        <p>24h 动态负责“刚发生了什么”；这里永久记录已经上线的功能、体验和基础设施变化。</p>
+      </div>
+    </section>
+
+    <section class="profile-panel update-log-toolbar">
+      <div class="profile-panel-head">
+        <h2>更新记录</h2>
+        <span id="updateCount">正在读取…</span>
+      </div>
+      <div id="updateFilters" class="update-filter-list" aria-label="更新类别筛选"></div>
+    </section>
+
+    <section id="updateList" class="update-log-list" aria-live="polite"></section>
+  </main>
+
+  <div id="updateToast" class="toast hidden"></div>
+</body>
+</html>
