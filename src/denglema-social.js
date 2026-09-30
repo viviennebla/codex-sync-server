@@ -563,6 +563,34 @@ export async function syncUserAchievements(userId, date, stateDir = "state", opt
     await writeJson(file, store);
   }
 
+  if (typeof options.onRhythm === "function") {
+    try {
+      options.onRhythm({
+        user_id: id,
+        date,
+        timezone,
+        sample_count: usageHistory.length,
+        interval_count: rhythm.interval_count,
+        coverage_minutes: Math.round(rhythm.coverage_minutes * 100) / 100,
+        active_tokens: rhythm.active_tokens,
+        mean_rate_tpm: Math.round(rhythm.mean_rate_tpm * 100) / 100,
+        coefficient_of_variation: rhythm.coefficient_of_variation == null
+          ? null
+          : Math.round(rhythm.coefficient_of_variation * 1000) / 1000,
+        rhythm_eligible: rhythm.rhythm_eligible,
+        steady_cruise: rhythm.steady_cruise,
+        heartbeat_rider: rhythm.heartbeat_rider,
+        playful_timing: {
+          early_bird: rhythm.early_bird,
+          night_ride: rhythm.night_ride,
+          deep_night_rider: rhythm.deep_night_rider,
+          weekend_rider: rhythm.weekend_rider,
+        },
+        newly_unlocked: newlyUnlocked.map((achievement) => achievement.id),
+      });
+    } catch {}
+  }
+
   return DENGLEMA_ACHIEVEMENTS.map((achievement) => ({
     ...achievement,
     unlocked: Boolean(unlocked[achievement.id]),
