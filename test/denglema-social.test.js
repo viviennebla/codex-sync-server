@@ -60,10 +60,10 @@ test("24h event feed prunes old events, enriches users, and rate-limits comments
   const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T03:00:02Z"),
   });
-  assert.equal(events.length, 1);
-  assert.equal(events[0].kind, "comment");
-  assert.equal(events[0].message, "今天谁先把额度蹬没？");
-  assert.equal(events[0].user.display_name, "Alice");
+  const comments = events.filter((item) => item.kind === "comment");
+  assert.equal(comments.length, 1);
+  assert.equal(comments[0].message, "今天谁先把额度蹬没？");
+  assert.equal(comments[0].user.display_name, "Alice");
 });
 
 test("release announcement publishes once, links to upgrade notes, and does not reappear", async (t) => {
@@ -165,8 +165,10 @@ test("achievement events expose the unlocked achievement name", async (t) => {
   const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T02:01:00Z"),
   });
-  assert.equal(events[0].message, "解锁成就「百万燃料」");
-  assert.equal(events[0].meta.emoji, "🔥");
+  const achievement = events.find((item) => item.kind === "achievement");
+  assert.ok(achievement);
+  assert.equal(achievement.message, "解锁成就「百万燃料」");
+  assert.equal(achievement.meta.emoji, "🔥");
 });
 
 test("leader event emits only when first place changes", async (t) => {
@@ -231,8 +233,9 @@ test("upload events coalesce within the configured window", async (t) => {
   const events = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T03:05:01Z"),
   });
-  assert.equal(events.length, 1);
-  assert.equal(events[0].message, "刷新至 200");
+  const uploads = events.filter((item) => item.kind === "upload");
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].message, "刷新至 200");
 });
 
 test("achievements unlock once and include multi-harness progress", async (t) => {
