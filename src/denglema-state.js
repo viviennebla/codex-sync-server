@@ -2,6 +2,8 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
+const MAX_USAGE_HISTORY_SAMPLES = 96;
+
 function sha256(value) {
   return createHash("sha256").update(String(value)).digest("hex");
 }
@@ -280,6 +282,25 @@ function breakdownRows(target) {
     .sort((a, b) => b.total_tokens - a.total_tokens || a.name.localeCompare(b.name));
 }
 
+function mergeUsageHistory(existing = [], incoming = null) {
+  const byObservedAt = new Map();
+  for (const row of [...(Array.isArray(existing) ? existing : []), incoming]) {
+    const observed = Date.parse(row?.observed_at || "");
+    const total = Number(row?.total_tokens);
+    if (!Number.isFinite(observed) || !Number.isSafeInteger(total) || total < 0) continue;
+    byObservedAt.set(new Date(observed).toISOString(), total);
+  }
+
+  let monotonicTotal = 0;
+  return [...byObservedAt.entries()]
+    .sort((a, b) => Date.parse(a[0]) - Date.parse(b[0]))
+    .map(([observed_at, total_tokens]) => {
+      monotonicTotal = Math.max(monotonicTotal, total_tokens);
+      return { observed_at, total_tokens: monotonicTotal };
+    })
+    .slice(-MAX_USAGE_HISTORY_SAMPLES);
+}
+
 export function validateUsageSample(sample) {
   const version = Number(sample?.schema_version);
   if (version !== 1 && version !== 2) throw new Error("Unsupported usage sample schema");
@@ -414,6 +435,10 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
   const acceptedTotal = existing ? Math.max(existing.max_total_tokens, sample.total_tokens) : sample.total_tokens;
   const acceptedModels = mergeMaxBreakdown(existing?.max_models, sample.models);
   const acceptedProjects = mergeMaxBreakdown(existing?.max_projects, sample.projects);
+  const historySeed = Array.isArray(existing?.history)
+    ? existing.history
+    : [existing?.previous, existing?.latest].filter(Boolean);
+  const history = mergeUsageHistory(historySeed, sample);
   day.version = 2;
   day.installations[installation.id] = {
     installation_id: installation.id,
@@ -423,6 +448,7 @@ export async function upsertUsageSample(installation, rawSample, stateDir = "sta
     max_total_tokens: acceptedTotal,
     max_models: acceptedModels,
     max_projects: acceptedProjects,
+    history,
     reset_detected: reset || Boolean(existing?.reset_detected),
   };
   await writeJson(file, day);
@@ -528,6 +554,58 @@ export async function readUserTotals(date, stateDir = "state") {
       projects: breakdownRows(row.projectTotals),
     }))
     .sort((a, b) => b.total_tokens - a.total_tokens);
+}
+
+export async function readUserUsageHistory(userId, date, stateDir = "state") {
+  const user = String(userId || "").trim();
+  if (!user) return [];
+
+  const day = await readJson(paths(stateDir).usage(date), { installations: {} });
+  const events = [];
+  for (const row of Object.values(day.installations || {})) {
+    if (row?.user_id !== user) continue;
+    const history = Array.isArray(row.history) ? row.history : [];
+    for (const sample of history) {
+      const observed = Date.parse(sample?.observed_at || "");
+      const total = Number(sample?.total_tokens);
+      if (!Number.isFinite(observed) || !Number.isSafeInteger(total) || total < 0) continue;
+      events.push({
+        installation_id: row.installation_id,
+        observed_at: new Date(observed).toISOString(),
+        total_tokens: total,
+      });
+    }
+  }
+
+  events.sort((a, b) => (
+    Date.parse(a.observed_at) - Date.parse(b.observed_at)
+    || a.installation_id.localeCompare(b.installation_id)
+  ));
+
+  const totalsByInstallation = new Map();
+  const seenInstallations = new Set();
+  const samples = [];
+  for (let index = 0; index < events.length;) {
+    const observedAt = events[index].observed_at;
+    let introducedInstallation = false;
+    while (index < events.length && events[index].observed_at === observedAt) {
+      const event = events[index];
+      if (!seenInstallations.has(event.installation_id)) {
+        seenInstallations.add(event.installation_id);
+        introducedInstallation = true;
+      }
+      totalsByInstallation.set(event.installation_id, event.total_tokens);
+      index += 1;
+    }
+    samples.push({
+      observed_at: observedAt,
+      total_tokens: [...totalsByInstallation.values()].reduce((sum, value) => sum + value, 0),
+      installations: seenInstallations.size,
+      introduced_installation: introducedInstallation,
+    });
+  }
+
+  return samples;
 }
 
 export async function readDimensionLeaderboard(date, stateDir = "state") {
