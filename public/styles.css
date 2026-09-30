@@ -444,6 +444,7 @@ button { font: inherit; }
 }
 
 .rider.is-sprinting .rider-motion { animation: sprintSurge 2.2s cubic-bezier(.2,.72,.26,1) both; }
+.rider.is-quota-rushing .rider-motion { animation: sprintSurge 1.65s cubic-bezier(.2,.72,.26,1) both; }
 .rider.is-wheelie .rider-motion { animation: wheeliePop 1.9s cubic-bezier(.22,.72,.22,1) both; }
 .rider.is-bonking .rider-motion { animation: bonkSag 2.3s ease-in-out both; }
 .rider.is-celebrating .rider-motion { animation: victoryHop 2s cubic-bezier(.2,.75,.22,1) both; }
@@ -867,9 +868,9 @@ button { font: inherit; }
   border-radius: 999px;
   background: #27313c;
   transform-origin: 50% 0;
-  animation: pedalLeg .72s ease-in-out infinite;
+  animation: pedalLeg var(--cadence) ease-in-out infinite;
 }
-.leg.leg-b { animation-delay: -.36s; }
+.leg.leg-b { animation-delay: calc(var(--cadence) / -2); }
 .rider.is-sprinting .leg { height: 35px; top: 52px; }
 .rider.is-bonking .leg { height: 27px; top: 69px; }
 .rider.is-chill .leg { animation-duration: 1.2s; }
@@ -938,6 +939,7 @@ button { font: inherit; }
   z-index: 3;
 }
 .rider.is-sprinting .effect-speed { opacity: .72; animation: speedFlicker .26s steps(2) infinite; }
+.rider.is-quota-rushing .effect-speed { opacity: .34; animation: speedFlicker .34s steps(2) infinite; }
 
 .effect-fire {
   opacity: 0;
@@ -998,7 +1000,18 @@ button { font: inherit; }
 }
 .rider.is-tired .effect-sweat,
 .rider.is-sprinting .effect-sweat,
-.rider.is-bonking .effect-sweat { display: block; animation: sweatPop .8s ease-in-out infinite; }
+.rider.is-bonking .effect-sweat,
+.rider.is-quota-rushing .effect-sweat { display: block; animation: sweatPop .8s ease-in-out infinite; }
+.rider.is-quota-hurry .effect-sweat {
+  display: block;
+  opacity: .55;
+  animation: sweatPop 1.25s ease-in-out infinite;
+}
+.rider.is-quota-panic .effect-sweat {
+  display: block;
+  opacity: .95;
+  animation: sweatPop .62s ease-in-out infinite;
+}
 
 .effect-music {
   display: none;
@@ -1104,6 +1117,7 @@ button { font: inherit; }
   pointer-events: none;
 }
 .rider.is-sprinting .effect-burst,
+.rider.is-quota-rushing .effect-burst,
 .rider.is-wheelie .effect-burst,
 .rider.is-bonking .effect-burst,
 .rider.is-celebrating .effect-burst,
