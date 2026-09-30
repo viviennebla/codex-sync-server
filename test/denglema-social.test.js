@@ -66,6 +66,8 @@ test("24h event feed prunes old events, enriches users, and rate-limits comments
   assert.equal(comments.length, 1);
   assert.equal(comments[0].message, "今天谁先把额度蹬没？");
   assert.equal(comments[0].user.display_name, "Alice");
+  assert.equal(comments[0].user.avatar_emoji, "🐱");
+  assert.equal(comments[0].user.avatar_url, null);
 });
 
 test("release announcement publishes once, links to upgrade notes, and does not reappear", async (t) => {
