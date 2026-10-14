@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "hide-rider-workstations-2026-10-14",
+    emoji: "🪑",
+    message: "赛道工位暂时隐藏 · 桌子比骑手还抢镜可不行",
+    href: "/",
+  },
+  {
     id: "update-log-dedupe-2026-09",
     emoji: "🪞",
     message: "#54 更新日志入口去重 · 一个入口已经够负责了",
