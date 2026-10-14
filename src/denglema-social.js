@@ -35,7 +35,7 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "hide-rider-workstations-2026-10-14",
     emoji: "🪑",
-    message: "赛道工位暂时隐藏 · 桌子比骑手还抢镜可不行",
+    message: "#55 赛道工位暂时隐藏 · 桌子比骑手还抢镜可不行",
     href: "/",
   },
   {
