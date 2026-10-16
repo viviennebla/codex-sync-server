@@ -1,6 +1,6 @@
 # 蹬了吗 · 万圣节办公室主题技术方案（v0）
 
-> 状态：**设计方案，未实现、未部署**  
+> 状态：**阶段 A 背景已经实现并完成浏览器截图验证，等待用户视觉验收；未合并、未部署。阶段 B 特效 / 阶段 C 人物未开始。**  
 > 视觉依据：2026-10-16 Project 对话中用户认可的**第二版**「万圣节办公室」设计稿。设计图是氛围参考，**不是当前页面结构的像素级改版规格**。  
 > 主仓库：`viviennebla/codex-sync-server`；从当前 `main` 开发。  
 > 优先级：好玩 / 易用 > 低干扰 > 数据准确 > 复杂展示；不将 token 用量包装为绩效。
@@ -20,6 +20,36 @@
 | 燃烧榜 / 赛道 / 24h 动态 / 成就四卡片 | **不新增卡片**；继续沿用现有顶部导航、事件栏和已有独立页面 |
 
 **不做**：重构成企业 Dashboard、生成五个固定人物、复活已关闭的 `.rider-workstation`、改排名/成就判定/用户数据模型、改变布局拖拽合同、引入动画框架、要求重新登录或绑定设备。
+
+### 阶段 A：已实现的背景预览（待验收）
+
+实际浏览器截图（临时预览服务、使用仓库内置的 6 个演示骑手，**不是原始设计稿，也不是线上已部署截图**）：
+
+- [桌面 1440px](assets/halloween-stage-a-1440.png)
+- [窄窗口 760px](assets/halloween-stage-a-760.png)
+- [手机 375px](assets/halloween-stage-a-375.png)
+
+![背景阶段实际浏览器截图](assets/halloween-stage-a-1440.png)
+
+已接入：`/?preview=1&season=halloween`；`?season=off` 或无参数恢复普通背景。独立的 `public/halloween-theme.css` 在 `styles.css` 后加载，新增加载路由仅提供 CSS 和合成 SVG。
+
+**素材清单**（可以直接由后续阶段使用）：
+
+| 用途 | 仓库路径 |
+| --- | --- |
+| 合成背景 | `public/themes/halloween/office-stage-halloween.svg` |
+| 城市与月亮 | `public/themes/halloween/layers/01-city-night.svg` |
+| 办公室与暖灯 | `public/themes/halloween/layers/02-office-interior.svg` |
+| 道路 | `public/themes/halloween/layers/03-rider-road.svg` |
+| 前景装饰 | `public/themes/halloween/layers/04-front-decorations.svg` |
+| 图标集合 | `public/themes/halloween/icons/`（pumpkin、ghost、bat、black-cat、spider-web、witch-hat、broom、candle） |
+
+主 SVG 保持固有 `1920×820` 比例，使用 `background-size: cover`，窄屏裁切而非把南瓜压扁。全部素材本地托管，不增加对第三方图片服务的运行时依赖。
+
+**已验证**：`npm test` 55/55、`node --check`（app/server/social）、SVG XML 可解析；Chromium 1440/760/375 实际页面 6 位骑手/4 层 lane 均保留，静态资源没有 4xx；`season=off` 回到 `office-stage.svg`，旧工位继续隐藏。
+
+**已知差异**：原页面是四层骑手场景，并非设计稿单层道路，所以上两层人物仍会出现在办公室/窗景上方；375px 时原有左侧事件区给赛场只剩约 155px，骑手拥挤明显。前者留待人物阶段决定是否调整，后者需要在发布前单独改善响应式布局；本次背景阶段没有改动交互布局。视觉稿的背景是方向标准，当前 SVG 是可复用的工程初稿，待人工审批再细调。
+
 
 ## 2. 现有实现与技术映射
 
@@ -45,7 +75,7 @@ src/server.js                   静态资源逐项显式注册
 
 ### 2.1 场景素材
 
-- 新建 `public/office-stage-halloween.svg`：沿用当前 `office-stage.svg` 的 `1920 × 820` 坐标体系，制作深紫色办公室外墙、窗外圆月/城市、暖黄灯、道路感地面与静态道具。
+- 已准备 `public/themes/halloween/office-stage-halloween.svg`：沿用当前 `office-stage.svg` 的 `1920 × 820` 坐标体系，制作深紫色办公室外墙、窗外圆月/城市、暖黄灯、道路感地面与静态道具。
 - 道路仅是**背景视觉**；不合并四个 lane、不更改 rider 的 `x/lane` 计算与碰撞边界。道路区域要与实际角色活动带对齐，不能让人物看起来漂在家具中。
 - 左右边角放南瓜/蜘蛛网；中下部预留人物与姓名 chip 的安全区。主要装饰不能挡住点击、拖动、对话气泡。
 - SVG 做颜色和静态形状，避免单张大位图、外部字体、第三方 CDN；优先压缩并复用路径。
@@ -103,6 +133,6 @@ src/server.js                   静态资源逐项显式注册
 
 ## 5. 交接说明
 
-- 本文是实现前的技术方案，**不代表 Halloween 已上线**。
+- 背景实现已经在 Draft PR #56，但**尚未合并或上线**；本轮先停在阶段 A 等待人工视觉验收。
 - 第二版设计稿中的左栏统计、顶部搜索、底部四卡片并非现有界面功能；本方案明确**不实现**它们，避免演变成整站重构。
 - 开发前重读当前 `main` 和 `AGENTS.md`，不要依据本文固定文件行号；同一时期其他 Chat 若修改 `public/app.js` / `public/styles.css`，先合并一个 PR 再继续另一个。
