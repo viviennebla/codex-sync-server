@@ -2,9 +2,9 @@
  * Enabled explicitly with ?season=halloween. The default homepage is unchanged. */
 body.season-halloween {
   --page-glow: rgba(148, 90, 174, .16);
-  --page-top: #232037;
-  --page-bottom: #1b192e;
-  --topbar-bg: rgba(29, 26, 47, .98);
+  --page-top: #372154;
+  --page-bottom: #221a43;
+  --topbar-bg: rgba(35, 24, 63, .96);
   --event-zone-bg: rgba(47, 36, 66, .42);
 }
 
@@ -32,16 +32,18 @@ body.season-halloween .profile-button {
 }
 body.season-halloween .manual-refresh-button:hover { color: #ffe5b9; }
 
-/* The reference's moonlit city, office lamps, and orange-lit roadway.
- * Existing four rider lanes remain untouched and above the background. */
-body.season-halloween .race-stage {
-  background-color: #242139;
+/* Paint the whole office shell, including behind the event rail.
+ * Rider lane positions retain their existing stage margin and interactions. */
+body.season-halloween .app-shell {
+  background-color: #292047;
   background-image: url("/themes/halloween/office-stage-halloween.svg");
-  background-position: 59% center;
-  /* Crop rather than squeeze the office on narrow viewports. */
   background-size: cover;
+  background-position: 56% center;
   background-repeat: no-repeat;
-  box-shadow: inset 0 1px 0 rgba(243, 165, 123, .12);
+}
+body.season-halloween .race-stage {
+  background: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 170, 124, .16);
 }
 body.season-halloween .race-stage::before {
   content: none;
@@ -57,4 +59,72 @@ body.season-halloween .event-rail-head span {
 body.season-halloween .event-empty {
   color: #ddc6dc;
   text-shadow: none;
+}
+
+/* Frosted event glass: translucent cards and legible text over the office.
+ * This visual change only applies while the Halloween preview is enabled. */
+body.season-halloween .event-rail {
+  border: 1px solid rgba(233, 198, 255, .42);
+  background: linear-gradient(145deg, rgba(89, 57, 143, .27), rgba(31, 24, 68, .49));
+  box-shadow: 0 12px 38px rgba(23, 14, 56, .23), inset 0 1px 0 rgba(255, 231, 253, .25);
+  -webkit-backdrop-filter: blur(19px) saturate(150%);
+  backdrop-filter: blur(19px) saturate(150%);
+}
+body.season-halloween .event-item {
+  color: #fff0f9;
+  border-color: rgba(246, 211, 255, .3);
+  background: rgba(33, 25, 76, .55);
+  box-shadow: 0 4px 12px rgba(20, 13, 57, .14), inset 0 1px 0 rgba(255,255,255,.1);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+}
+body.season-halloween .event-join,
+body.season-halloween .event-upload {
+  background: rgba(51, 49, 106, .57);
+}
+body.season-halloween .event-comment {
+  background: rgba(73, 47, 101, .61);
+}
+body.season-halloween .event-achievement {
+  border-color: rgba(255, 197, 112, .5);
+  background: rgba(98, 53, 101, .61);
+}
+body.season-halloween .event-release {
+  background: rgba(71, 57, 124, .65);
+}
+body.season-halloween .event-line,
+body.season-halloween .event-line strong {
+  color: #fff2fb;
+  text-shadow: 0 1px 3px rgba(8, 6, 27, .5);
+}
+body.season-halloween .event-body small {
+  color: #e1c6e5;
+}
+body.season-halloween .event-avatar {
+  border-color: rgba(255, 240, 255, .4);
+  background: rgba(251, 244, 255, .83);
+}
+body.season-halloween .event-release::after {
+  color: #ffd699;
+}
+body.season-halloween .event-composer {
+  border-color: rgba(255, 220, 252, .4);
+  background: rgba(48, 37, 91, .64);
+  box-shadow: 0 4px 16px rgba(21, 15, 57, .15);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+body.season-halloween .event-composer input {
+  color: #fff3f9;
+}
+body.season-halloween .event-composer input::placeholder {
+  color: #e1cbe8;
+}
+body.season-halloween .event-composer button {
+  color: #352043;
+  background: #ffc07e;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  body.season-halloween .event-rail { background: rgba(43, 31, 84, .82); }
+  body.season-halloween .event-item { background: rgba(39, 32, 78, .87); }
 }
