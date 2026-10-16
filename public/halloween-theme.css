@@ -1,0 +1,59 @@
+/* Seasonal preview, Phase A: background only, no rider/effect changes.
+ * Enabled explicitly with ?season=halloween. The default homepage is unchanged. */
+body.season-halloween {
+  --page-glow: rgba(148, 90, 174, .16);
+  --page-top: #232037;
+  --page-bottom: #1b192e;
+  --topbar-bg: rgba(29, 26, 47, .98);
+  --event-zone-bg: rgba(47, 36, 66, .42);
+}
+
+body.season-halloween .topbar {
+  border-bottom-color: rgba(253, 174, 102, .18);
+}
+body.season-halloween .brand-title {
+  color: #fff0dd;
+  text-shadow: 2px 2px 0 rgba(232, 109, 57, .55);
+}
+body.season-halloween .brand-spark,
+body.season-halloween .today-total strong {
+  color: #ffa35c;
+}
+body.season-halloween .today-total,
+body.season-halloween .today-freshness,
+body.season-halloween .manual-refresh-button {
+  color: #e2c6dc;
+}
+body.season-halloween .profile-button {
+  background: #352c4c;
+  color: #f8e4ec;
+  border-color: #66527e;
+  box-shadow: 0 3px 0 rgba(12, 11, 28, .34);
+}
+body.season-halloween .manual-refresh-button:hover { color: #ffe5b9; }
+
+/* The reference's moonlit city, office lamps, and orange-lit roadway.
+ * Existing four rider lanes remain untouched and above the background. */
+body.season-halloween .race-stage {
+  background-color: #242139;
+  background-image: url("/themes/halloween/office-stage-halloween.svg");
+  background-position: center;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 1px 0 rgba(243, 165, 123, .12);
+}
+body.season-halloween .race-stage::before {
+  content: none;
+  display: none;
+}
+body.season-halloween .event-rail-head strong {
+  color: #f7e5f3;
+  text-shadow: none;
+}
+body.season-halloween .event-rail-head span {
+  color: #c4afcf;
+}
+body.season-halloween .event-empty {
+  color: #ddc6dc;
+  text-shadow: none;
+}
