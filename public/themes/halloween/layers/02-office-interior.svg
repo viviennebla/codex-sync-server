@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 820" preserveAspectRatio="none"><defs>
- <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#151830"/><stop offset=".55" stop-color="#48336c"/><stop offset="1" stop-color="#a04e64"/></linearGradient>
- <radialGradient id="moonGlow"><stop stop-color="#ffe9ab" stop-opacity=".5"/><stop offset="1" stop-color="#fca861" stop-opacity="0"/></radialGradient>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#23154b"/><stop offset=".55" stop-color="#753ea7"/><stop offset="1" stop-color="#d15a9c"/></linearGradient>
+ <radialGradient id="moonGlow"><stop stop-color="#fff2c1" stop-opacity=".78"/><stop offset="1" stop-color="#ffa65d" stop-opacity="0"/></radialGradient>
  <radialGradient id="bulbGlow"><stop stop-color="#ffca73" stop-opacity=".62"/><stop offset="1" stop-color="#ffb66d" stop-opacity="0"/></radialGradient>
  <linearGradient id="wall" x1="0" x2="1" y2=".6"><stop stop-color="#29213f"/><stop offset=".5" stop-color="#3b2445"/><stop offset="1" stop-color="#241d35"/></linearGradient>
- <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4c4057"/><stop offset=".5" stop-color="#322c47"/><stop offset="1" stop-color="#201e36"/></linearGradient>
+ <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#654b83"/><stop offset=".5" stop-color="#473664"/><stop offset="1" stop-color="#2c244c"/></linearGradient>
  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#7c4e53"/><stop offset="1" stop-color="#412b40"/></linearGradient>
  <filter id="glow"><feGaussianBlur stdDeviation="9"/></filter>
  <symbol id="pumpkin" viewBox="0 0 85 80"><path d="M42 17q-5-13 10-17l4 5Q43 6 47 19" fill="#7e9952"/><ellipse cx="43" cy="48" rx="40" ry="32" fill="#df6333" stroke="#8e3630" stroke-width="3"/><ellipse cx="27" cy="47" rx="12" ry="30" fill="#f88730" opacity=".55"/><ellipse cx="58" cy="47" rx="10" ry="29" fill="#f98d3d" opacity=".5"/><path d="m16 44 18-12-1 24zm53 0-18-12 1 24zM38 57l5-9 7 9zM24 60q22 20 40 0l-10 5-9 10-9-8-8 3Z" fill="#271b31"/><path d="M22 45 32 38m35 7-11-7M32 64q11 9 23 1" stroke="#ffd579" stroke-width="3" opacity=".8"/></symbol>
@@ -13,7 +13,7 @@
  <symbol id="lamp" viewBox="0 0 130 110"><path d="M65 0V40" stroke="#34233b" stroke-width="9"/><ellipse cx="65" cy="77" rx="63" ry="33" fill="url(#bulbGlow)"/><path d="M16 60q49-34 98 0l-16 15H32Z" fill="#523346" stroke="#1d192c" stroke-width="4"/><ellipse cx="65" cy="71" rx="24" ry="8" fill="#ffd895"/><ellipse cx="65" cy="75" rx="37" ry="8" fill="#ffa95b" opacity=".3"/></symbol>
  <symbol id="web" viewBox="0 0 145 125"><path d="M1 1H145M1 1V125M1 1l144 124M1 1l144 65M1 1l70 124M34 1Q25 25 1 34M67 1Q56 57 1 67M108 1Q93 93 1 108M145 32q-35 91-113 93M145 66q-31 63-79 59" stroke="#ba88bf" stroke-width="2.2" fill="none" opacity=".75"/></symbol>
 </defs><rect x="0" y="0" width="1920" height="39" fill="#24192e" />
-<rect x="0" y="360" width="1920" height="111" fill="#31253c" />
+<rect x="0" y="360" width="1920" height="111" fill="#492d59" />
 <path d="M0 360H1920" stroke="#564056" stroke-width="10"/><use href="#web" x="5" y="15" width="170" height="150"/><use href="#web" x="1780" y="20" width="130" height="110"/>
 <use href="#lamp" x="170" y="14" width="135" height="126"/>
 <use href="#lamp" x="595" y="14" width="135" height="126"/>
@@ -34,4 +34,4 @@
 <use href="#ghost" x="345" y="185" width="68" height="90"/><use href="#ghost" x="1420" y="176" width="63" height="82"/>
 <path d="M156 360V90h230V360" stroke="#42344d" stroke-width="10" fill="none"/><path d="M166 102h210v150H166Z" fill="#342441" opacity=".45"/><path d="M206 135h134" stroke="#c67c8a" stroke-width="4" opacity=".5"/>
 <path d="M1680 84h180v234h-180z" fill="#37283d" stroke="#9b664c" stroke-width="8"/><path d="M1692 110h160v190h-160Z" fill="#1c2230"/><text x="1770" y="168" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="25" fill="#9add82">FASTER</text><text x="1770" y="207" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="25" fill="#9add82">IDEAS</text><text x="1770" y="246" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="25" fill="#9add82">KINDER</text>
-<path d="M0 425H1920" stroke="#4a3b53" stroke-width="26"/><path d="M0 429H1920" stroke="#be6c63" opacity=".7" stroke-width="5"/></svg>
+<path d="M0 425H1920" stroke="#715078" stroke-width="26"/><path d="M0 429H1920" stroke="#be6c63" opacity=".7" stroke-width="5"/></svg>
