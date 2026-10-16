@@ -84,6 +84,10 @@ const DENGLEMA_CONTRACT_URL =
 
 const TIME_THEME_CLASSES = ["time-morning", "time-day", "time-evening", "time-night"];
 
+// Phase A: opt-in preview only; no automatic seasonal takeover.
+const season = new URLSearchParams(location.search).get("season");
+document.body.classList.toggle("season-halloween", season === "halloween");
+
 function themeForHour(hour) {
   if (hour >= 6 && hour < 12) return "morning";
   if (hour >= 12 && hour < 18) return "day";
