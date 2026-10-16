@@ -1444,6 +1444,14 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "office-stage.svg", "image/svg+xml; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/halloween-theme.css") {
+      await sendStatic(res, "halloween-theme.css", "text/css; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/themes/halloween/office-stage-halloween.svg") {
+      await sendStatic(res, "themes/halloween/office-stage-halloween.svg", "image/svg+xml; charset=utf-8");
+      return;
+    }
 
     // ── 404 ──
     sendError(res, 404, "Not Found");
