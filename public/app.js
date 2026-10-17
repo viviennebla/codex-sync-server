@@ -86,6 +86,7 @@ const TIME_THEME_CLASSES = ["time-morning", "time-day", "time-evening", "time-ni
 
 // Phase A: opt-in preview only; no automatic seasonal takeover.
 const season = new URLSearchParams(location.search).get("season");
+const seasonalTrackLanes = season === "halloween" ? [1, 3] : [1, 2, 3, 4];
 document.body.classList.toggle("season-halloween", season === "halloween");
 
 function themeForHour(hour) {
@@ -884,8 +885,11 @@ function lanePlan(riders) {
   riders.forEach((rider) => {
     const manualLane = Number(rider.office_position?.lane);
     if (Number.isInteger(manualLane) && manualLane >= 1 && manualLane <= 4) {
-      laneById.set(rider.user_id, manualLane);
-      counts[manualLane - 1] += 1;
+      // Project existing four-lane saved positions into two visible tracks.
+      // The original saved lane is not changed until the user drags again.
+      const trackLane = season === "halloween" ? (manualLane <= 2 ? 1 : 3) : manualLane;
+      laneById.set(rider.user_id, trackLane);
+      counts[trackLane - 1] += 1;
     }
   });
 
@@ -900,7 +904,7 @@ function lanePlan(riders) {
   ordered.forEach((rider) => {
     let chosenLane = 1;
     let bestScore = -Infinity;
-    for (let lane = 1; lane <= 4; lane += 1) {
+    for (const lane of seasonalTrackLanes) {
       const preference = stableUnit(rider.user_id + ":lane:" + lane) * 10000;
       const crowdingPenalty = counts[lane - 1] * 2200;
       const score = preference - crowdingPenalty;
@@ -1328,10 +1332,10 @@ function pointerOfficePosition(event) {
     OFFICE_X_MIN,
     Math.min(OFFICE_X_MAX, ((event.clientX - rect.left) / rect.width) * 100),
   );
-  const lane = Math.max(
-    1,
-    Math.min(4, Math.floor(((event.clientY - rect.top) / rect.height) * 4) + 1),
-  );
+  const relativeY = (event.clientY - rect.top) / rect.height;
+  const lane = season === "halloween"
+    ? (relativeY < 0.70 ? 1 : 3)
+    : Math.max(1, Math.min(4, Math.floor(relativeY * 4) + 1));
   return { lane, x: Math.round(x * 10) / 10 };
 }
 
