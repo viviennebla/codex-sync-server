@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "deploy-ci-tested-checkout-2026-10",
+    emoji: "🛠️",
+    message: "#58 部署改从 CI 测试代码取货 · 错仓库 main 别抢方向盘",
+    href: "/updates",
+  },
+  {
     id: "deploy-fresh-fetch-head-2026-10",
     emoji: "🔧",
     message: "#57 部署改用刚拉取的 main · 旧指针别再假装超前",
