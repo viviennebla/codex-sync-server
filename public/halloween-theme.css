@@ -32,18 +32,43 @@ body.season-halloween .profile-button {
 }
 body.season-halloween .manual-refresh-button:hover { color: #ffe5b9; }
 
-/* Paint the whole office shell, including behind the event rail.
- * Rider lane positions retain their existing stage margin and interactions. */
+/* Approved illustration: a REAL raster backdrop, not the old illustrative SVG.
+ * Scene is painted behind both the two-lane track and the translucent event rail. */
 body.season-halloween .app-shell {
-  background-color: #292047;
-  background-image: url("/themes/halloween/office-stage-halloween.svg");
-  background-size: cover;
-  background-position: 56% center;
-  background-repeat: no-repeat;
+  position: relative;
+  isolation: isolate;
+  background: #281d4b;
+}
+body.season-halloween .app-shell::before {
+  content: "";
+  position: absolute;
+  inset: 82px 0 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url("/themes/halloween/halloween-two-lane-background.avif") center / cover no-repeat;
 }
 body.season-halloween .race-stage {
+  position: relative;
+  z-index: 1;
   background: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 170, 124, .16);
+  box-shadow: none;
+}
+/* Render the existing riders in the two illustrated asphalt lanes,
+ * without altering their stored four-lane office positions. */
+body.season-halloween .race-stage .lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border: 0;
+  overflow: visible;
+}
+body.season-halloween #lane1 { top: 52%; height: 16%; }
+body.season-halloween #lane3 { top: 71%; height: 16%; }
+body.season-halloween #lane2,
+body.season-halloween #lane4 { display: none; }
+@media (max-width: 900px) {
+  body.season-halloween .app-shell::before { top: 72px; }
 }
 body.season-halloween .race-stage::before {
   content: none;
