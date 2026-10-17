@@ -1452,6 +1452,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "themes/halloween/office-stage-halloween.svg", "image/svg+xml; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/themes/halloween/halloween-two-lane-background.avif") {
+      await sendStatic(res, "themes/halloween/halloween-two-lane-background.avif", "image/avif");
+      return;
+    }
 
     // ── 404 ──
     sendError(res, 404, "Not Found");
