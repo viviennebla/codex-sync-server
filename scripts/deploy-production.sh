@@ -56,7 +56,9 @@ CURRENT_SHA="$(git rev-parse HEAD)"
 log "current=${CURRENT_SHA:0:8} tested=${EXPECTED_SHA:0:8}"
 
 git fetch --quiet --no-tags origin main
-REMOTE_SHA="$(git rev-parse origin/main)"
+# A deploy checkout can have a stale origin/main tracking ref when it was
+# configured with a narrow fetch refspec. Validate the SHA just fetched.
+REMOTE_SHA="$(git rev-parse FETCH_HEAD)"
 if [[ "$REMOTE_SHA" != "$EXPECTED_SHA" ]]; then
   fail "main moved: pipeline=$EXPECTED_SHA remote=$REMOTE_SHA; refusing to deploy an untested newer commit"
 fi
