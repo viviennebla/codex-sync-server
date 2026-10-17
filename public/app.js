@@ -84,10 +84,18 @@ const DENGLEMA_CONTRACT_URL =
 
 const TIME_THEME_CLASSES = ["time-morning", "time-day", "time-evening", "time-night"];
 
-// Phase A: opt-in preview only; no automatic seasonal takeover.
+// Halloween launch: enabled from October 18 to November 1 in the product timezone.
+// Explicit ?season=off preserves the ordinary homepage for rollback and comparison.
 const season = new URLSearchParams(location.search).get("season");
-const seasonalTrackLanes = season === "halloween" ? [1, 3] : [1, 2, 3, 4];
-document.body.classList.toggle("season-halloween", season === "halloween");
+const dateParts = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit"
+}).formatToParts(new Date());
+const productDayPart = (type) => dateParts.find((part) => part.type === type)?.value || "";
+const productDay = [productDayPart("year"), productDayPart("month"), productDayPart("day")].join("-");
+const halloweenEnabled = season === "halloween"
+  || (season !== "off" && productDay >= "2026-10-18" && productDay <= "2026-11-01");
+const seasonalTrackLanes = halloweenEnabled ? [1, 3] : [1, 2, 3, 4];
+document.body.classList.toggle("season-halloween", halloweenEnabled);
 
 function themeForHour(hour) {
   if (hour >= 6 && hour < 12) return "morning";
@@ -887,7 +895,7 @@ function lanePlan(riders) {
     if (Number.isInteger(manualLane) && manualLane >= 1 && manualLane <= 4) {
       // Project existing four-lane saved positions into two visible tracks.
       // The original saved lane is not changed until the user drags again.
-      const trackLane = season === "halloween" ? (manualLane <= 2 ? 1 : 3) : manualLane;
+      const trackLane = halloweenEnabled ? (manualLane <= 2 ? 1 : 3) : manualLane;
       laneById.set(rider.user_id, trackLane);
       counts[trackLane - 1] += 1;
     }
@@ -1333,7 +1341,7 @@ function pointerOfficePosition(event) {
     Math.min(OFFICE_X_MAX, ((event.clientX - rect.left) / rect.width) * 100),
   );
   const relativeY = (event.clientY - rect.top) / rect.height;
-  const lane = season === "halloween"
+  const lane = halloweenEnabled
     ? (relativeY < 0.70 ? 1 : 3)
     : Math.max(1, Math.min(4, Math.floor(relativeY * 4) + 1));
   return { lane, x: Math.round(x * 10) / 10 };
