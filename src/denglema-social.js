@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "deploy-restore-runtime-deps-2026-10",
+    emoji: "🧰",
+    message: "#60 部署补齐运行依赖 · 有源码没依赖可跑不起来",
+    href: "/updates",
+  },
+  {
     id: "deploy-shallow-ci-fetch-2026-10",
     emoji: "🧩",
     message: "#59 修复浅克隆部署 · Git 别把自己的脚绊了",
