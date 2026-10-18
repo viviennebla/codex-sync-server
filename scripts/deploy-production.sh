@@ -82,10 +82,10 @@ if [[ "$CURRENT_SHA" == "$EXPECTED_SHA" ]]; then
   exit 0
 fi
 
-DEPENDENCIES_CHANGED=0
-if ! git diff --quiet "$CURRENT_SHA" "$EXPECTED_SHA" -- package.json package-lock.json; then
-  DEPENDENCIES_CHANGED=1
-fi
+# The deployment worktree was previously restored from source without node_modules.
+# A matching lockfile does not prove that runtime dependencies actually exist.
+# npm ci is cheap for this app and ensures native modules are present before restart.
+DEPENDENCIES_CHANGED=1
 
 rollback() {
   local reason="$1"
@@ -132,5 +132,10 @@ if wait_healthy; then
   exit 0
 fi
 
+# Report only service health metadata; never print production environment
+# files, credentials, or user data in a public CI log.
+systemctl --user show "$SERVICE_NAME" --no-pager \
+  --property=ActiveState --property=SubState --property=Result \
+  --property=ExecMainCode --property=ExecMainStatus || true
 rollback "health check timed out after ${HEALTH_TIMEOUT}s"
 exit 1
