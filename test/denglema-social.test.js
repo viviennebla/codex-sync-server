@@ -331,7 +331,7 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
 
   const firstEvents = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T03:02:01Z"),
-    limit: 20,
+    limit: 240,
   });
   assert.equal(firstEvents.filter((item) => item.kind === "achievement").length, 9);
 
@@ -343,7 +343,7 @@ test("achievements unlock once and include multi-harness progress", async (t) =>
   );
   const secondEvents = await readDenglemaEvents(root, {
     now: () => new Date("2026-09-29T04:00:01Z"),
-    limit: 20,
+    limit: 240,
   });
   assert.equal(secondEvents.filter((item) => item.kind === "achievement").length, 9);
 });

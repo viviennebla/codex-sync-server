@@ -55,13 +55,24 @@ fi
 CURRENT_SHA="$(git rev-parse HEAD)"
 log "current=${CURRENT_SHA:0:8} tested=${EXPECTED_SHA:0:8}"
 
-git fetch --quiet --no-tags origin main
-# A deploy checkout can have a stale origin/main tracking ref when it was
-# configured with a narrow fetch refspec. Validate the SHA just fetched.
-REMOTE_SHA="$(git rev-parse FETCH_HEAD)"
+# The old deployment worktree can point at a different "origin" main.
+# Verify current upstream main using the canonical public repository URL.
+UPSTREAM_URL="https://github.com/viviennebla/codex-sync-server.git"
+REMOTE_SHA="$(git ls-remote "$UPSTREAM_URL" refs/heads/main | cut -f1)"
+[[ -n "$REMOTE_SHA" ]] || fail "could not resolve canonical upstream main"
 if [[ "$REMOTE_SHA" != "$EXPECTED_SHA" ]]; then
   fail "main moved: pipeline=$EXPECTED_SHA remote=$REMOTE_SHA; refusing to deploy an untested newer commit"
 fi
+
+# Source objects only from this Actions job's already-checked-out tested commit,
+# not from the production worktree's misconfigured origin.
+TESTED_CHECKOUT="${DENGLEMA_TESTED_CHECKOUT:-${GITHUB_WORKSPACE:-}}"
+[[ -n "$TESTED_CHECKOUT" ]] || fail "tested checkout path is required"
+CHECKOUT_SHA="$(git -C "$TESTED_CHECKOUT" rev-parse HEAD)" || fail "invalid tested checkout"
+[[ "$CHECKOUT_SHA" == "$EXPECTED_SHA" ]] || fail "tested checkout HEAD differs from pipeline SHA"
+git fetch --quiet --no-tags "$TESTED_CHECKOUT" HEAD
+FETCHED_SHA="$(git rev-parse FETCH_HEAD)"
+[[ "$FETCHED_SHA" == "$EXPECTED_SHA" ]] || fail "fetched checkout SHA differs from pipeline SHA"
 
 if [[ "$CURRENT_SHA" == "$EXPECTED_SHA" ]]; then
   log "tested commit is already deployed; verifying health before cutover"
