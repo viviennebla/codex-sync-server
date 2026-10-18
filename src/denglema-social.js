@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "deploy-shallow-ci-fetch-2026-10",
+    emoji: "🧩",
+    message: "#59 修复浅克隆部署 · Git 别把自己的脚绊了",
+    href: "/updates",
+  },
+  {
     id: "deploy-ci-tested-checkout-2026-10",
     emoji: "🛠️",
     message: "#58 部署改从 CI 测试代码取货 · 错仓库 main 别抢方向盘",

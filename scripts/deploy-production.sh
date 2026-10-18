@@ -70,7 +70,7 @@ TESTED_CHECKOUT="${DENGLEMA_TESTED_CHECKOUT:-${GITHUB_WORKSPACE:-}}"
 [[ -n "$TESTED_CHECKOUT" ]] || fail "tested checkout path is required"
 CHECKOUT_SHA="$(git -C "$TESTED_CHECKOUT" rev-parse HEAD)" || fail "invalid tested checkout"
 [[ "$CHECKOUT_SHA" == "$EXPECTED_SHA" ]] || fail "tested checkout HEAD differs from pipeline SHA"
-git fetch --quiet --no-tags "$TESTED_CHECKOUT" HEAD
+git fetch --quiet --update-shallow --no-tags "$TESTED_CHECKOUT" HEAD
 FETCHED_SHA="$(git rev-parse FETCH_HEAD)"
 [[ "$FETCHED_SHA" == "$EXPECTED_SHA" ]] || fail "fetched checkout SHA differs from pipeline SHA"
 
