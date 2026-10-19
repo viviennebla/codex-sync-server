@@ -1,0 +1,100 @@
+{
+  "id": "christmas-office-2026",
+  "theme": "christmas",
+  "version": 1,
+  "canvas": {
+    "width": 3840,
+    "height": 1440,
+    "aspectRatio": "8:3"
+  },
+  "artwork": {
+    "src": "/themes/christmas/christmas-office-two-lane-base-2048.webp",
+    "width": 2048,
+    "height": 768,
+    "sourceWidth": 2048,
+    "sourceHeight": 768,
+    "qualityNote": "2048px native generated/composited scene; a future authentic 3840px master can replace this file without changing the theme API."
+  },
+  "lanes": {
+    "top": {
+      "id": 1,
+      "topPercent": 52,
+      "heightPercent": 16
+    },
+    "bottom": {
+      "id": 3,
+      "topPercent": 71,
+      "heightPercent": 16
+    }
+  },
+  "layers": [
+    {
+      "id": "warm-light-glow",
+      "kind": "glows",
+      "enabled": true,
+      "points": [
+        {
+          "x": 7,
+          "y": 15,
+          "size": 8,
+          "delay": 0
+        },
+        {
+          "x": 20,
+          "y": 11,
+          "size": 7,
+          "delay": 1.1
+        },
+        {
+          "x": 34,
+          "y": 8,
+          "size": 8,
+          "delay": 2.4
+        },
+        {
+          "x": 53,
+          "y": 12,
+          "size": 7,
+          "delay": 3.5
+        },
+        {
+          "x": 74,
+          "y": 11,
+          "size": 6,
+          "delay": 1.8
+        },
+        {
+          "x": 88,
+          "y": 17,
+          "size": 8,
+          "delay": 3
+        }
+      ],
+      "periodSeconds": 4.6
+    },
+    {
+      "id": "snowfall",
+      "kind": "snow",
+      "enabled": true,
+      "count": 30,
+      "seed": 1225
+    },
+    {
+      "id": "foreground-sparkles",
+      "kind": "sparkles",
+      "enabled": true,
+      "count": 12,
+      "seed": 1226
+    }
+  ],
+  "effects": {
+    "respectReducedMotion": true,
+    "animationFramePolling": false
+  },
+  "controls": {
+    "forceEnable": "?season=christmas",
+    "disable": "?season=off",
+    "preview": "?preview=1&season=christmas"
+  },
+  "stage": "ready-for-live-preview"
+}
