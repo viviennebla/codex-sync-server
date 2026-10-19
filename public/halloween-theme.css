@@ -48,7 +48,7 @@ body.season-halloween .app-shell::before {
   background: var(--season-base, url("/themes/halloween/halloween-two-lane-background.avif")) center / cover no-repeat;
   /* The base artwork has baked-in light: darken only its pixels (not riders,
      UI or overlay masks) to create actual headroom for a visible pulse. */
-  filter: brightness(.81) saturate(1.12);
+  filter: none; /* Already dark unlit master, so do not darken twice. */
 }
 body.season-halloween .race-stage {
   position: relative;
@@ -178,25 +178,13 @@ body.season-halloween .season-layer {
 }
 body.season-halloween .season-glow-pumpkins {
   mix-blend-mode: screen;
-  /* Transparent source pixels are faint; brighten the mask itself as well. */
-  filter: brightness(1.7) saturate(1.16);
-  animation: halloweenPumpkinBreath 3.7s ease-in-out infinite alternate;
-}
-body.season-halloween .season-glow-lamps {
-  mix-blend-mode: screen;
-  filter: brightness(1.5);
-  animation: halloweenLampBreath 5.3s ease-in-out infinite alternate;
-}
-body.season-halloween .season-foreground-glints {
-  opacity: .75;
+  /* Registered pumpkin faces + halo come from the same 2048x768 art canvas. */
+  filter: brightness(1.08);
+  animation: halloweenPumpkinBreath 3.8s ease-in-out infinite alternate;
 }
 @keyframes halloweenPumpkinBreath {
-  from { opacity: .03; }
-  to { opacity: .92; }
-}
-@keyframes halloweenLampBreath {
-  from { opacity: .04; }
-  to { opacity: .67; }
+  from { opacity: .06; }
+  to { opacity: 1; }
 }
 body.season-halloween .season-bat-flyover {
   display: block;
@@ -238,11 +226,9 @@ body.season-halloween .rider.is-near-right .season-costume { left: 57px; }
 }
 @media (prefers-reduced-motion:reduce) {
   body.season-halloween .season-glow-pumpkins,
-  body.season-halloween .season-glow-lamps,
   body.season-halloween .season-bat-flyover {
     animation: none !important;
   }
-  body.season-halloween .season-glow-pumpkins { opacity: .32; }
-  body.season-halloween .season-glow-lamps { opacity: .24; }
+  body.season-halloween .season-glow-pumpkins { opacity: .55; }
   body.season-halloween .season-bat-flyover { display: none; }
 }

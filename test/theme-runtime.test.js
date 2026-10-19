@@ -11,16 +11,22 @@ const localManifest = async (url) => {
 
 test("halloween art selection is device-pixel-ratio aware", async () => {
   const cfg = await loadThemeManifest("halloween", localManifest);
-  assert.equal(pickArtwork(cfg.base.variants, 1440, 1), "/themes/halloween/art/base-1920.webp");
-  assert.equal(pickArtwork(cfg.base.variants, 1440, 2), "/themes/halloween/art/base-3840.webp");
-  assert.equal(pickArtwork(cfg.base.variants, 2560, 1), "/themes/halloween/art/base-2560.webp");
-  assert.equal(pickArtwork(cfg.base.variants, 5000, 1), "/themes/halloween/art/base-3840.webp");
+  assert.equal(pickArtwork(cfg.base.variants, 1440, 1), "/themes/halloween/art/base-dark-1920.webp");
+  assert.equal(pickArtwork(cfg.base.variants, 1440, 2), "/themes/halloween/art/base-dark-3840.webp");
+  assert.equal(pickArtwork(cfg.base.variants, 2560, 1), "/themes/halloween/art/base-dark-2560.webp");
+  assert.equal(pickArtwork(cfg.base.variants, 5000, 1), "/themes/halloween/art/base-dark-3840.webp");
 });
 
 test("halloween theme assets are all present, with aligned master geometry", async () => {
   const cfg = await loadThemeManifest("halloween",localManifest);
   assert.deepEqual(cfg.designCanvas,{width:3840,height:1440});
   assert.equal(cfg.base.variants.length,3);
+  assert.equal(cfg.layers.length,1);
+  assert.equal(cfg.layers[0].id,"pumpkin-glow");
+  assert.equal(cfg.layers[0].src,"/themes/halloween/art/glow-pumpkins-aligned.webp");
+  assert.deepEqual(cfg.artworkRegistration.canvas,{width:2048,height:768});
+  assert.equal(cfg.artworkRegistration.logicalImageLayers,2);
+  for(const width of [1920,2560,3840]) assert.equal(Math.round(width*3/8)*8,width*3);
   const files=[...cfg.base.variants.map(x=>x.src),...cfg.layers.map(x=>x.src),...cfg.flyovers.map(x=>x.src)];
   for(const src of files){
     assert.equal(validThemeAsset(src,"halloween"),true,src);
@@ -33,7 +39,7 @@ test("untrusted paths cannot escape theme root",() => {
   assert.equal(validThemeAsset("/themes/halloween/manifest.json","halloween"),false);
   assert.equal(validThemeAsset("/themes/halloween/art/../../private.json","halloween"),false);
   assert.equal(validThemeAsset("/themes/christmas/art/base.webp","halloween"),false);
-  assert.equal(validThemeAsset("/themes/halloween/art/base-3840.webp","halloween"),true);
+  assert.equal(validThemeAsset("/themes/halloween/art/base-dark-3840.webp","halloween"),true);
 });
 
 test("theme assets cannot break rider interactions",async()=>{
