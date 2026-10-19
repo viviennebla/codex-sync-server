@@ -1456,6 +1456,28 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "themes/halloween/halloween-two-lane-background.avif", "image/avif");
       return;
     }
+    if (method === "GET" && url.pathname === "/theme-runtime.js") {
+      await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/themes/halloween/manifest.json") {
+      await sendStatic(res, "themes/halloween/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    const artMatch = method === "GET" && url.pathname.match(
+      /^\/themes\/halloween\/art\/(base-(?:1920|2560|3840)|glow-(?:pumpkins|lamps)|foreground-glints)\.webp$/
+    );
+    if (artMatch) {
+      await sendStatic(res, "themes/halloween/art/" + artMatch[1] + ".webp", "image/webp");
+      return;
+    }
+    const batMatch = method === "GET" && url.pathname.match(
+      /^\/themes\/halloween\/sprites\/(bat-0[12])\.svg$/
+    );
+    if (batMatch) {
+      await sendStatic(res, "themes/halloween/sprites/" + batMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+      return;
+    }
 
     // ── 404 ──
     sendError(res, 404, "Not Found");
