@@ -1,0 +1,92 @@
+{
+  "id": "halloween-office-2026-v2",
+  "theme": "halloween",
+  "schemaVersion": 1,
+  "designCanvas": {
+    "width": 3840,
+    "height": 1440
+  },
+  "sourceArt": {
+    "width": 2048,
+    "height": 768,
+    "note": "3840 export is high-quality upsampling of the approved 2048 illustration, not a new native 3840 image"
+  },
+  "base": {
+    "variants": [
+      {
+        "width": 1920,
+        "src": "/themes/halloween/art/base-1920.webp"
+      },
+      {
+        "width": 2560,
+        "src": "/themes/halloween/art/base-2560.webp"
+      },
+      {
+        "width": 3840,
+        "src": "/themes/halloween/art/base-3840.webp"
+      }
+    ],
+    "fallback": "/themes/halloween/halloween-two-lane-background.avif"
+  },
+  "layers": [
+    {
+      "id": "pumpkin-glow",
+      "type": "image",
+      "src": "/themes/halloween/art/glow-pumpkins.webp",
+      "className": "season-glow-pumpkins",
+      "durationSeconds": 4.1
+    },
+    {
+      "id": "lamp-glow",
+      "type": "image",
+      "src": "/themes/halloween/art/glow-lamps.webp",
+      "className": "season-glow-lamps",
+      "durationSeconds": 6.2
+    },
+    {
+      "id": "foreground-glints",
+      "type": "image",
+      "src": "/themes/halloween/art/foreground-glints.webp",
+      "className": "season-foreground-glints"
+    }
+  ],
+  "staticBats": {
+    "enabled": false,
+    "note": "The 2048 approved backdrop already contains static bats. Keep this disabled to avoid doubled silhouettes; turn on with a clean art master."
+  },
+  "flyovers": [
+    {
+      "id": "bat-flyover-1",
+      "src": "/themes/halloween/sprites/bat-01.svg",
+      "topPercent": 14,
+      "delaySeconds": -3,
+      "durationSeconds": 24,
+      "size": 34
+    },
+    {
+      "id": "bat-flyover-2",
+      "src": "/themes/halloween/sprites/bat-02.svg",
+      "topPercent": 26,
+      "delaySeconds": -13,
+      "durationSeconds": 33,
+      "size": 26
+    }
+  ],
+  "accessories": {
+    "enabled": true,
+    "variants": [
+      "witch",
+      "pumpkin",
+      "ghost",
+      "cat"
+    ],
+    "policy": "stable per user_id, independent of token usage"
+  },
+  "effects": {
+    "motionReducedDisablesAnimations": true,
+    "pointerEvents": "none",
+    "seasonalWindow": "October 18 – November 1 (Asia/Shanghai)",
+    "force": "?season=halloween",
+    "off": "?season=off"
+  }
+}
