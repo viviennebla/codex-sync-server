@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "christmas-office-theme-2026",
+    emoji: "🎄",
+    message: "圣诞办公室上线可预览 · 南瓜休假，雪花来代班",
+    href: "/?season=christmas",
+  },
+  {
     id: "drag-stage-pointer-capture-2026-10",
     emoji: "🛴",
     message: "#63 修好双赛道跨道拖动 · 鼠标别骑到一半就撒手",
