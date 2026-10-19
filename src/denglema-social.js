@@ -39,6 +39,12 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
     href: "/?season=halloween",
   },
   {
+    id: "halloween-layered-reference-board-2026-10",
+    emoji: "🎨",
+    message: "#65 万圣节分层参考板入库 · 终于不用对着大图猜图层",
+    href: "/updates",
+  },
+  {
     id: "deploy-restore-runtime-deps-2026-10",
     emoji: "🧰",
     message: "#60 部署补齐运行依赖 · 有源码没依赖可跑不起来",
