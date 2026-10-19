@@ -9,8 +9,8 @@
   "sourceArt": {
     "width": 2048,
     "height": 768,
-    "master": "/themes/halloween/art/base-master-2048.webp",
-    "note": "Only 2048x768 contains original native visual detail; base-2560 and base-3840 are high-quality upscaled exports."
+    "note": "Only 2048x768 contains original native visual detail; base-2560 and base-3840 are high-quality upscaled exports.",
+    "repositoryMasterPath": "public/themes/halloween/art/base-master-2048.webp"
   },
   "base": {
     "variants": [

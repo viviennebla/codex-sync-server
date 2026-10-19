@@ -175,8 +175,8 @@ body.season-halloween .season-layer {
   background-size: cover;
   pointer-events: none;
 }
-body.season-halloween .season-static-bats,
-body.season-halloween .season-static-cats { opacity: 1; }
+body.season-halloween .season-bats-static,
+body.season-halloween .season-cats-static { opacity: 1; }
 body.season-halloween .season-glow-pumpkins {
   mix-blend-mode: screen;
   /* 2048x768 transparent light mask: same registration and cover as base. */

@@ -28,6 +28,8 @@ test("halloween theme assets are all present, with aligned master geometry", asy
   assert.ok(cfg.flyovers.every(x=>x.src.endsWith(".webp")));
   assert.equal(cfg.sourceArt.width,2048);
   assert.equal(cfg.sourceArt.height,768);
+  assert.equal(cfg.sourceArt.repositoryMasterPath,"public/themes/halloween/art/base-master-2048.webp");
+  assert.ok((await stat(new URL("../"+cfg.sourceArt.repositoryMasterPath,import.meta.url))).size>500000);
   for(const width of [1920,2560,3840]) assert.equal(Math.round(width*3/8)*8,width*3);
   const files=[...cfg.base.variants.map(x=>x.src),...cfg.layers.map(x=>x.src),...cfg.flyovers.map(x=>x.src)];
   for(const src of files){
@@ -52,4 +54,24 @@ test("theme assets cannot break rider interactions",async()=>{
   const app=await readFile(new URL("../public/app.js",import.meta.url),"utf8");
   assert.match(app,/stage\.setPointerCapture\(pointerId\)/);
   assert.match(app,/mountThemeLayers\("halloween"\)/);
+});
+
+test("all legacy halloween production art has been removed", async () => {
+  const stale=[
+    "public/themes/halloween/art/base-dark-1920.webp",
+    "public/themes/halloween/art/base-dark-2560.webp",
+    "public/themes/halloween/art/base-dark-3840.webp",
+    "public/themes/halloween/art/glow-pumpkins-aligned.webp",
+    "public/themes/halloween/art/glow-lamps.webp",
+    "public/themes/halloween/art/foreground-glints.webp",
+    "public/themes/halloween/halloween-two-lane-background.avif",
+    "public/themes/halloween/office-stage-halloween.svg",
+    "public/themes/halloween/sprites/bat-01.svg"
+  ];
+  for (const path of stale) {
+    await assert.rejects(stat(new URL("../"+path,import.meta.url)),{code:"ENOENT"});
+  }
+  const cfg=await loadThemeManifest("halloween",localManifest);
+  const paths=[...cfg.base.variants.map(x=>x.src),...cfg.layers.map(x=>x.src),...cfg.flyovers.map(x=>x.src)];
+  for (const src of paths) assert.ok((await stat(new URL("../public"+src,import.meta.url))).size>500);
 });
