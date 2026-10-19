@@ -35,7 +35,7 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "halloween-layered-theme-v2-2026-10",
     emoji: "🎃",
-    message: "万圣节图层升级 · 蝙蝠终于不用焊死在背景上",
+    message: "#68 万圣节图层升级 · 蝙蝠终于不用焊死在背景上",
     href: "/?season=halloween",
   },
   {
