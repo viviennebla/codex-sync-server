@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "halloween-two-registered-layers-2026-10",
+    emoji: "🎃",
+    message: "#71 南瓜灯双层配准上线 · 脸终于长在南瓜上了",
+    href: "/?season=halloween",
+  },
+  {
     id: "halloween-glow-contrast-2026-10",
     emoji: "🎃",
     message: "#70 万圣节呼吸灯更亮了 · 之前亮得像在省电",
