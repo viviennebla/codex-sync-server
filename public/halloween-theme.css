@@ -45,7 +45,7 @@ body.season-halloween .app-shell::before {
   inset: 82px 0 0;
   z-index: 0;
   pointer-events: none;
-  background: url("/themes/halloween/halloween-two-lane-background.avif") center / cover no-repeat;
+  background: var(--season-base, url("/themes/halloween/halloween-two-lane-background.avif")) center / cover no-repeat;
 }
 body.season-halloween .race-stage {
   position: relative;
@@ -152,4 +152,91 @@ body.season-halloween .event-composer button {
 @supports not (backdrop-filter: blur(1px)) {
   body.season-halloween .event-rail { background: rgba(43, 31, 84, .82); }
   body.season-halloween .event-item { background: rgba(39, 32, 78, .87); }
+}
+
+
+/* Theme Manifest layers use the identical crop and canvas as the background.
+ * They never intercept input, so current rider dragging remains usable. */
+body.season-halloween .season-layer-host {
+  position: absolute;
+  inset: 82px 0 0;
+  z-index: 0;
+  pointer-events: none !important;
+  overflow: hidden;
+  isolation: isolate;
+}
+body.season-halloween .season-layer {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+body.season-halloween .season-glow-pumpkins {
+  mix-blend-mode: screen;
+  animation: halloweenPumpkinBreath 4.1s ease-in-out infinite alternate;
+}
+body.season-halloween .season-glow-lamps {
+  mix-blend-mode: screen;
+  animation: halloweenLampBreath 6.2s ease-in-out infinite alternate;
+}
+body.season-halloween .season-foreground-glints {
+  opacity: .75;
+}
+@keyframes halloweenPumpkinBreath {
+  from { opacity: .04; }
+  to { opacity: .50; }
+}
+@keyframes halloweenLampBreath {
+  from { opacity: .08; }
+  to { opacity: .32; }
+}
+body.season-halloween .season-bat-flyover {
+  display: block;
+  position: absolute;
+  top: var(--bat-top);
+  left: -8%;
+  width: var(--bat-size);
+  height: auto;
+  opacity: .82;
+  filter: drop-shadow(0 1px 2px rgba(24,7,40,.25));
+  pointer-events: none;
+  animation: halloweenBatFly var(--bat-duration) linear var(--bat-delay) infinite;
+}
+@keyframes halloweenBatFly {
+  0% { opacity: 0; transform: translate3d(-15px, 0, 0) scale(.85); }
+  4% { opacity: .86; }
+  48% { transform: translate3d(54vw, -12px, 0) scale(1); }
+  96% { opacity: .86; }
+  100% { opacity: 0; transform: translate3d(116vw, 6px, 0) scale(.93); }
+}
+body.season-halloween .season-costume {
+  position: absolute;
+  left: 57px;
+  top: -23px;
+  z-index: 7;
+  width: 40px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  line-height: 1;
+  pointer-events: none;
+  transform: rotate(-9deg);
+  filter: drop-shadow(0 2px 2px rgba(27,11,36,.42));
+}
+body.season-halloween .rider.is-near-right .season-costume { left: 57px; }
+@media (max-width:900px) {
+  body.season-halloween .season-layer-host { top: 72px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.season-halloween .season-glow-pumpkins,
+  body.season-halloween .season-glow-lamps,
+  body.season-halloween .season-bat-flyover {
+    animation: none !important;
+  }
+  body.season-halloween .season-glow-pumpkins { opacity: .20; }
+  body.season-halloween .season-glow-lamps { opacity: .16; }
+  body.season-halloween .season-bat-flyover { display: none; }
 }
