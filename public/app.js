@@ -1350,6 +1350,7 @@ function pointerOfficePosition(event) {
 function rollbackRiderDrag(state) {
   const lane = $("lane" + state.original.lane);
   if (lane && state.node.parentElement !== lane) lane.appendChild(state.node);
+  state.node.style.removeProperty("top");
   state.node.style.left = state.original.x + "%";
   state.node.classList.toggle("is-near-right", state.original.x >= 70);
 }
@@ -1442,8 +1443,16 @@ function attachOwnRiderDrag(node) {
     }
 
     node.classList.remove("is-drag-blocked");
-    const lane = $("lane" + position.lane);
-    if (lane && node.parentElement !== lane) lane.appendChild(node);
+    const targetLane = $("lane" + position.lane);
+    if (!targetLane) return;
+    // DOM reparenting during pointermove releases pointer capture, so the
+    // eventual pointerup may never reach this rider. Offset it visually until
+    // the drag ends; keep the original parent and capture throughout the move.
+    const sourceRect = node.parentElement.getBoundingClientRect();
+    const targetRect = targetLane.getBoundingClientRect();
+    const dy = targetRect.top + targetRect.height / 2
+      - (sourceRect.top + sourceRect.height / 2);
+    node.style.top = `calc(50% + ${dy}px)`;
     node.style.left = position.x + "%";
     node.classList.toggle("is-near-right", position.x >= 70);
     state.lastValid = position;
@@ -1457,9 +1466,14 @@ function attachOwnRiderDrag(node) {
     try { node.releasePointerCapture?.(event.pointerId); } catch {}
 
     if (cancelled || !state.moved) {
-      if (cancelled) rollbackRiderDrag(state);
+      rollbackRiderDrag(state);
       return;
     }
+    const targetLane = $("lane" + state.lastValid.lane);
+    if (targetLane && node.parentElement !== targetLane) {
+      targetLane.appendChild(node);
+    }
+    node.style.removeProperty("top");
     node.dataset.justDragged = "1";
     window.setTimeout(() => { delete node.dataset.justDragged; }, 0);
     void saveDraggedRider(state);
@@ -1467,6 +1481,15 @@ function attachOwnRiderDrag(node) {
 
   node.addEventListener("pointerup", (event) => finish(event, false));
   node.addEventListener("pointercancel", (event) => finish(event, true));
+  // A browser may unexpectedly revoke capture (e.g. window loses focus).
+  // Never leave an unfinished drag active or persist a half-moved position.
+  node.addEventListener("lostpointercapture", (event) => {
+    const state = riderDragState;
+    if (!state || state.node !== node || state.pointerId !== event.pointerId) return;
+    riderDragState = null;
+    node.classList.remove("is-dragging", "is-drag-blocked");
+    rollbackRiderDrag(state);
+  });
 }
 
 function renderRiders(riders) {
