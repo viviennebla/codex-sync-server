@@ -35,7 +35,7 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "fix-season-cross-lane-pointer-capture-2026-10",
     emoji: "🛹",
-    message: "万圣节跨赛道拖动修复 · 人物总算能完整抵达下一条路",
+    message: "#64 万圣节跨赛道拖动修复 · 人物总算能完整抵达下一条路",
     href: "/",
   },
   {
