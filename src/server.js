@@ -1456,6 +1456,27 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "themes/halloween/halloween-two-lane-background.avif", "image/avif");
       return;
     }
+    // Explicit allowlist for current theme assets; no directory traversal paths.
+    if (method === "GET" && url.pathname === "/theme-loader.js") {
+      await sendStatic(res, "theme-loader.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/christmas-theme.css") {
+      await sendStatic(res, "christmas-theme.css", "text/css; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/themes/halloween/manifest.json") {
+      await sendStatic(res, "themes/halloween/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/themes/christmas/manifest.json") {
+      await sendStatic(res, "themes/christmas/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/themes/christmas/christmas-office-two-lane-base-2048.webp") {
+      await sendStatic(res, "themes/christmas/christmas-office-two-lane-base-2048.webp", "image/webp");
+      return;
+    }
 
     // ── 404 ──
     sendError(res, 404, "Not Found");
