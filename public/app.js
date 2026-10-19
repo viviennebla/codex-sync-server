@@ -1,3 +1,5 @@
+import { mountThemeLayers } from "./theme-runtime.js";
+
 const $ = (id) => document.getElementById(id);
 
 const loginOverlay = $("loginOverlay");
@@ -96,6 +98,7 @@ const halloweenEnabled = season === "halloween"
   || (season !== "off" && productDay >= "2026-10-18" && productDay <= "2026-11-01");
 const seasonalTrackLanes = halloweenEnabled ? [1, 3] : [1, 2, 3, 4];
 document.body.classList.toggle("season-halloween", halloweenEnabled);
+if (halloweenEnabled) void mountThemeLayers("halloween").catch(() => {});
 
 function themeForHour(hour) {
   if (hour >= 6 && hour < 12) return "morning";
@@ -1122,6 +1125,11 @@ function raceAvatarEmoji(rider) {
   return transportLike.has(emoji) ? "🙂" : emoji;
 }
 
+function halloweenCostumeEmoji(riderId) {
+  const choices = ["🧙", "🎃", "👻", "🐈‍⬛"];
+  return choices[stableHash(String(riderId) + ":halloween-accessory") % choices.length];
+}
+
 function riderMarkup(rider) {
   const quotaEmotion = quotaEmotionFor(rider);
   const classes = [...stateFor(rider), "quota-emotion-" + quotaEmotion].join(" ");
@@ -1156,6 +1164,9 @@ function riderMarkup(rider) {
               ? '<img src="' + escapeHtml(rider.avatar_url) + '" alt="">'
               : '<span class="emoji-avatar">' + escapeHtml(raceAvatarEmoji(rider)) + '</span>') +
           '</div>' +
+          (halloweenEnabled
+            ? '<span class="season-costume" aria-hidden="true">' + halloweenCostumeEmoji(rider.user_id) + '</span>'
+            : '') +
           '<span class="personality-accessory" title="' + escapeHtml(personality.label) + '">' +
             personality.emoji +
           '</span>' +
