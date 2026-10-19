@@ -174,6 +174,8 @@ A1 不允许 AI Operator 修改 usage、成就、榜单、用户资料或 instal
 
 ## 当前部署
 
+> **5.77 双实例提醒**：蹬了吗正式服务是 `denglema-dev.service :1600`。同一台机器上的 `codex-family-sync-server.service :34777` 和 `codex-family-usage-dashboard.service :34778` 属于 **Codex Family**，不是蹬了吗的备用实例，不能混用部署目录、数据或凭据。跨仓协作以 [5.77 Usage / 蹬了吗部署边界](https://github.com/viviennebla/codex-family/blob/main/docs/DEPLOYMENT_INSTANCES.md) 为准。
+
 内部服务：
 
 ```text
