@@ -1398,19 +1398,27 @@ function attachOwnRiderDrag(node) {
     const rider = node._riderData;
     if (
       previewMode
+      || riderDragState
       || !rider
       || rider.demo
       || rider.user_id !== me?.user_id
       || event.button > 0
+      || event.isPrimary === false
       || event.target.closest?.("button")
     ) return;
+
+    // A rider is reparented when crossing lanes. Pointer capture on that
+    // moving DOM node is lost; the persistent stage must own capture instead.
+    const stage = document.querySelector(".race-stage");
+    if (!stage) return;
 
     const start = {
       lane: Number(rider.lane || 1),
       x: currentRiderX(rider),
     };
+    const pointerId = event.pointerId;
     riderDragState = {
-      pointerId: event.pointerId,
+      pointerId,
       riderId: rider.user_id,
       node,
       original: start,
@@ -1420,53 +1428,71 @@ function attachOwnRiderDrag(node) {
       moved: false,
     };
     node.classList.add("is-dragging");
-    node.setPointerCapture?.(event.pointerId);
+
+    const onMove = (moveEvent) => {
+      const state = riderDragState;
+      if (!state || state.node !== node || state.pointerId !== moveEvent.pointerId) return;
+      const position = pointerOfficePosition(moveEvent);
+      if (!position) return;
+
+      const distance = Math.hypot(
+        moveEvent.clientX - state.startClientX,
+        moveEvent.clientY - state.startClientY,
+      );
+      if (distance > 5) state.moved = true;
+
+      if (hasHardOfficeCollision(position.lane, position.x, state.riderId)) {
+        node.classList.add("is-drag-blocked");
+        return;
+      }
+
+      node.classList.remove("is-drag-blocked");
+      const lane = $("lane" + position.lane);
+      if (lane && node.parentElement !== lane) lane.appendChild(node);
+      node.style.left = position.x + "%";
+      node.classList.toggle("is-near-right", position.x >= 70);
+      state.lastValid = position;
+    };
+
+    const cleanup = () => {
+      stage.removeEventListener("pointermove", onMove);
+      stage.removeEventListener("pointerup", onUp);
+      stage.removeEventListener("pointercancel", onCancel);
+      stage.removeEventListener("lostpointercapture", onCaptureLost);
+      window.removeEventListener("blur", onBlur);
+      try {
+        if (stage.hasPointerCapture(pointerId)) stage.releasePointerCapture(pointerId);
+      } catch {}
+    };
+
+    const finish = (endEvent, cancelled = false) => {
+      const state = riderDragState;
+      if (!state || state.node !== node || (endEvent && state.pointerId !== endEvent.pointerId)) return;
+      riderDragState = null;
+      cleanup();
+      node.classList.remove("is-dragging", "is-drag-blocked");
+
+      if (cancelled || !state.moved) {
+        if (cancelled) rollbackRiderDrag(state);
+        return;
+      }
+      node.dataset.justDragged = "1";
+      window.setTimeout(() => { delete node.dataset.justDragged; }, 0);
+      void saveDraggedRider(state);
+    };
+
+    const onUp = (upEvent) => finish(upEvent, false);
+    const onCancel = (cancelEvent) => finish(cancelEvent, true);
+    const onCaptureLost = (lostEvent) => finish(lostEvent, true);
+    const onBlur = () => finish(null, true);
+    stage.addEventListener("pointermove", onMove);
+    stage.addEventListener("pointerup", onUp);
+    stage.addEventListener("pointercancel", onCancel);
+    stage.addEventListener("lostpointercapture", onCaptureLost);
+    window.addEventListener("blur", onBlur);
+    stage.setPointerCapture(pointerId);
     event.preventDefault();
   });
-
-  node.addEventListener("pointermove", (event) => {
-    const state = riderDragState;
-    if (!state || state.node !== node || state.pointerId !== event.pointerId) return;
-    const position = pointerOfficePosition(event);
-    if (!position) return;
-
-    const distance = Math.hypot(
-      event.clientX - state.startClientX,
-      event.clientY - state.startClientY,
-    );
-    if (distance > 5) state.moved = true;
-
-    if (hasHardOfficeCollision(position.lane, position.x, state.riderId)) {
-      node.classList.add("is-drag-blocked");
-      return;
-    }
-
-    node.classList.remove("is-drag-blocked");
-    const lane = $("lane" + position.lane);
-    if (lane && node.parentElement !== lane) lane.appendChild(node);
-    node.style.left = position.x + "%";
-    node.classList.toggle("is-near-right", position.x >= 70);
-    state.lastValid = position;
-  });
-
-  const finish = (event, cancelled = false) => {
-    const state = riderDragState;
-    if (!state || state.node !== node || state.pointerId !== event.pointerId) return;
-    riderDragState = null;
-    node.classList.remove("is-dragging", "is-drag-blocked");
-    try { node.releasePointerCapture?.(event.pointerId); } catch {}
-
-    if (cancelled || !state.moved) {
-      if (cancelled) rollbackRiderDrag(state);
-      return;
-    }
-    node.dataset.justDragged = "1";
-    window.setTimeout(() => { delete node.dataset.justDragged; }, 0);
-    void saveDraggedRider(state);
-  };
-
-  node.addEventListener("pointerup", (event) => finish(event, false));
-  node.addEventListener("pointercancel", (event) => finish(event, true));
 }
 
 function renderRiders(riders) {
