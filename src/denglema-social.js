@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "drag-stage-pointer-capture-2026-10",
+    emoji: "🛴",
+    message: "#63 修好双赛道跨道拖动 · 鼠标别骑到一半就撒手",
+    href: "/?season=halloween",
+  },
+  {
     id: "deploy-restore-runtime-deps-2026-10",
     emoji: "🧰",
     message: "#60 部署补齐运行依赖 · 有源码没依赖可跑不起来",
