@@ -115,6 +115,13 @@ public/themes/halloween/
 
 修复验收：在**隔离的真实登录态**（不是 `?preview=1`，preview 有拖动保护）进行 `pointerdown→move→up`，双道路内位置可保存、刷新保留、换路可保存；拖动不可触发骑手详情；普通 `?season=off` 继续可拖；窄屏可触控、无误点击；不会改变其它用户的位置和生产 state。尽可能给出行为测试而非只靠静态检查。
 
+### Phase 1 修复记录（待用户验收）
+
+- **根因已复现**：旧代码在 `pointermove` 期间调用 `targetLane.appendChild(node)`。DOM 跨 lane 重挂时，浏览器提前触发 `lostpointercapture`；若 `pointerup` 不再落在骑手节点上，保存不会发生。
+- **修复方式**：拖动中保持 DOM parent 不变，通过 `top` 偏移预览目标车道；`pointerup` 后才重挂节点并提交合法 `lane/x`。取消/意外丢失 capture 时回滚并清理拖动状态。
+- **隔离验证**：临时独立 `STATE_DIR`、非 preview 的真实注册登录态，Chromium 实际执行跨 lane 鼠标拖放，观察 HTTP 200、位置持久化、刷新恢复；Halloween 双道路和 `?season=off` 四道路均通过；`lostpointercapture` 排在 `pointerup` 之后。
+- **范围**：不变更服务端 `office_position` 契约、实际线上用户位置、其他骑手权限；修复 PR 待人工验收。后续触摸/小屏真实设备还需用户验收。
+
 ## 6. 锁定的交付顺序与停止线
 
 | Phase | 交付 | 停止条件 |
