@@ -1,5 +1,5 @@
-/* Seasonal preview, Phase A: background only, no rider/effect changes.
- * Enabled explicitly with ?season=halloween. The default homepage is unchanged. */
+/* Halloween V2: standalone art beneath independently breathing light masks.
+ * Seasonal switches are resolved in app.js; regular page and rider interactions stay untouched. */
 body.season-halloween {
   --page-glow: rgba(148, 90, 174, .16);
   --page-top: #372154;
@@ -46,6 +46,9 @@ body.season-halloween .app-shell::before {
   z-index: 0;
   pointer-events: none;
   background: var(--season-base, url("/themes/halloween/halloween-two-lane-background.avif")) center / cover no-repeat;
+  /* The base artwork has baked-in light: darken only its pixels (not riders,
+     UI or overlay masks) to create actual headroom for a visible pulse. */
+  filter: brightness(.81) saturate(1.12);
 }
 body.season-halloween .race-stage {
   position: relative;
@@ -175,22 +178,25 @@ body.season-halloween .season-layer {
 }
 body.season-halloween .season-glow-pumpkins {
   mix-blend-mode: screen;
-  animation: halloweenPumpkinBreath 4.1s ease-in-out infinite alternate;
+  /* Transparent source pixels are faint; brighten the mask itself as well. */
+  filter: brightness(1.7) saturate(1.16);
+  animation: halloweenPumpkinBreath 3.7s ease-in-out infinite alternate;
 }
 body.season-halloween .season-glow-lamps {
   mix-blend-mode: screen;
-  animation: halloweenLampBreath 6.2s ease-in-out infinite alternate;
+  filter: brightness(1.5);
+  animation: halloweenLampBreath 5.3s ease-in-out infinite alternate;
 }
 body.season-halloween .season-foreground-glints {
   opacity: .75;
 }
 @keyframes halloweenPumpkinBreath {
-  from { opacity: .04; }
-  to { opacity: .50; }
+  from { opacity: .03; }
+  to { opacity: .92; }
 }
 @keyframes halloweenLampBreath {
-  from { opacity: .08; }
-  to { opacity: .32; }
+  from { opacity: .04; }
+  to { opacity: .67; }
 }
 body.season-halloween .season-bat-flyover {
   display: block;
@@ -236,7 +242,7 @@ body.season-halloween .rider.is-near-right .season-costume { left: 57px; }
   body.season-halloween .season-bat-flyover {
     animation: none !important;
   }
-  body.season-halloween .season-glow-pumpkins { opacity: .20; }
-  body.season-halloween .season-glow-lamps { opacity: .16; }
+  body.season-halloween .season-glow-pumpkins { opacity: .32; }
+  body.season-halloween .season-glow-lamps { opacity: .24; }
   body.season-halloween .season-bat-flyover { display: none; }
 }
