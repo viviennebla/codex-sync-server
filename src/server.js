@@ -1448,14 +1448,6 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "halloween-theme.css", "text/css; charset=utf-8");
       return;
     }
-    if (method === "GET" && url.pathname === "/themes/halloween/office-stage-halloween.svg") {
-      await sendStatic(res, "themes/halloween/office-stage-halloween.svg", "image/svg+xml; charset=utf-8");
-      return;
-    }
-    if (method === "GET" && url.pathname === "/themes/halloween/halloween-two-lane-background.avif") {
-      await sendStatic(res, "themes/halloween/halloween-two-lane-background.avif", "image/avif");
-      return;
-    }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
       await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
       return;
@@ -1465,17 +1457,17 @@ const server = createServer(async (req, res) => {
       return;
     }
     const artMatch = method === "GET" && url.pathname.match(
-      /^\/themes\/halloween\/art\/(base-(?:1920|2560|3840)|base-dark-(?:1920|2560|3840)|glow-(?:pumpkins|lamps)|glow-pumpkins-aligned|foreground-glints)\.webp$/
+      /^\/themes\/halloween\/art\/(base-(?:1920|2560|3840)|glow-pumpkins|cats-static|bats-static)\.webp$/
     );
     if (artMatch) {
       await sendStatic(res, "themes/halloween/art/" + artMatch[1] + ".webp", "image/webp");
       return;
     }
     const batMatch = method === "GET" && url.pathname.match(
-      /^\/themes\/halloween\/sprites\/(bat-0[12])\.svg$/
+      /^\/themes\/halloween\/sprites\/(bat-flyover-0[12])\.webp$/
     );
     if (batMatch) {
-      await sendStatic(res, "themes/halloween/sprites/" + batMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+      await sendStatic(res, "themes/halloween/sprites/" + batMatch[1] + ".webp", "image/webp");
       return;
     }
 

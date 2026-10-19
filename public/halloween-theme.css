@@ -1,4 +1,4 @@
-/* Halloween V2: standalone art beneath independently breathing light masks.
+/* Halloween V4: canonical clean scene + separately authored pumpkin, cat, and bat layers.
  * Seasonal switches are resolved in app.js; regular page and rider interactions stay untouched. */
 body.season-halloween {
   --page-glow: rgba(148, 90, 174, .16);
@@ -32,7 +32,7 @@ body.season-halloween .profile-button {
 }
 body.season-halloween .manual-refresh-button:hover { color: #ffe5b9; }
 
-/* Approved illustration: a REAL raster backdrop, not the old illustrative SVG.
+/* Canonical clean-scene illustration. No cats, bats or lit pumpkin faces baked into the art.
  * Scene is painted behind both the two-lane track and the translucent event rail. */
 body.season-halloween .app-shell {
   position: relative;
@@ -45,10 +45,9 @@ body.season-halloween .app-shell::before {
   inset: 82px 0 0;
   z-index: 0;
   pointer-events: none;
-  background: var(--season-base, url("/themes/halloween/halloween-two-lane-background.avif")) center / cover no-repeat;
-  /* The base artwork has baked-in light: darken only its pixels (not riders,
-     UI or overlay masks) to create actual headroom for a visible pulse. */
-  filter: none; /* Already dark unlit master, so do not darken twice. */
+  background: var(--season-base, url("/themes/halloween/art/base-1920.webp")) center / cover no-repeat;
+  /* The base is an unlit master; glowing pumpkins are in their own aligned mask. */
+  filter: none;
 }
 body.season-halloween .race-stage {
   position: relative;
@@ -176,14 +175,16 @@ body.season-halloween .season-layer {
   background-size: cover;
   pointer-events: none;
 }
+body.season-halloween .season-static-bats,
+body.season-halloween .season-static-cats { opacity: 1; }
 body.season-halloween .season-glow-pumpkins {
   mix-blend-mode: screen;
-  /* Registered pumpkin faces + halo come from the same 2048x768 art canvas. */
-  filter: brightness(1.08);
-  animation: halloweenPumpkinBreath 3.8s ease-in-out infinite alternate;
+  /* 2048x768 transparent light mask: same registration and cover as base. */
+  filter: saturate(1.07);
+  animation: halloweenPumpkinBreath 4.1s ease-in-out infinite alternate;
 }
 @keyframes halloweenPumpkinBreath {
-  from { opacity: .06; }
+  from { opacity: .10; }
   to { opacity: 1; }
 }
 body.season-halloween .season-bat-flyover {

@@ -12,13 +12,14 @@ const declaration = (selector) => {
 };
 
 test("Halloween renders only registered two-layer pumpkin composition",()=>{
-  assert.equal(manifest.layers.length,1);
-  assert.equal(manifest.layers[0].id,"pumpkin-glow");
-  assert.match(manifest.base.variants[0].src,/base-dark-/);
+  assert.deepEqual(manifest.layers.map(x=>x.id),["bats-static","cats-static","pumpkin-glow"]);
+  assert.equal(manifest.layers[2].src,"/themes/halloween/art/glow-pumpkins.webp");
+  assert.match(manifest.base.variants[0].src,/base-1920/);
+  assert.equal(manifest.staticBats.enabled,true);
   assert.deepEqual(manifest.artworkRegistration.canvas,manifest.sourceArt&&{width:manifest.sourceArt.width,height:manifest.sourceArt.height});
   assert.match(declaration("body.season-halloween .app-shell::before"),/filter:\s*none/);
   assert.match(declaration("body.season-halloween .season-glow-pumpkins"),/mix-blend-mode:\s*screen/);
-  assert.match(css,/@keyframes halloweenPumpkinBreath[\s\S]*?from\s*\{\s*opacity:\s*\.06;\s*\}[\s\S]*?to\s*\{\s*opacity:\s*1;/);
+  assert.match(css,/@keyframes halloweenPumpkinBreath[\s\S]*?from\s*\{\s*opacity:\s*\.10;\s*\}[\s\S]*?to\s*\{\s*opacity:\s*1;/);
   assert.doesNotMatch(css,/\.season-glow-lamps\s*\{/);
   assert.match(declaration("body.season-halloween .season-layer-host"),/pointer-events:\s*none\s*!important/);
 });
