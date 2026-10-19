@@ -1,0 +1,143 @@
+/* Christmas art, aligned to the approved two-lane office stage.
+   Rider DOM, server data, topbar and app layout are inherited unchanged. */
+body.season-christmas {
+  --page-top: #162342;
+  --page-bottom: #1d1d41;
+  --page-glow: rgba(142, 174, 238, .20);
+  --topbar-bg: rgba(19, 29, 60, .96);
+}
+body.season-christmas .topbar {
+  border-bottom-color: rgba(255, 216, 154, .27);
+}
+body.season-christmas .brand-title { color: #fff8e8; text-shadow: 2px 2px 0 rgba(215, 78, 82, .58); }
+body.season-christmas .brand-spark,
+body.season-christmas .today-total strong { color: #ffd68a; }
+body.season-christmas .today-total,
+body.season-christmas .today-freshness,
+body.season-christmas .manual-refresh-button { color: #deeafc; }
+body.season-christmas .profile-button {
+  color: #f6f6ff;
+  border-color: #536c9b;
+  background: rgba(40, 60, 98, .85);
+  box-shadow: 0 3px 0 rgba(10, 18, 40, .3);
+}
+body.season-christmas .app-shell {
+  position: relative;
+  isolation: isolate;
+  background: #171d42;
+}
+body.season-christmas .app-shell::before {
+  content: "";
+  position: absolute;
+  inset: 82px 0 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--season-art, url("/themes/christmas/christmas-office-two-lane-base-2048.webp")) center / cover no-repeat;
+}
+body.season-christmas .race-stage {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  box-shadow: none;
+}
+body.season-christmas .race-stage::before { content: none; display: none; }
+body.season-christmas .race-stage .lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border: 0;
+  overflow: visible;
+}
+body.season-christmas #lane1 { top: 52%; height: 16%; }
+body.season-christmas #lane3 { top: 71%; height: 16%; }
+body.season-christmas #lane2,
+body.season-christmas #lane4 { display: none; }
+body.season-christmas .event-rail {
+  border: 1px solid rgba(223, 235, 255, .46);
+  background: linear-gradient(155deg, rgba(50, 83, 126, .34), rgba(24, 36, 76, .58));
+  -webkit-backdrop-filter: blur(18px) saturate(155%);
+  backdrop-filter: blur(18px) saturate(155%);
+  box-shadow: 0 14px 35px rgba(9, 21, 50, .3), inset 0 1px 0 rgba(255,255,255,.27);
+}
+body.season-christmas .event-rail-head strong,
+body.season-christmas .event-line,
+body.season-christmas .event-line strong { color: #f7faff; text-shadow: 0 1px 3px rgba(4,14,38,.5); }
+body.season-christmas .event-rail-head span,
+body.season-christmas .event-body small { color: #d0dcf5; }
+body.season-christmas .event-item {
+  color: #f3f6ff;
+  border-color: rgba(223, 230, 255, .3);
+  background: rgba(29, 49, 93, .61);
+  box-shadow: 0 3px 12px rgba(11, 22, 56, .18);
+}
+body.season-christmas .event-achievement { border-color: rgba(255,215,151,.57); background: rgba(74,63,96,.7); }
+body.season-christmas .event-comment { background: rgba(45,69,106,.7); }
+body.season-christmas .event-composer { background: rgba(28, 46, 87, .72); border-color: rgba(218, 235, 255, .46); }
+body.season-christmas .event-composer input { color: white; }
+body.season-christmas .event-composer input::placeholder { color: #d9e2fa; }
+body.season-christmas .event-composer button { background: #ffd28b; color: #344468; }
+/* The stage backdrop and effects share the same full-shell coordinate system. */
+body.season-christmas .season-decor {
+  position: absolute;
+  inset: 82px 0 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.season-light-glow {
+  position: absolute;
+  aspect-ratio: 1;
+  display: block;
+  border-radius: 50%;
+  filter: blur(16px);
+  background: radial-gradient(circle, rgba(255, 209, 126, .65), rgba(255, 168, 74, .26) 40%, transparent 72%);
+  opacity: .15;
+  animation: seasonGlow ease-in-out infinite alternate;
+}
+.season-snowflake {
+  position: absolute;
+  left: var(--season-x);
+  top: -4%;
+  width: var(--season-size);
+  height: var(--season-size);
+  border-radius: 50%;
+  background: rgba(249, 251, 255, .90);
+  box-shadow: 0 0 8px rgba(225,242,255,.35);
+  opacity: .88;
+  animation: seasonSnowfall var(--season-duration) linear var(--season-delay) infinite;
+}
+.season-sparkle {
+  position: absolute;
+  left: var(--season-x);
+  width: var(--season-size);
+  height: var(--season-size);
+  background: #fff6dc;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px rgba(255,211,136,.8);
+  animation: seasonTwinkle 3.7s ease-in-out var(--season-delay) infinite alternate;
+}
+@keyframes seasonGlow { from { opacity: .13; transform: scale(.87); } to { opacity: .64; transform: scale(1.16); } }
+@keyframes seasonTwinkle { from { opacity: .2; transform: scale(.7); } to { opacity: .85; transform: scale(1.45); } }
+@keyframes seasonSnowfall {
+  from { transform: translate3d(0,-10px,0); }
+  to { transform: translate3d(var(--season-sway),105vh,0); }
+}
+@media (max-width: 900px) {
+  body.season-christmas .app-shell::before,
+  body.season-christmas .season-decor { top: 72px; }
+}
+@media (max-width: 640px) {
+  body.season-christmas .race-stage { margin-left: 0; }
+  body.season-christmas .event-rail {
+    width: min(220px, 58vw);
+    max-height: 345px;
+  }
+  body.season-christmas .season-decor { opacity: .7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.season-christmas .season-light-glow,
+  body.season-christmas .season-snowflake,
+  body.season-christmas .season-sparkle { animation: none; }
+  body.season-christmas .season-snowflake { opacity: .35; top: 18%; }
+}
