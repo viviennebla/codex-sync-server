@@ -1465,7 +1465,7 @@ const server = createServer(async (req, res) => {
       return;
     }
     const artMatch = method === "GET" && url.pathname.match(
-      /^\/themes\/halloween\/art\/(base-(?:1920|2560|3840)|glow-(?:pumpkins|lamps)|foreground-glints)\.webp$/
+      /^\/themes\/halloween\/art\/(base-(?:1920|2560|3840)|base-dark-(?:1920|2560|3840)|glow-(?:pumpkins|lamps)|glow-pumpkins-aligned|foreground-glints)\.webp$/
     );
     if (artMatch) {
       await sendStatic(res, "themes/halloween/art/" + artMatch[1] + ".webp", "image/webp");
