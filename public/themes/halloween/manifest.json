@@ -1,5 +1,5 @@
 {
-  "id": "halloween-office-2026-v2",
+  "id": "halloween-office-2026-v3-registered-pumpkins",
   "theme": "halloween",
   "schemaVersion": 1,
   "designCanvas": {
@@ -9,45 +9,36 @@
   "sourceArt": {
     "width": 2048,
     "height": 768,
-    "note": "3840 export is high-quality upsampling of the approved 2048 illustration, not a new native 3840 image"
+    "note": "Two registered master layers at 2048x768; base 2560/3840 are derived from 2048 and do not contain native extra detail."
   },
   "base": {
     "variants": [
       {
         "width": 1920,
-        "src": "/themes/halloween/art/base-1920.webp"
+        "src": "/themes/halloween/art/base-dark-1920.webp"
       },
       {
         "width": 2560,
-        "src": "/themes/halloween/art/base-2560.webp"
+        "src": "/themes/halloween/art/base-dark-2560.webp"
       },
       {
         "width": 3840,
-        "src": "/themes/halloween/art/base-3840.webp"
+        "src": "/themes/halloween/art/base-dark-3840.webp"
       }
     ],
-    "fallback": "/themes/halloween/halloween-two-lane-background.avif"
+    "fallback": "/themes/halloween/art/base-dark-1920.webp"
   },
   "layers": [
     {
       "id": "pumpkin-glow",
       "type": "image",
-      "src": "/themes/halloween/art/glow-pumpkins.webp",
+      "src": "/themes/halloween/art/glow-pumpkins-aligned.webp",
       "className": "season-glow-pumpkins",
-      "durationSeconds": 4.1
-    },
-    {
-      "id": "lamp-glow",
-      "type": "image",
-      "src": "/themes/halloween/art/glow-lamps.webp",
-      "className": "season-glow-lamps",
-      "durationSeconds": 6.2
-    },
-    {
-      "id": "foreground-glints",
-      "type": "image",
-      "src": "/themes/halloween/art/foreground-glints.webp",
-      "className": "season-foreground-glints"
+      "durationSeconds": 3.8,
+      "sourceCanvas": {
+        "width": 2048,
+        "height": 768
+      }
     }
   ],
   "staticBats": {
@@ -88,5 +79,16 @@
     "seasonalWindow": "October 18 – November 1 (Asia/Shanghai)",
     "force": "?season=halloween",
     "off": "?season=off"
+  },
+  "artworkRegistration": {
+    "canvas": {
+      "width": 2048,
+      "height": 768
+    },
+    "coordinateOrigin": "top-left",
+    "crop": "center/cover",
+    "logicalImageLayers": 2,
+    "method": "shared-canvas overlay registered by composite inspection",
+    "notes": "Base and mask generated as separate 2048x768 master images. Export variants preserve 8:3. The older approximate glow masks remain archived but are not loaded."
   }
 }
