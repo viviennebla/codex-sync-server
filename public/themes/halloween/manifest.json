@@ -1,0 +1,34 @@
+{
+  "id": "halloween-office-2026",
+  "theme": "halloween",
+  "version": 1,
+  "canvas": {
+    "width": 2048,
+    "height": 768
+  },
+  "artwork": {
+    "src": "/themes/halloween/halloween-two-lane-background.avif",
+    "width": 2048,
+    "height": 768
+  },
+  "lanes": {
+    "top": {
+      "id": 1,
+      "topPercent": 52,
+      "heightPercent": 16
+    },
+    "bottom": {
+      "id": 3,
+      "topPercent": 71,
+      "heightPercent": 16
+    }
+  },
+  "layers": [],
+  "effects": {
+    "respectReducedMotion": true
+  },
+  "controls": {
+    "forceEnable": "?season=halloween",
+    "disable": "?season=off"
+  }
+}
