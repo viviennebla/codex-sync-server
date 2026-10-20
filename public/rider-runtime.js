@@ -65,7 +65,7 @@ function svgMarkup(preset) {
       ${imageLayer("body", slots.body)}
       ${imageLayer("head", slots.head)}
       <g class="pixel-face">
-        <rect x="77" y="21" width="15" height="14" fill="#171430"/>
+        <rect x="76" y="19" width="15" height="18" fill="#171430"/>
         <path class="pixel-eyes" d="M79 22v9m8-9v9" stroke="#ffe987" stroke-width="3" stroke-linecap="square"/>
       </g>
     </g>
