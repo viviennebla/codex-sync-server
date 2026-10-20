@@ -1,0 +1,98 @@
+{
+  "id": "helmet-commuter",
+  "label": "头盔通勤客",
+  "view": "side-right",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "asset_canvas": {
+    "width": 64,
+    "height": 64
+  },
+  "slots": {
+    "backpack": {
+      "src": "/riders/presets/helmet-commuter/backpack.svg",
+      "x": 33,
+      "y": 38,
+      "width": 29,
+      "height": 35
+    },
+    "body": {
+      "src": "/riders/presets/helmet-commuter/body.svg",
+      "x": 48,
+      "y": 42,
+      "width": 42,
+      "height": 42
+    },
+    "head": {
+      "src": "/riders/presets/helmet-commuter/head.svg",
+      "x": 44,
+      "y": 0,
+      "width": 52,
+      "height": 52
+    }
+  },
+  "vehicles": {
+    "bike": {
+      "src": "/riders/presets/helmet-commuter/bike.svg",
+      "x": 5,
+      "y": 28,
+      "width": 118,
+      "height": 61,
+      "anchors": {
+        "seat": [
+          60,
+          54
+        ],
+        "handle": [
+          90,
+          48
+        ],
+        "pedal": [
+          67,
+          75
+        ]
+      }
+    }
+  },
+  "states": {
+    "idle": {
+      "frames": 4,
+      "fps": 5
+    },
+    "walk": {
+      "frames": 4,
+      "fps": 8
+    },
+    "happy": {
+      "frames": 3,
+      "fps": 6
+    },
+    "focused": {
+      "frames": 3,
+      "fps": 6
+    },
+    "tired": {
+      "frames": 3,
+      "fps": 4
+    },
+    "bike_mount": {
+      "frames": 2,
+      "fps": 4
+    },
+    "bike_ride": {
+      "frames": 6,
+      "fps": 10
+    },
+    "bike_glide": {
+      "frames": 2,
+      "fps": 5
+    },
+    "bike_brake": {
+      "frames": 2,
+      "fps": 6
+    }
+  },
+  "note": "Anchors are in 128x100 logical canvas pixels. Slots are standalone replaceable SVG files."
+}
