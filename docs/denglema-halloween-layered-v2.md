@@ -1,4 +1,6 @@
-# 万圣节主题 v2：分层资源与高清导出说明
+# 万圣节主题 v2/v3：历史技术记录（已归档）
+
+> **历史归档，非当前执行规格。** 万圣节当前唯一的生产素材列表和 Manifest 合同见 [v4 素材清单](denglema-halloween-assets-v4.md)。本文件涉及的旧 `base-dark`、`glow-pumpkins-aligned` 路径已从主分支移除，不能再按本页旧示例加载。\n\n
 
 > 依照 [万圣节设计基线](denglema-halloween-layered-theme-design.md) 开发。圣诞节概念独立归档，不参与本主题的运行时代码。
 

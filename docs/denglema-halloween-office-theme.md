@@ -1,4 +1,6 @@
-# 蹬了吗 · 万圣节办公室主题技术方案（v0）
+# 蹬了吗 · 万圣节办公室主题技术方案（v0，历史归档）
+
+> **此页中早期 SVG/AVIF 素材已从生产目录清理。** 当前请参考 [万圣节 v4 素材清单](denglema-halloween-assets-v4.md) 与 `manifest.json`；本页只作方案迭代记录。
 
 > **最新设计基线**：分层、3840×1440、拖动修复验收与视觉参考图，见 [`denglema-halloween-layered-theme-design.md`](denglema-halloween-layered-theme-design.md)。本文件记录旧版背景技术实施过程；后续新高清素材请以新设计基线为准。
 

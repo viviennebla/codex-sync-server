@@ -1,5 +1,5 @@
 {
-  "id": "halloween-office-2026-v3-registered-pumpkins",
+  "id": "halloween-office-2026-v5-user-art",
   "theme": "halloween",
   "schemaVersion": 1,
   "designCanvas": {
@@ -9,32 +9,53 @@
   "sourceArt": {
     "width": 2048,
     "height": 768,
-    "note": "Two registered master layers at 2048x768; base 2560/3840 are derived from 2048 and do not contain native extra detail."
+    "note": "Four aligned 2048x768 PNGs uploaded on 2026-10-20: base, pumpkin glow, cats and bats. WebP exports derived without changing registration.",
+    "repositoryMasterPath": "public/themes/halloween/art/base-master-2048.webp"
   },
   "base": {
     "variants": [
       {
         "width": 1920,
-        "src": "/themes/halloween/art/base-dark-1920.webp"
+        "src": "/themes/halloween/art/base-1920.webp"
       },
       {
         "width": 2560,
-        "src": "/themes/halloween/art/base-dark-2560.webp"
+        "src": "/themes/halloween/art/base-2560.webp"
       },
       {
         "width": 3840,
-        "src": "/themes/halloween/art/base-dark-3840.webp"
+        "src": "/themes/halloween/art/base-3840.webp"
       }
     ],
-    "fallback": "/themes/halloween/art/base-dark-1920.webp"
+    "fallback": "/themes/halloween/art/base-1920.webp"
   },
   "layers": [
     {
+      "id": "bats-static",
+      "type": "image",
+      "src": "/themes/halloween/art/bats-static.webp",
+      "className": "season-bats-static",
+      "sourceCanvas": {
+        "width": 2048,
+        "height": 768
+      }
+    },
+    {
+      "id": "cats-static",
+      "type": "image",
+      "src": "/themes/halloween/art/cats-static.webp",
+      "className": "season-cats-static",
+      "sourceCanvas": {
+        "width": 2048,
+        "height": 768
+      }
+    },
+    {
       "id": "pumpkin-glow",
       "type": "image",
-      "src": "/themes/halloween/art/glow-pumpkins-aligned.webp",
+      "src": "/themes/halloween/art/glow-pumpkins.webp",
       "className": "season-glow-pumpkins",
-      "durationSeconds": 3.8,
+      "durationSeconds": 4.1,
       "sourceCanvas": {
         "width": 2048,
         "height": 768
@@ -42,27 +63,11 @@
     }
   ],
   "staticBats": {
-    "enabled": false,
-    "note": "The 2048 approved backdrop already contains static bats. Keep this disabled to avoid doubled silhouettes; turn on with a clean art master."
+    "enabled": true,
+    "src": "/themes/halloween/art/bats-static.webp",
+    "note": "Static bats only; flyovers intentionally disabled in this art update."
   },
-  "flyovers": [
-    {
-      "id": "bat-flyover-1",
-      "src": "/themes/halloween/sprites/bat-01.svg",
-      "topPercent": 14,
-      "delaySeconds": -3,
-      "durationSeconds": 24,
-      "size": 34
-    },
-    {
-      "id": "bat-flyover-2",
-      "src": "/themes/halloween/sprites/bat-02.svg",
-      "topPercent": 26,
-      "delaySeconds": -13,
-      "durationSeconds": 33,
-      "size": 26
-    }
-  ],
+  "flyovers": [],
   "accessories": {
     "enabled": true,
     "variants": [
@@ -78,7 +83,15 @@
     "pointerEvents": "none",
     "seasonalWindow": "October 18 – November 1 (Asia/Shanghai)",
     "force": "?season=halloween",
-    "off": "?season=off"
+    "off": "?season=off",
+    "pumpkinGlow": {
+      "enabled": true,
+      "periodSeconds": 4.1,
+      "opacityMin": 0.1,
+      "opacityMax": 1
+    },
+    "staticCats": true,
+    "staticBats": true
   },
   "artworkRegistration": {
     "canvas": {
@@ -87,8 +100,14 @@
     },
     "coordinateOrigin": "top-left",
     "crop": "center/cover",
-    "logicalImageLayers": 2,
-    "method": "shared-canvas overlay registered by composite inspection",
-    "notes": "Base and mask generated as separate 2048x768 master images. Export variants preserve 8:3. The older approximate glow masks remain archived but are not loaded."
+    "renderOrder": [
+      "base",
+      "bats-static",
+      "cats-static",
+      "pumpkin-glow",
+      "riders"
+    ],
+    "method": "Four user-supplied 2048x768 co-registered PNG layers, converted to WebP while preserving full-canvas placement.",
+    "note": "Base is an opaque unlit scene; pumpkin glow, cats and bats are transparent. Flyover animation deferred."
   }
 }
