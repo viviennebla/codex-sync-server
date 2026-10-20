@@ -611,7 +611,7 @@ async function postEventMessage() {
 function resetNotchLabel(runway) {
   const completed = runway?.latest_completed || null;
   if (completed) {
-    const occurredAt = completed.effective_at || completed.completed_at;
+    const occurredAt = completed.effective_at || completed.completed_at || completed.announced_at;
     const date = occurredAt ? new Date(occurredAt) : null;
     if (date && !Number.isNaN(date.getTime())) {
       const resetTime = date.toLocaleTimeString("zh-CN", {
