@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 64" shape-rendering="crispEdges">
+<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
+<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
+ <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
+ <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
+ <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
+ <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
+ <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
+ <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+ <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+</g>
+</svg>
