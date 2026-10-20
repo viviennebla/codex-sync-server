@@ -1,29 +1,36 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { frameIndex, resolveSpriteState } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
+const riderDir = join(root, "riders/presets/helmet-commuter");
+const loadJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 
-test("default helmet commuter has three independently replaceable art slots", async () => {
-  const catalog = JSON.parse(await readFile(join(root, "riders/manifest.json"), "utf8"));
-  const preset = JSON.parse(await readFile(
-    join(root, "riders/presets/helmet-commuter/manifest.json"), "utf8"
-  ));
+test("default character uses approved transparent atlas and independent head/body/backpack slots", async () => {
+  const catalog = await loadJson(join(root, "riders/manifest.json"));
+  const preset = await loadJson(join(riderDir, "manifest.json"));
   assert.equal(catalog.default_preset, "helmet-commuter");
   assert.equal(preset.view, "side-right");
+  assert.equal(preset.atlas.src, "/riders/presets/helmet-commuter/atlas.webp");
   assert.deepEqual(Object.keys(preset.slots), ["backpack", "body", "head"]);
-  for (const [name, part] of Object.entries(preset.slots)) {
-    assert.match(part.src, new RegExp("/" + name + "\\.svg$"));
+  assert.deepEqual(Object.keys(preset.limbs), ["arm_back", "arm_front", "leg_back", "leg_front"]);
+  const image = await readFile(join(riderDir, "atlas.webp"));
+  assert.equal(image.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(image.subarray(8, 12).toString("ascii"), "WEBP");
+  for (const part of Object.values({ ...preset.slots, ...preset.limbs })) {
+    assert.equal(part.src, preset.atlas.src);
     assert.ok(part.x >= 0 && part.y >= 0 && part.width > 0 && part.height > 0);
-    assert.ok((await stat(join(root, part.src.slice(1)))).size > 0);
+    assert.ok(Array.isArray(part.crop) && part.crop.length === 4);
+    const [x, y, w, h] = part.crop;
+    assert.ok(x >= 0 && y >= 0 && w > 0 && h > 0);
+    assert.ok(x + w <= preset.atlas.width && y + h <= preset.atlas.height);
   }
-  assert.ok((await stat(join(root, preset.vehicles.bike.src.slice(1)))).size > 0);
 });
 
-test("helmet rider state machine maps bike mounting, pedaling, gliding and braking", () => {
+test("helmet rider supports bike mounting, pedaling, gliding, braking, and walking emotions", () => {
   assert.equal(resolveSpriteState("bike", { mounting: true }), "bike_mount");
   assert.equal(resolveSpriteState("bike", {}), "bike_ride");
   assert.equal(resolveSpriteState("bike", { coasting: true }), "bike_glide");
@@ -36,7 +43,7 @@ test("helmet rider state machine maps bike mounting, pedaling, gliding and braki
   assert.equal(resolveSpriteState("walk", {}), "walk");
 });
 
-test("animation frame selection uses configured frame counts and wraps cleanly", () => {
+test("animation frame selection wraps at the configured frame count", () => {
   const states = { idle: { frames: 4, fps: 5 }, bike_ride: { frames: 6, fps: 10 } };
   assert.equal(frameIndex("idle", 0, states), 0);
   assert.equal(frameIndex("idle", 201, states), 1);
@@ -46,11 +53,9 @@ test("animation frame selection uses configured frame counts and wraps cleanly",
   assert.equal(frameIndex("missing", 123, states), 0);
 });
 
-test("default art does not bake in Halloween costume or emoji", async () => {
-  const paths = ["head.svg", "body.svg", "backpack.svg", "bike.svg"];
-  for (const path of paths) {
-    const svg = await readFile(join(root, "riders/presets/helmet-commuter", path), "utf8");
-    assert.match(svg, /viewBox=/);
-    assert.doesNotMatch(svg, /<emoji|ghost|halloween|🎃|👻/i);
-  }
+test("approved helmet character has no default ghost outfit and no emoji face", async () => {
+  const preset = await loadJson(join(riderDir, "manifest.json"));
+  const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
+  assert.doesNotMatch(runtime, /emoji-avatar|halloweenCostumeEmoji/);
+  assert.doesNotMatch(JSON.stringify(preset), /ghost|witch|pumpkin_costume/);
 });
