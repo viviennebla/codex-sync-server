@@ -77,9 +77,10 @@ export function getFootBaseline(snapshot, visualLane, fraction = 0.8) {
 }
 
 export function projectSavedPosition(snapshot, position, options = {}) {
-  const visualLane = resolveVisualLane(snapshot?.mode, position?.lane);
-  const percent = Number(position?.x);
-  if (!snapshot || visualLane === null || !Number.isFinite(percent)) return null;
+  if (!snapshot || !position) return null;
+  const visualLane = resolveVisualLane(snapshot.mode, position.lane);
+  const percent = Number(position.x);
+  if (visualLane === null || !Number.isFinite(percent)) return null;
   const y = getFootBaseline(snapshot, visualLane, options.footFraction ?? 0.8);
   if (y === null) return null;
   return {
