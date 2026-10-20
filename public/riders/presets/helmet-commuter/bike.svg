@@ -1,21 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 64" shape-rendering="crispEdges">
-<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
-<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
- <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
- <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
- <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
- <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
- <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
- <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
- <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
- <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
- <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
- <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
- <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
- <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
- <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
- <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
- <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
- <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 64">
+  <!-- Soft indigo/orange side-view commuter bike matched to the approved mascot.
+       The vehicle is independent of the head/body/backpack atlas. -->
+  <defs>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#b0daff"/><stop offset=".52" stop-color="#6e9fdc"/>
+      <stop offset="1" stop-color="#445caa"/>
+    </linearGradient>
+    <linearGradient id="tire" x1="0" y1="0" x2=".8" y2="1">
+      <stop stop-color="#5a438a"/><stop offset=".6" stop-color="#22163f"/>
+      <stop offset="1" stop-color="#100f29"/>
+    </linearGradient>
+    <radialGradient id="hub"><stop stop-color="#fff6bf"/><stop offset=".6" stop-color="#ffae60"/><stop offset="1" stop-color="#8c4892"/></radialGradient>
+  </defs>
+  <ellipse cx="61" cy="57" rx="58" ry="4" fill="#171334" opacity=".31"/>
+  <g stroke-linecap="round" fill="none">
+    <!-- Wheels are slightly oversized like the approved board, not technical road-bike circles. -->
+    <circle cx="24" cy="43" r="18.5" stroke="#48346f" stroke-width="8.5"/>
+    <circle cx="100" cy="43" r="18.5" stroke="#48346f" stroke-width="8.5"/>
+    <circle cx="24" cy="43" r="18.5" stroke="url(#tire)" stroke-width="6.5"/>
+    <circle cx="100" cy="43" r="18.5" stroke="url(#tire)" stroke-width="6.5"/>
+    <circle cx="24" cy="43" r="15.7" stroke="#7d68c6" stroke-width="2.2"/>
+    <circle cx="100" cy="43" r="15.7" stroke="#7d68c6" stroke-width="2.2"/>
+    <circle cx="24" cy="43" r="13.5" stroke="#e08b67" stroke-width="1.3" stroke-dasharray="7 6"/>
+    <circle cx="100" cy="43" r="13.5" stroke="#e08b67" stroke-width="1.3" stroke-dasharray="7 6"/>
+    <path d="M24 29v28M10 43h28M100 29v28M86 43h28" stroke="#806fc4" stroke-width="1.1" opacity=".7"/>
+    <path d="M16 35l16 16m-16 0 16-16M92 35l16 16m-16 0 16-16" stroke="#b5a7e0" stroke-width=".85" opacity=".7"/>
+    <!-- Double-stroked frame gives the same lilac outline and icy-blue body as mascot. -->
+    <path d="M24 43 45 16 63 43 24 43 81 19 63 43 100 43 81 19 45 16" stroke="#2b214f" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M24 43 45 16 63 43 24 43 81 19 63 43 100 43 81 19 45 16" stroke="url(#frame)" stroke-width="4.2" stroke-linejoin="round"/>
+    <path d="M24 43 45 16 63 43M81 19 100 43" stroke="#f2d9ff" stroke-width="1" opacity=".9"/>
+    <!-- Seat, stem, handlebar and crank -->
+    <path d="M45 16 41 11M81 19 88 9 102 9" stroke="#2b214f" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M45 16 41 11M81 19 88 9 102 9" stroke="#8d78d3" stroke-width="3.4"/>
+    <path d="M34 11h15M95 9h11" stroke="#322750" stroke-width="5.7"/>
+    <path d="M34 10h14M95 8h10" stroke="#ffbd79" stroke-width="3"/>
+    <path d="M62 42l6 5h8" stroke="#35315e" stroke-width="4.5"/>
+    <path d="M63 43l5 4h8" stroke="#e0cbff" stroke-width="2.4"/>
+  </g>
+  <circle cx="63" cy="43" r="5.7" fill="#302451" stroke="#ac8ad2" stroke-width="1.5"/>
+  <circle cx="63" cy="43" r="3.2" fill="url(#hub)"/>
+  <circle cx="24" cy="43" r="3.3" fill="url(#hub)"/>
+  <circle cx="100" cy="43" r="3.3" fill="url(#hub)"/>
+  <path d="M11 27h7M103 28h6" stroke="#fbe5af" stroke-width="1.7" stroke-linecap="round" opacity=".7"/>
 </svg>
