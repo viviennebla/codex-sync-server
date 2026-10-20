@@ -1465,7 +1465,7 @@ const server = createServer(async (req, res) => {
       return;
     }
     const riderAssetMatch = method === "GET" && url.pathname.match(
-      /^\\/riders\\/presets\\/helmet-commuter\\/(head|body|backpack|bike)\\.svg$/
+      /^\/riders\/presets\/helmet-commuter\/(head|body|backpack|bike)\.svg$/
     );
     if (riderAssetMatch) {
       await sendStatic(res, "riders/presets/helmet-commuter/" + riderAssetMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
