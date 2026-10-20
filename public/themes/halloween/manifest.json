@@ -1,5 +1,5 @@
 {
-  "id": "halloween-office-2026-v4-canonical",
+  "id": "halloween-office-2026-v5-user-art",
   "theme": "halloween",
   "schemaVersion": 1,
   "designCanvas": {
@@ -9,7 +9,7 @@
   "sourceArt": {
     "width": 2048,
     "height": 768,
-    "note": "Only 2048x768 contains original native visual detail; base-2560 and base-3840 are high-quality upscaled exports.",
+    "note": "Four aligned 2048x768 PNGs uploaded on 2026-10-20: base, pumpkin glow, cats and bats. WebP exports derived without changing registration.",
     "repositoryMasterPath": "public/themes/halloween/art/base-master-2048.webp"
   },
   "base": {
@@ -65,26 +65,9 @@
   "staticBats": {
     "enabled": true,
     "src": "/themes/halloween/art/bats-static.webp",
-    "note": "The canonical base contains no baked-in bat silhouettes; static bats are independently removable."
+    "note": "Static bats only; flyovers intentionally disabled in this art update."
   },
-  "flyovers": [
-    {
-      "id": "bat-flyover-1",
-      "src": "/themes/halloween/sprites/bat-flyover-01.webp",
-      "topPercent": 14,
-      "delaySeconds": -3,
-      "durationSeconds": 24,
-      "size": 42
-    },
-    {
-      "id": "bat-flyover-2",
-      "src": "/themes/halloween/sprites/bat-flyover-02.webp",
-      "topPercent": 26,
-      "delaySeconds": -13,
-      "durationSeconds": 33,
-      "size": 34
-    }
-  ],
+  "flyovers": [],
   "accessories": {
     "enabled": true,
     "variants": [
@@ -124,7 +107,7 @@
       "pumpkin-glow",
       "riders"
     ],
-    "method": "Generated companion transparent layers aligned to the chosen clean-scene image; composite checked at original 2048x768 without independently scaling overlays.",
-    "note": "Only files referenced in this manifest are used at runtime. Original approved design references remain in docs; legacy runtime assets have been deleted."
+    "method": "Four user-supplied 2048x768 co-registered PNG layers, converted to WebP while preserving full-canvas placement.",
+    "note": "Base is an opaque unlit scene; pumpkin glow, cats and bats are transparent. Flyover animation deferred."
   }
 }

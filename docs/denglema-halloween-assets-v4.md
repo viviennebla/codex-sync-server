@@ -34,3 +34,9 @@
 只删除 **`public/themes/halloween/`** 下的旧版本生产文件：旧 AVIF、旧背景变体、旧南瓜/吊灯 glow、旧 glints、早期 SVG 办公室/道路/icons 和旧蝙蝠 SVG。其余业务素材、普通版 `public/office-stage.svg`、`docs/assets/` 里的用户设计稿与参考图保留。
 
 旧 `docs/denglema-halloween-layered-v2.md` 记录为何此前错位及临时调光策略；那些参数并非当前实现。
+
+## 2026-10-20 · 替换为用户上传的四张 PNG
+
+本轮沿用本 PR 的 Manifest / `season-layer` / CSS 呼吸逻辑，不新增 DOM 叠图系统。用户上传的 `*-1.png` 至 `*-4.png` 均为 2048×768；按顺序分别对应 `base`（不透明）、`pumpkin-glow`、`cats-static`、`bats-static`（透明）。源 PNG 保留在 `public/themes/halloween/` 便于追溯，运行时使用原画布无位置偏移转换的 WebP：`art/base-{1920,2560,3840}.webp`、`art/glow-pumpkins.webp`、`art/cats-static.webp`、`art/bats-static.webp`。`base-master-2048.webp` 无损保留。
+
+渲染顺序：`base → bats-static → cats-static → pumpkin-glow → riders`；仅 glow 沿用原来的 `4.1s` opacity 呼吸灯，猫和蝙蝠静态。暂时清空 Manifest 的 `flyovers`，不在网页播放蝙蝠飞越。静态装饰继续 `pointer-events:none`，普通版本的 `?season=off` 和骑手双赛道不变。3840 仍为 2048 原图重采样而非原生细节。
