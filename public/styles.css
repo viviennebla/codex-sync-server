@@ -2164,6 +2164,13 @@ button { font: inherit; }
 }
 
 
+/* Compact live riders for the two-road illustrated scene.
+ * Road count and rider locations are owned by artwork; only presentation changes here.
+ * Keep message text separate from sprite art for readability and accessibility. */
+body.season-halloween .rider-message-bubble {
+  max-width: 172px;
+}
+
 /* Compact Codex reset notch */
 .reset-notch {
   position: absolute;
