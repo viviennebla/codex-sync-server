@@ -1,29 +1,46 @@
-// Helmet commuter v0.1: one fixed right-facing sprite rig shared by walk and bike.
-// Other transports keep the established DOM art until their own adapters are ready.
-// Slot assets are loaded from a trusted same-origin static catalog, never user-supplied markup.
+// Helmet commuter v0.1. Source-matched pixel atlas; the approved concept artwork
+// supplies the silhouette, rather than independently redrawn blocky SVG placeholders.
+// Slot coordinates and limb anchors use one right-facing 128x100 logical canvas.
 const SVG_NS = "http://www.w3.org/2000/svg";
-const ASSET_CATALOG = "/riders/manifest.json";
-const VIEWPORT = "0 0 128 100";
+const CATALOG_URL = "/riders/manifest.json";
+const VIEWBOX = "0 0 128 100";
 const mounted = new Map();
 let catalogPromise = null;
-let animationPending = false;
-let previousTick = 0;
+let framePending = false;
+let lastFrameTime = 0;
 
-async function readCatalog(url) {
+async function fetchJson(url) {
   const response = await fetch(url, { credentials: "same-origin" });
-  if (!response.ok) throw new Error("rider artwork HTTP " + response.status);
+  if (!response.ok) throw new Error("Rider asset HTTP " + response.status);
   return response.json();
+}
+
+async function preloadArt(urls) {
+  if (typeof Image === "undefined") return;
+  await Promise.all([...new Set(urls)].map(async (url) => {
+    const image = new Image();
+    image.src = url;
+    if (image.decode) await image.decode();
+    else await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = reject;
+    });
+  }));
 }
 
 export function loadRiderCatalog() {
   if (!catalogPromise) {
     catalogPromise = (async () => {
-      const root = await readCatalog(ASSET_CATALOG);
-      const id = root.default_preset;
-      const preset = await readCatalog(root.presets[id]);
-      return { id, preset, activeTransports: root.active_transports || ["bike", "walk"] };
+      const root = await fetchJson(CATALOG_URL);
+      const preset = await fetchJson(root.presets[root.default_preset]);
+      await preloadArt([preset.atlas?.src, preset.vehicles?.bike?.src].filter(Boolean));
+      return {
+        id: root.default_preset,
+        preset,
+        activeTransports: root.active_transports || ["bike", "walk"]
+      };
     })().catch((error) => {
-      catalogPromise = null; // A later refresh can recover after a temporary failure.
+      catalogPromise = null; // A failed load never hides the original CSS rider.
       throw error;
     });
   }
@@ -39,42 +56,81 @@ export function frameIndex(state, elapsedMs, states) {
 }
 
 export function resolveSpriteState(transport, flags = {}) {
-  const bike = transport === "bike";
-  if (bike && flags.mounting) return "bike_mount";
-  if (bike && (flags.bonking || flags.tired)) return "bike_brake";
-  if (bike && flags.coasting) return "bike_glide";
-  if (bike) return "bike_ride";
+  if (transport === "bike") {
+    if (flags.mounting) return "bike_mount";
+    if (flags.bonking || flags.tired) return "bike_brake";
+    if (flags.coasting) return "bike_glide";
+    return "bike_ride";
+  }
   if (flags.tired) return "tired";
   if (flags.celebrating || flags.waving) return "happy";
   if (flags.fast) return "focused";
   return flags.idle ? "idle" : "walk";
 }
 
-function imageLayer(slot, props) {
-  return `<image data-part="${slot}" href="${props.src}" x="${props.x}" y="${props.y}" width="${props.width}" height="${props.height}" preserveAspectRatio="none"/>`;
+function svg(name, attributes = {}) {
+  const element = document.createElementNS(SVG_NS, name);
+  for (const [key, value] of Object.entries(attributes)) {
+    element.setAttribute(key, String(value));
+  }
+  return element;
 }
 
-function svgMarkup(preset) {
-  const slots = preset.slots;
+function atlasLayer(name, spec, atlas) {
+  // A nested SVG clips the shared atlas to this part. The outer <g> may rotate
+  // while the inner viewBox preserves original, approved source-art pixels.
+  const group = svg("g", { class: "sprite-part sprite-" + name, "data-part": name });
+  const viewport = svg("svg", {
+    x: spec.x, y: spec.y, width: spec.width, height: spec.height,
+    viewBox: spec.crop.join(" "), preserveAspectRatio: "none", overflow: "hidden"
+  });
+  const bitmap = svg("image", {
+    href: spec.src, x: 0, y: 0, width: atlas.width, height: atlas.height,
+    preserveAspectRatio: "none"
+  });
+  viewport.append(bitmap);
+  group.append(viewport);
+  return group;
+}
+
+function buildSprite(preset) {
+  const root = svg("svg", {
+    class: "pixel-rider-svg",
+    viewBox: VIEWBOX,
+    "aria-hidden": "true",
+    focusable: "false"
+  });
+  root.append(svg("ellipse", {cx: 66, cy: 94, rx: 42, ry: 3, fill: "#20163d", opacity: ".32"}));
   const bike = preset.vehicles.bike;
-  return `<svg class="pixel-rider-svg" viewBox="${VIEWPORT}" xmlns="${SVG_NS}" aria-hidden="true" focusable="false" shape-rendering="crispEdges">
-    <ellipse cx="67" cy="93" rx="46" ry="3" fill="#2e2453" opacity=".35"/>
-    <image class="pixel-vehicle" href="${bike.src}" x="${bike.x}" y="${bike.y}" width="${bike.width}" height="${bike.height}" preserveAspectRatio="none"/>
-    <g class="pixel-rider-core">
-      ${imageLayer("backpack", slots.backpack)}
-      ${imageLayer("body", slots.body)}
-      ${imageLayer("head", slots.head)}
-      <g class="pixel-face">
-        <rect x="76" y="19" width="15" height="18" fill="#171430"/>
-        <path class="pixel-eyes" d="M79 22v9m8-9v9" stroke="#ffe987" stroke-width="3" stroke-linecap="square"/>
-      </g>
-    </g>
-    <path class="pixel-leg-back" d="" fill="none" stroke="#7566ba" stroke-width="6" stroke-linecap="square" stroke-linejoin="bevel"/>
-    <path class="pixel-leg-front" d="" fill="none" stroke="#d0c6ff" stroke-width="7" stroke-linecap="square" stroke-linejoin="bevel"/>
-    <path class="pixel-arm-back" d="" fill="none" stroke="#b3a4ed" stroke-width="7" stroke-linecap="square" stroke-linejoin="bevel"/>
-    <path class="pixel-arm-front" d="" fill="none" stroke="#fff5fa" stroke-width="7" stroke-linecap="square" stroke-linejoin="bevel"/>
-    <path class="pixel-bike-brake" d="M5 91h8m-5 4h7" stroke="#ffad67" stroke-width="3" stroke-linecap="square" opacity="0"/>
-  </svg>`;
+  root.append(svg("image", {
+    class: "pixel-vehicle", href: bike.src,
+    x: bike.x, y: bike.y, width: bike.width, height: bike.height,
+    preserveAspectRatio: "none"
+  }));
+  const core = svg("g", {class: "pixel-rider-core"});
+  for (const name of ["leg_back", "backpack", "arm_back", "body", "leg_front", "head", "arm_front"]) {
+    core.append(atlasLayer(name, preset.slots[name] || preset.limbs[name], preset.atlas));
+  }
+  const expression = svg("g", {class: "pixel-expression", display: "none"});
+  // This patch sits fully inside the dark visor; the default golden pixel eyes
+  // are retained unmodified. Only exceptional expressions draw over them.
+  expression.append(svg("rect", {
+    x: 80, y: 36, width: 17, height: 17, rx: 7, fill: "#20163d"
+  }));
+  expression.append(svg("path", {
+    class: "pixel-expression-eyes",
+    stroke: "#ffe88d", "stroke-width": 2.6, "stroke-linecap": "round",
+    fill: "none"
+  }));
+  core.append(expression);
+  root.append(core);
+  const brake = svg("g", {class: "pixel-bike-brake", opacity: 0});
+  brake.append(svg("path", {
+    d: "M8 89h8m-11 4h9", stroke: "#ffb66c",
+    "stroke-width": 2.3, "stroke-linecap": "round"
+  }));
+  root.append(brake);
+  return root;
 }
 
 function flagsFor(node) {
@@ -89,87 +145,77 @@ function flagsFor(node) {
   };
 }
 
-function segment(hipX, hipY, kneeX, kneeY, footX, footY) {
-  return `M${hipX} ${hipY}L${kneeX} ${kneeY}L${footX} ${footY}`;
+function transform(part, dx = 0, dy = 0, angle = 0, pivotX = 65, pivotY = 68) {
+  part?.setAttribute("transform",
+    `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) rotate(${angle.toFixed(2)} ${pivotX} ${pivotY})`);
+}
+
+function renderFace(art, state, flags) {
+  const expression = art.querySelector(".pixel-expression");
+  const eyes = art.querySelector(".pixel-expression-eyes");
+  const emotion = flags.tired || state === "bike_brake"
+    ? "tired"
+    : flags.celebrating || flags.waving || state === "happy"
+      ? "happy"
+      : flags.fast || state === "focused" ? "focused" : "neutral";
+  expression.setAttribute("display", emotion === "neutral" ? "none" : "");
+  if (emotion === "happy") eyes.setAttribute("d", "M82 44q2-4 4 0m4 0q2-4 4 0");
+  else if (emotion === "tired") eyes.setAttribute("d", "M82 45h4m5 0h4");
+  else if (emotion === "focused") eyes.setAttribute("d", "M83 40l3 7m6-7v7");
 }
 
 function drawFrame(entry, now) {
   const { node, art, preset } = entry;
   const bike = entry.transport === "bike";
+  const flags = flagsFor(node);
   const state = resolveSpriteState(entry.transport, {
-    ...flagsFor(node),
-    mounting: bike && now < entry.mountUntil
+    ...flags, mounting: bike && now < entry.mountUntil
   });
-  const frames = preset.states;
-  const elapsed = now - entry.stateStarted;
   if (entry.state !== state) {
     entry.state = state;
     entry.stateStarted = now;
   }
-  const frame = frameIndex(state, now - entry.stateStarted, frames);
-  const phase = (frame / Math.max(1, frames[state]?.frames || 1)) * Math.PI * 2;
-  const x = Math.sin(phase);
-  const y = Math.cos(phase);
-  const core = art.querySelector(".pixel-rider-core");
-  const vehicle = art.querySelector(".pixel-vehicle");
-  const face = art.querySelector(".pixel-eyes");
-  const backLeg = art.querySelector(".pixel-leg-back");
-  const frontLeg = art.querySelector(".pixel-leg-front");
-  const backArm = art.querySelector(".pixel-arm-back");
-  const frontArm = art.querySelector(".pixel-arm-front");
-  const brake = art.querySelector(".pixel-bike-brake");
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const motion = reduced ? 0 : 1;
-  const bodyBob = (bike ? Math.abs(x) * -1.1 : Math.abs(x) * -2.4) * motion;
-  const mountOffset = state === "bike_mount" && frame === 0 ? -3 : 0;
-  core.setAttribute("transform", `translate(0 ${Math.round(bodyBob + mountOffset)})`);
+  const step = reduced ? 0 : frameIndex(state, now - entry.stateStarted, preset.states);
+  const frames = Math.max(1, preset.states[state]?.frames || 1);
+  const phase = 2 * Math.PI * step / frames;
+  const swing = reduced ? 0 : Math.sin(phase);
+  const lift = reduced ? 0 : Math.cos(phase);
+  const get = (name) => art.querySelector(".sprite-" + name);
+  const core = art.querySelector(".pixel-rider-core");
+  const bob = reduced ? 0 : (bike ? -0.7 : -1.5) * Math.abs(swing);
+  const mounting = state === "bike_mount" && step === 0;
+  const sleepy = state === "tired" || state === "bike_brake";
+  transform(core, mounting ? -6 : 0, bob + (sleepy ? 1 : 0));
+  const vehicle = art.querySelector(".pixel-vehicle");
   vehicle.style.display = bike ? "" : "none";
-  brake.setAttribute("opacity", state === "bike_brake" && !reduced ? "1" : "0");
-  let front;
-  let back;
+  art.querySelector(".pixel-bike-brake").setAttribute("opacity",
+    state === "bike_brake" && !reduced ? "1" : "0");
+
   if (bike) {
-    const pedalX = 67 + (reduced ? 0 : Math.round(Math.cos(phase) * 10));
-    const pedalY = 75 + (reduced ? 0 : Math.round(Math.sin(phase) * 7));
-    front = segment(66, 66, 72, 70, pedalX, pedalY);
-    back = segment(62, 67, 60, 72, 67 - (pedalX - 67), 75 - (pedalY - 75));
-    if (state === "bike_glide") {
-      front = segment(66, 66, 69, 72, 68, 79);
-      back = segment(62, 66, 57, 72, 58, 80);
-    }
-    if (state === "bike_brake") {
-      front = segment(66, 67, 73, 72, 76, 79);
-      back = segment(62, 67, 59, 72, 56, 77);
-    }
-    frontArm.setAttribute("d", segment(79, 50, 83, 54, 91, 48));
-    backArm.setAttribute("d", segment(75, 52, 81, 56, 89, 48));
+    const pedaling = state === "bike_ride" && !reduced;
+    const dx = pedaling ? 4 * swing : 0;
+    const dy = pedaling ? 3 * lift : 0;
+    transform(get("leg_front"), -3 + dx, -9 + dy, -8 + 10 * swing, 65, 76);
+    transform(get("leg_back"), 5 - dx, -10 - dy, 8 - 10 * swing, 55, 76);
+    transform(get("arm_front"), 6, -3, -14, 80, 60);
+    transform(get("arm_back"), 7, -4, -9, 55, 60);
   } else {
-    front = segment(67, 69, 68 + 7*x*motion, 80, 72 + 10*x*motion, 89);
-    back = segment(59, 68, 59 - 7*x*motion, 79, 56 - 10*x*motion, 89);
-    if (state === "idle" || state === "happy" || state === "tired") {
-      front = segment(67, 69, 67, 80, 67, 90);
-      back = segment(59, 69, 59, 80, 59, 90);
-    }
-    frontArm.setAttribute("d", state === "happy"
-      ? segment(79, 51, 84, 42, 88, 36)
-      : segment(78, 51, 78 - 4*x*motion, 61, 79 - 7*x*motion, 67));
-    backArm.setAttribute("d", segment(55, 51, 51 + 4*x*motion, 59, 53 + 7*x*motion, 67));
+    const standing = ["idle", "happy", "tired", "focused"].includes(state);
+    const stride = standing ? 0 : swing;
+    transform(get("leg_front"), 4 * stride, Math.max(0, -2 * lift), -10 * stride, 65, 76);
+    transform(get("leg_back"), -4 * stride, Math.max(0, 2 * lift), 10 * stride, 55, 76);
+    transform(get("arm_front"), 2 * stride, -2 * stride, state === "happy" ? -36 : -6 * stride, 79, 60);
+    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride, 57, 60);
   }
-  frontLeg.setAttribute("d", front);
-  backLeg.setAttribute("d", back);
-  if (state === "happy") face.setAttribute("d", "M78 25l3 2 3-2m3 0 3 2 2-2");
-  else if (state === "tired" || state === "bike_brake") face.setAttribute("d", "M79 28h4m4 0h4");
-  else if (state === "focused") face.setAttribute("d", "M79 25v5m8-5v5");
-  else face.setAttribute("d", "M79 22v9m8-9v9");
+  renderFace(art, state, flags);
 }
 
 function animate(now) {
-  animationPending = false;
-  if (document.hidden) {
-    // Resume on visibilitychange rather than polling an invisible tab.
-    return;
-  }
-  if (now - previousTick >= 85) {
-    previousTick = now;
+  framePending = false;
+  if (document.hidden) return;
+  if (now - lastFrameTime >= 85) {
+    lastFrameTime = now;
     for (const [node, entry] of mounted) {
       if (!node.isConnected || !node.classList.contains("has-pixel-rider")) {
         mounted.delete(node);
@@ -182,8 +228,8 @@ function animate(now) {
 }
 
 function startTicker() {
-  if (animationPending || !mounted.size || document.hidden) return;
-  animationPending = true;
+  if (framePending || !mounted.size || document.hidden) return;
+  framePending = true;
   window.requestAnimationFrame(animate);
 }
 
@@ -194,19 +240,16 @@ if (typeof document !== "undefined") {
 }
 
 export function mountRiderSprite(node, transport, catalog) {
-  const supported = catalog.activeTransports.includes(transport);
-  if (!supported) {
-    if (mounted.has(node)) mounted.delete(node);
-    node.querySelector(".pixel-rider-art")?.remove();
-    node.classList.remove("has-pixel-rider");
+  if (!catalog.activeTransports.includes(transport)) {
+    disposeRiderSprite(node);
     return;
   }
-  const previous = mounted.get(node);
-  if (previous) {
-    if (previous.transport !== transport) {
-      previous.transport = transport;
-      previous.mountUntil = transport === "bike" ? performance.now() + 650 : 0;
-      previous.state = null;
+  const existing = mounted.get(node);
+  if (existing) {
+    if (existing.transport !== transport) {
+      existing.transport = transport;
+      existing.mountUntil = transport === "bike" ? performance.now() + 650 : 0;
+      existing.state = null;
     }
     startTicker();
     return;
@@ -216,7 +259,7 @@ export function mountRiderSprite(node, transport, catalog) {
   const art = document.createElement("div");
   art.className = "pixel-rider-art";
   art.setAttribute("aria-hidden", "true");
-  art.innerHTML = svgMarkup(catalog.preset);
+  art.append(buildSprite(catalog.preset));
   parent.appendChild(art);
   node.classList.add("has-pixel-rider");
   const entry = {
@@ -229,16 +272,27 @@ export function mountRiderSprite(node, transport, catalog) {
   startTicker();
 }
 
-// Future preset selection can replace any of these independently, while preserving anchor geometry.
+// Replacements must be trusted, same-origin character artwork with the same slot
+// coordinate contract. Other preset/body-specific limbs can be added later.
 export function setRiderSlots(node, overrides = {}) {
   const entry = mounted.get(node);
   if (!entry) return false;
-  for (const slot of ["head", "body", "backpack"]) {
-    if (!overrides[slot]) continue;
-    const image = entry.art.querySelector(`[data-part="${slot}"]`);
-    if (image) image.setAttribute("href", overrides[slot]);
+  let changed = false;
+  for (const name of ["head", "body", "backpack"]) {
+    const override = overrides[name];
+    if (!override) continue;
+    const spec = typeof override === "string" ? { src: override } : override;
+    if (!spec?.src?.startsWith("/riders/")) continue;
+    const part = entry.art.querySelector(`[data-part="${name}"]`);
+    const bitmap = part?.querySelector("image");
+    if (!bitmap) continue;
+    bitmap.setAttribute("href", spec.src);
+    if (Array.isArray(spec.crop) && spec.crop.length === 4) {
+      part.querySelector("svg").setAttribute("viewBox", spec.crop.join(" "));
+    }
+    changed = true;
   }
-  return true;
+  return changed;
 }
 
 export function disposeRiderSprite(node) {
