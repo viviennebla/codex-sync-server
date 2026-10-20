@@ -1,6 +1,6 @@
 # 蹬了吗 · 双布局、人物位置与气泡动画方案（v2）
 
-> 状态：设计，尚未修改运行时代码。**本版替代 v1 中过度设计的 walkablePolygon / footPath / scene-geometry.json 提案。** 2026-10-20 按用户澄清：普通四车道与万圣节双道路是**两套展示布局**；不新增道路或可站立位置。人物 Sprite 素材由独立 Session 负责。
+> **完整动画/自动移动/时序盘点与 Reviewer 规则：**[动画系统总账](denglema-animation-system.md)。本设计文档负责未来架构；不要在本文件单独维护另一份动作清单。\n>\n> 状态：设计，尚未修改运行时代码。**本版替代 v1 中过度设计的 walkablePolygon / footPath / scene-geometry.json 提案。** 2026-10-20 按用户澄清：普通四车道与万圣节双道路是**两套展示布局**；不新增道路或可站立位置。人物 Sprite 素材由独立 Session 负责。
 
 ## 1. 两套布局，不是三条路
 
