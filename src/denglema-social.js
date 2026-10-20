@@ -33,6 +33,12 @@ export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "helmet-commuter-v01-2026-10",
+    emoji: "🪖",
+    message: "#75 默认角色换成头盔通勤客 · Emoji 小人终于可以下班了",
+    href: "/?season=halloween",
+  },
+  {
     id: "halloween-clean-layer-assets-2026-10",
     emoji: "🎃",
     message: "#72 万圣节猫咪蝙蝠终于分层 · 旧图纸别再出来捣乱",
