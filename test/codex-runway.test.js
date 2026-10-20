@@ -95,6 +95,36 @@ test("completed reset prefers effectiveAt and falls back to completedAt", async 
   assert.equal(value.latest_completed.completed_at, "2026-09-30T03:30:00Z");
 });
 
+test("completed global reset with only announcedAt is visible for 24 hours", async () => {
+  // didcodexreset's 2026-10-20 global reset has no effectiveAt or completedAt.
+  const announcedAt = "2026-10-20T06:33:48.000Z";
+  let now = Date.parse("2026-10-20T06:47:00.000Z");
+  const fetch = async (url) => (
+    String(url).includes("kind=reset_completed")
+      ? response({
+          kind: "reset_completed",
+          resetType: "global",
+          announcedAt,
+          effectiveAt: null,
+          completedAt: null,
+          confidence: 0.82,
+          scope: { plans: ["all"], windows: ["unknown"] },
+        })
+      : response(null)
+  );
+  const read = createCodexRunwayReader({ fetch, now: () => now, cacheMs: 100 });
+  const recent = await read();
+
+  assert.equal(recent.latest_completed?.kind, "reset_completed");
+  assert.equal(recent.latest_completed?.reset_type, "global");
+  assert.equal(recent.latest_completed?.announced_at, announcedAt);
+  assert.equal(recent.latest_completed?.confidence, 0.82);
+
+  now = Date.parse("2026-10-21T06:33:49.000Z");
+  const expired = await read();
+  assert.equal(expired.latest_completed, null);
+});
+
 test("CodexRunway reader serves stale cache when refresh fails", async () => {
   let calls = 0;
   let now = Date.parse("2026-09-30T04:00:00Z");
