@@ -125,3 +125,16 @@ const stageRect = document.querySelector(".race-stage").getBoundingClientRect();
 验收：桌面/375px；窗口 resize 与页面 cover 裁切；1/2/6/20+ Rider；四逻辑 lane 的已有用户正常映射；万圣节仅两条道路；`?season=off` 恢复四车道；跨车道拖动与 409 回滚；气泡不重叠且不挡交互；低动画偏好；无持续昂贵动画重排。
 
 **本设计的停止线**：不新增道路或可站立区，不迁移 `office_position`，不改 Usage/身份/API，不改背景/Glow/猫蝙蝠素材；没有实际视觉截图前不声称像素级道路贴合已完成。
+
+
+## 7. Phase A 交付状态（2026-10-20）
+
+**已实现（隔离模块，尚未接入主页面）**：`public/scene-layout.js` + `test/scene-layout.test.js`。该模块读取既有 `#lane1..#lane4` 的 `getBoundingClientRect()`，提供 `readLaneLayout()`、`visibleLaneIds()`、`resolveVisualLane()`、`nearestVisibleLane()`、`pointerToLayoutPosition()`、`projectSavedPosition()`、`getFootBaseline()`。普通四车道 / 万圣节两道路沿用现有 DOM，**没有创造第三条道路或新的可站立点**。
+
+- 读几何：`readLaneLayout(stage, mode)` 必须完整读取该模式的四个或两个有效 lane；缺失/隐藏时返回 `null`，而不是在页面中猜道路位置。
+- 指针坐标：当前默认 `22–78%` X 边界仅为兼容旧拖动策略；Y 基于真实 lane 矩形，处于两条路间的指针归属最近道路。接入后应在桌面/手机截图下对照旧行为检查道路切换体验。
+- 保存兼容：`projectSavedPosition()` 将原有逻辑 lane 1/2 显示在视觉 1、3/4 显示在视觉 3，不修改输入。`pointerToLayoutPosition()` 默认返回旧 API 可接受的可见 lane（1 或 3）；选项 `preserveLogicalLane` 仅为未来显式语义保留，**本阶段不启用**。
+- 脚底参照：`getFootBaseline()` 的默认 `0.8` 是 DOM lane 内位置采样，而不是最终美术脚底落点。Phase B 接入具体骑手时须视觉校准。
+- 限制：模块当前**未引入到 `public/app.js`，没有新的静态路由，也未改变线上任何动画/布局**。之所以暂不连接，是因为素材开发的 PR #75 正在修改 `app.js` 和 `src/server.js`。等 #75 合并后，从最新 `main` 引入该模块并接管 `pointerOfficePosition()` 等位置路径；同时在 server 静态白名单加入 `/scene-layout.js`。该集成必须另做独立验证，不可把专项测试通过当成视觉验收完成。
+
+验证：`node --test test/scene-layout.test.js` **7/7 通过**；隔离 checkout `npm test` **73/73 通过**；`node --check public/scene-layout.js` 通过。
