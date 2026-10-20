@@ -40,7 +40,8 @@ function normalizeRecord(record) {
 
 function recentCompletedRecord(record, nowMs) {
   if (!record || record.kind !== "reset_completed") return null;
-  const occurredAt = Date.parse(record.effective_at || record.completed_at || "");
+  // Announcements can confirm a completed reset without an effective/completed timestamp.
+  const occurredAt = Date.parse(record.effective_at || record.completed_at || record.announced_at || "");
   if (!Number.isFinite(occurredAt)) return null;
   const ageMs = nowMs - occurredAt;
   return ageMs >= 0 && ageMs <= RECENT_COMPLETED_MS ? record : null;
