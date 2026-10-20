@@ -1,0 +1,427 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" shape-rendering="crispEdges">
+<rect width="1280" height="760" fill="#181635"/><rect x="15" y="15" width="1250" height="730" rx="18" fill="#211a40" stroke="#7654bb" stroke-width="3"/>
+<path d="M15 128H1265" stroke="#8b64c5" stroke-width="2"/>
+<text x="44" y="71" fill="#ffe7bd" font-family="system-ui,Arial,sans-serif" font-size="40" font-weight="700">蹬了吗 · 头盔通勤客 v0.1</text>
+<text x="46" y="108" fill="#bea8e7" font-family="system-ui,Arial,sans-serif" font-size="19" font-weight="700">单一右向侧视图   ·   无性别特征   ·   Head / Body / Backpack   ·   Bike</text>
+<rect x="40" y="150" width="430" height="420" rx="16" fill="#28204a" stroke="#6d51a6" stroke-width="2"/><text x="65" y="192" fill="#ffc17c" font-family="system-ui,Arial,sans-serif" font-size="23" font-weight="700">01   默认人物 / 固定右向侧视</text>
+<g transform="translate(112 242) scale(2.35)"><ellipse cx="67" cy="94" rx="48" ry="3" fill="#0d1030" opacity=".6"/><svg x="5" y="28" width="118" height="61" viewBox="0 0 124 64" shape-rendering="crispEdges">
+<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
+<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
+ <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
+ <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
+ <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
+ <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
+ <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
+ <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+ <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+</g>
+</svg><svg x="33" y="38" width="29" height="35" viewBox="0 0 36 44" shape-rendering="crispEdges">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg><svg x="48" y="42" width="42" height="42" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg><svg x="44" y="0" width="52" height="52" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg><path d="M66 66L74 72L67 79 M62 67L58 70L60 79" stroke="#d3c5ff" stroke-width="6" fill="none" stroke-linejoin="bevel"/><path d="M79 50L83 54L91 48" stroke="#f4e9ff" stroke-width="7" fill="none" stroke-linejoin="bevel"/></g>
+<text x="78" y="516" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="19" font-weight="700">面罩表情由独立眼睛状态控制</text>
+<rect x="490" y="150" width="750" height="420" rx="16" fill="#28204a" stroke="#6d51a6" stroke-width="2"/><text x="515" y="192" fill="#ffc17c" font-family="system-ui,Arial,sans-serif" font-size="23" font-weight="700">02   模块化槽位 · 更换外观不改变锚点</text>
+<rect x="510" y="210" width="218" height="310" rx="16" fill="#28204a" stroke="#6d51a6" stroke-width="2"/><rect x="744" y="210" width="220" height="310" rx="16" fill="#28204a" stroke="#6d51a6" stroke-width="2"/><rect x="980" y="210" width="238" height="310" rx="16" fill="#28204a" stroke="#6d51a6" stroke-width="2"/>
+<text x="548" y="249" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="20" font-weight="700">Head Slot</text>
+<svg x="550" y="280" width="142" height="142" viewBox="0 0 64 64">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg>
+<text x="543" y="477" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="18" font-weight="700">头部 / 面罩 / 表情</text>
+<text x="789" y="249" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="20" font-weight="700">Body Slot</text>
+<svg x="790" y="275" width="135" height="150" viewBox="0 0 48 52">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg>
+<text x="793" y="477" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="18" font-weight="700">躯干与四肢锚点</text>
+<text x="1013" y="249" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="20" font-weight="700">Backpack Slot</text>
+<svg x="1032" y="282" width="120" height="150" viewBox="0 0 36 44">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg>
+<text x="1020" y="477" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="18" font-weight="700">独立背包层</text>
+<rect x="40" y="590" width="1200" height="133" rx="16" fill="#28204a" stroke="#6d51a6" stroke-width="2"/><text x="65" y="627" fill="#ffc17c" font-family="system-ui,Arial,sans-serif" font-size="23" font-weight="700">03   状态与载具交互 / 同一骨架复用</text>
+<g transform="translate(102 637) scale(0.73)"><ellipse cx="67" cy="94" rx="48" ry="3" fill="#0d1030" opacity=".6"/><svg x="33" y="38" width="29" height="35" viewBox="0 0 36 44" shape-rendering="crispEdges">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg><svg x="48" y="42" width="42" height="42" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg><svg x="44" y="0" width="52" height="52" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg><path d="M66 68L71 80L77 90 M60 68L56 80L52 90" stroke="#d4c9ff" stroke-width="7" fill="none" stroke-linejoin="bevel"/><path d="M79 51L79 61L79 67" stroke="#f4ecff" stroke-width="7" fill="none"/></g><text x="76" y="714" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="16" font-weight="700">待机/步行</text>
+<g transform="translate(310 635) scale(0.77)"><ellipse cx="67" cy="94" rx="48" ry="3" fill="#0d1030" opacity=".6"/><svg x="5" y="28" width="118" height="61" viewBox="0 0 124 64" shape-rendering="crispEdges">
+<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
+<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
+ <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
+ <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
+ <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
+ <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
+ <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
+ <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+ <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+</g>
+</svg><svg x="33" y="38" width="29" height="35" viewBox="0 0 36 44" shape-rendering="crispEdges">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg><svg x="48" y="42" width="42" height="42" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg><svg x="44" y="0" width="52" height="52" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg><path d="M66 66L74 72L67 79 M62 67L58 70L60 79" stroke="#d3c5ff" stroke-width="6" fill="none" stroke-linejoin="bevel"/><path d="M79 50L83 54L91 48" stroke="#f4e9ff" stroke-width="7" fill="none" stroke-linejoin="bevel"/></g><text x="283" y="714" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="16" font-weight="700">上车</text>
+<g transform="translate(535 635) scale(0.77)"><ellipse cx="67" cy="94" rx="48" ry="3" fill="#0d1030" opacity=".6"/><svg x="5" y="28" width="118" height="61" viewBox="0 0 124 64" shape-rendering="crispEdges">
+<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
+<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
+ <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
+ <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
+ <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
+ <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
+ <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
+ <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+ <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+</g>
+</svg><svg x="33" y="38" width="29" height="35" viewBox="0 0 36 44" shape-rendering="crispEdges">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg><svg x="48" y="42" width="42" height="42" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg><svg x="44" y="0" width="52" height="52" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg><path d="M66 66L74 72L67 79 M62 67L58 70L60 79" stroke="#d3c5ff" stroke-width="6" fill="none" stroke-linejoin="bevel"/><path d="M79 50L83 54L91 48" stroke="#f4e9ff" stroke-width="7" fill="none" stroke-linejoin="bevel"/></g><text x="500" y="714" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="16" font-weight="700">骑行 6 帧</text>
+<g transform="translate(760 635) scale(0.77)"><ellipse cx="67" cy="94" rx="48" ry="3" fill="#0d1030" opacity=".6"/><svg x="5" y="28" width="118" height="61" viewBox="0 0 124 64" shape-rendering="crispEdges">
+<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
+<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
+ <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
+ <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
+ <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
+ <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
+ <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
+ <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+ <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+</g>
+</svg><svg x="33" y="38" width="29" height="35" viewBox="0 0 36 44" shape-rendering="crispEdges">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg><svg x="48" y="42" width="42" height="42" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg><svg x="44" y="0" width="52" height="52" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg><path d="M66 66L74 72L67 79 M62 67L58 70L60 79" stroke="#d3c5ff" stroke-width="6" fill="none" stroke-linejoin="bevel"/><path d="M79 50L83 54L91 48" stroke="#f4e9ff" stroke-width="7" fill="none" stroke-linejoin="bevel"/></g><text x="732" y="714" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="16" font-weight="700">滑行</text>
+<g transform="translate(978 635) scale(0.77)"><ellipse cx="67" cy="94" rx="48" ry="3" fill="#0d1030" opacity=".6"/><svg x="5" y="28" width="118" height="61" viewBox="0 0 124 64" shape-rendering="crispEdges">
+<!-- Ride-right commuter bike; wheels and triangle share a fixed axle baseline -->
+<g fill="none" stroke-linejoin="bevel" stroke-linecap="square">
+ <path d="M18 22h8v-4h12v4h-12M92 21h8v-5h-4v-5h-7" stroke="#46326a" stroke-width="4"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#302953" stroke-width="9"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#80c9f0" stroke-width="5"/>
+ <path d="M21 50 43 16 63 49 21 50 80 21 63 49 94 50 80 21 43 16" stroke="#4673b6" stroke-width="2"/>
+ <circle cx="21" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="94" cy="49" r="18" stroke="#221d49" stroke-width="8"/>
+ <circle cx="21" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="94" cy="49" r="17" stroke="#b0c4ff" stroke-width="4"/>
+ <circle cx="21" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <circle cx="94" cy="49" r="13" stroke="#5a4a8c" stroke-width="2"/>
+ <path d="M21 49h-14m14 0h14m-14-14v28m73-14H80m14 0h14m-14-14v28" stroke="#7b86c6" stroke-width="2"/>
+ <path d="M35 14h17m36-2h20v4" stroke="#ffa957" stroke-width="5"/>
+ <path d="M35 14h13m41-2h13" stroke="#fff3a6" stroke-width="2"/>
+ <circle cx="63" cy="49" r="5" stroke="#fca55d" stroke-width="4"/>
+ <circle cx="21" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+ <circle cx="94" cy="49" r="3" stroke="#ffca70" stroke-width="3"/>
+</g>
+</svg><svg x="33" y="38" width="29" height="35" viewBox="0 0 36 44" shape-rendering="crispEdges">
+<!-- Orange backpack is a back-layer slot, never baked into helmet or body -->
+<path fill="#50346c" d="M10 5h18v5h5v26h-5v6H8v-6H3V13h7Z"/>
+<path fill="#ff8c32" d="M11 5h16v6h5v23h-5v5H9v-6H5V14h6Z"/>
+<path fill="#ffc45d" d="M12 6h13v5h4v4H9v-4h3ZM8 17h5v15H8Z"/>
+<path fill="#de622e" d="M11 30h17v6H11Z"/>
+<path fill="#6b4290" d="M17 12h6v25h-6Z"/>
+<path fill="#a7663e" d="M19 12h3v22h-3Z"/>
+<path fill="#fff19b" d="M23 15h5v7h-5Z"/>
+<path fill="#ffe6b6" d="M24 16h3v5h-3Z"/>
+<path fill="#86486f" d="M1 19h5v13H1Z"/>
+<path fill="#ffb05a" d="M2 20h3v11H2Z"/>
+</svg><svg x="48" y="42" width="42" height="42" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg><svg x="44" y="0" width="52" height="52" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg><path d="M66 66L74 72L67 79 M62 67L58 70L60 79" stroke="#d3c5ff" stroke-width="6" fill="none" stroke-linejoin="bevel"/><path d="M79 50L83 54L91 48" stroke="#f4e9ff" stroke-width="7" fill="none" stroke-linejoin="bevel"/></g><text x="953" y="714" fill="#f4e8ff" font-family="system-ui,Arial,sans-serif" font-size="16" font-weight="700">刹车</text>
+</svg>
