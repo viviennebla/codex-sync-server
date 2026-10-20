@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<!-- Helmet commuter: right-facing 64x64 modular head, visor expressions remain separate -->
+<path fill="#58428f" d="M17 5h28v4h9v7h5v31h-6v8H18v-5H9V17h4V9h4Z"/>
+<path fill="#b6a7f0" d="M17 3h27v4h9v8h4v28h-5v8H17v-6H8V18h5V9h4Z"/>
+<path fill="#f4f1ff" d="M18 5h24v4h7v9H32v3h-4v24H17v-4h-5V19h5V11h1Z"/>
+<path fill="#ffffff" d="M18 7h19v4H22v4h-5v16h-4V19h5Z"/>
+<path fill="#7c6ac8" d="M14 32h10v14h-7v-3h-3ZM20 49h27v3H20Z"/>
+<path fill="#272147" d="M34 12h16v4h5v7h3v20h-4v6h-7v3H32v-4h-5V21h4v-6h3Z"/>
+<path fill="#171430" d="M36 16h14v4h4v25h-7v3H32v-5h-2V23h4v-5h2Z"/>
+<path fill="#473a82" d="M32 24h3v16h-3Z"/>
+<path fill="#fee67c" d="M41 24h5v14h-5v-3h-2v-8h2ZM50 25h3v10h-3Z"/>
+<path fill="#fff9af" d="M42 26h2v7h-2Z"/>
+<path fill="#8a75d5" d="M7 24h13v7H7ZM9 22h10v2H9Z"/>
+<path fill="#dacdff" d="M10 24h8v6h-8Z"/>
+<path fill="#ffffff" d="M11 24h3v4h-3Z"/>
+<path fill="#ff9e4d" d="M25 0h9v3h-9ZM27 2h6v3h-6Z"/>
+<path fill="#ffe9a5" d="M28 0h4v2h-4Z"/>
+<path fill="#fff1dc" d="M19 54h30v3H19Z"/>
+</svg>
