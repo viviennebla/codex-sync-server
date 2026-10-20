@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "default_preset": "helmet-commuter",
+  "presets": {
+    "helmet-commuter": "/riders/presets/helmet-commuter/manifest.json"
+  },
+  "active_transports": [
+    "bike",
+    "walk"
+  ],
+  "note": "v0.1 pilots bike and walking. Other transports keep their original visual implementation."
+}
