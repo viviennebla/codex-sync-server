@@ -1448,6 +1448,29 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "halloween-theme.css", "text/css; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/rider-runtime.js") {
+      await sendStatic(res, "rider-runtime.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/rider-runtime.css") {
+      await sendStatic(res, "rider-runtime.css", "text/css; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/riders/manifest.json") {
+      await sendStatic(res, "riders/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/riders/presets/helmet-commuter/manifest.json") {
+      await sendStatic(res, "riders/presets/helmet-commuter/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    const riderAssetMatch = method === "GET" && url.pathname.match(
+      /^\\/riders\\/presets\\/helmet-commuter\\/(head|body|backpack|bike)\\.svg$/
+    );
+    if (riderAssetMatch) {
+      await sendStatic(res, "riders/presets/helmet-commuter/" + riderAssetMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
       await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
       return;
