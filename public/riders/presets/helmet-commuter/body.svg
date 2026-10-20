@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 52" shape-rendering="crispEdges">
+<!-- Universal side-view torso, limb pose comes from runtime rig -->
+<path fill="#49387b" d="M11 3h22v4h6v7h4v24h-7v8H12v-6H5V16h4V7h2Z"/>
+<path fill="#d0bcf9" d="M12 2h20v6h6v27h-5v6H13v-4H7V15h5Z"/>
+<path fill="#faf3ff" d="M13 3h17v5h6v20h-4v7H13V31H9V17h4Z"/>
+<path fill="#ffffff" d="M13 4h15v8H13ZM10 17h5v13h-5Z"/>
+<path fill="#7663ba" d="M12 32h25v6H12ZM15 41h17v6H15Z"/>
+<path fill="#ede5ff" d="M14 37h20v7H14Z"/>
+<path fill="#ff9f47" d="M28 25h6v8h-6Z"/>
+<path fill="#ffca67" d="M29 26h4v5h-4Z"/>
+<path fill="#6e54ad" d="M17 10h4v23h-4Z"/>
+<path fill="#b5a5ed" d="M20 11h3v24h-3Z"/>
+<path fill="#4b4279" d="M8 46h31v4H8Z"/>
+</svg>
