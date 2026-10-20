@@ -1541,7 +1541,9 @@ function renderRiders(riders) {
       lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-      node.style.setProperty("--scale", String(1.06 + sizeJitter));
+      // Keep riders compact over the two-road illustrated background; preserve the classic scene scale.
+      const riderScale = halloweenEnabled ? 0.86 + sizeJitter * 0.5 : 1.06 + sizeJitter;
+      node.style.setProperty("--scale", String(riderScale));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
