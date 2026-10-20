@@ -1264,6 +1264,10 @@ function updateRiderNode(node, rider) {
   }
 
   const nextTransport = transportFor(rider);
+  // Changing transport updates display size without touching the saved office position.
+  const visualJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
+  const pixelActive = ["bike", "walk"].includes(nextTransport);
+  node.style.setProperty("--scale", String(pixelActive ? 0.92 + visualJitter * 0.3 : 1.06 + visualJitter));
   if (node.dataset.transport !== nextTransport) {
     const currentTransport = node.querySelector(".transport");
     currentTransport?.insertAdjacentHTML("afterend", transportMarkup(nextTransport));
