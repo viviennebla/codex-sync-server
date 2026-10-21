@@ -1,9 +1,7 @@
-// Helmet commuter v0.1. Source-matched pixel atlas; the approved concept artwork
-// supplies the silhouette, rather than independently redrawn blocky SVG placeholders.
-// Slot coordinates and limb anchors use one right-facing 128x100 logical canvas.
+// Modular helmet commuter: independent transparent source parts and shared side-view rig.
+// Art manifests list files; rig coordinates determine placement and motion. No hand-authored atlas crops.
 const SVG_NS = "http://www.w3.org/2000/svg";
 const CATALOG_URL = "/riders/manifest.json";
-const VIEWBOX = "0 0 128 100";
 const mounted = new Map();
 let catalogPromise = null;
 let framePending = false;
@@ -33,10 +31,16 @@ export function loadRiderCatalog() {
     catalogPromise = (async () => {
       const root = await fetchJson(CATALOG_URL);
       const preset = await fetchJson(root.presets[root.default_preset]);
-      await preloadArt([preset.atlas?.src, preset.vehicles?.bike?.src].filter(Boolean));
+      const rig = await fetchJson(preset.rig);
+      await preloadArt([
+        ...Object.values(preset.slots),
+        ...Object.values(preset.limbs),
+        preset.vehicles?.bike?.src
+      ].filter(Boolean));
       return {
         id: root.default_preset,
         preset,
+        rig,
         activeTransports: root.active_transports || ["bike", "walk"]
       };
     })().catch((error) => {
@@ -76,46 +80,45 @@ function svg(name, attributes = {}) {
   return element;
 }
 
-function atlasLayer(name, spec, atlas) {
-  // A nested SVG clips the shared atlas to this part. The outer <g> may rotate
-  // while the inner viewBox preserves original, approved source-art pixels.
+function partLayer(name, src, geometry) {
+  // Independent transparent source file, positioned by the shared skeleton.
+  // No source-atlas viewBox, manual crop or texture-pack-specific coordinates.
   const group = svg("g", { class: "sprite-part sprite-" + name, "data-part": name });
-  const viewport = svg("svg", {
-    x: spec.x, y: spec.y, width: spec.width, height: spec.height,
-    viewBox: spec.crop.join(" "), preserveAspectRatio: "none", overflow: "hidden"
-  });
-  const bitmap = svg("image", {
-    href: spec.src, x: 0, y: 0, width: atlas.width, height: atlas.height,
+  group.append(svg("image", {
+    href: src,
+    x: geometry.x, y: geometry.y, width: geometry.width, height: geometry.height,
     preserveAspectRatio: "none"
-  });
-  viewport.append(bitmap);
-  group.append(viewport);
+  }));
   return group;
 }
 
-function buildSprite(preset) {
+function buildSprite(preset, rig) {
   const root = svg("svg", {
     class: "pixel-rider-svg",
-    viewBox: VIEWBOX,
+    viewBox: `0 0 ${rig.canvas.width} ${rig.canvas.height}`,
     "aria-hidden": "true",
     focusable: "false"
   });
   root.append(svg("ellipse", {cx: 66, cy: 94, rx: 42, ry: 3, fill: "#20163d", opacity: ".32"}));
-  const bike = preset.vehicles.bike;
+  const bike = rig.vehicles.bike;
   root.append(svg("image", {
-    class: "pixel-vehicle", href: bike.src,
+    class: "pixel-vehicle", href: preset.vehicles.bike.src,
     x: bike.x, y: bike.y, width: bike.width, height: bike.height,
     preserveAspectRatio: "none"
   }));
   const core = svg("g", {class: "pixel-rider-core"});
-  for (const name of ["leg_back", "backpack", "arm_back", "body", "leg_front", "head", "arm_front"]) {
-    core.append(atlasLayer(name, preset.slots[name] || preset.limbs[name], preset.atlas));
+  const art = { ...preset.slots, ...preset.limbs };
+  const geometry = { ...rig.slots, ...rig.limbs };
+  for (const name of rig.layer_order) {
+    core.append(partLayer(name, art[name], geometry[name]));
   }
   const expression = svg("g", {class: "pixel-expression", display: "none"});
   // This patch sits fully inside the dark visor; the default golden pixel eyes
   // are retained unmodified. Only exceptional expressions draw over them.
   expression.append(svg("rect", {
-    x: 80, y: 36, width: 17, height: 17, rx: 7, fill: "#20163d"
+    x: rig.expression.x, y: rig.expression.y,
+    width: rig.expression.width, height: rig.expression.height,
+    rx: 7, fill: "#20163d"
   }));
   expression.append(svg("path", {
     class: "pixel-expression-eyes",
@@ -165,7 +168,7 @@ function renderFace(art, state, flags) {
 }
 
 function drawFrame(entry, now) {
-  const { node, art, preset } = entry;
+  const { node, art, preset, rig } = entry;
   const bike = entry.transport === "bike";
   const flags = flagsFor(node);
   const state = resolveSpriteState(entry.transport, {
@@ -182,6 +185,7 @@ function drawFrame(entry, now) {
   const swing = reduced ? 0 : Math.sin(phase);
   const lift = reduced ? 0 : Math.cos(phase);
   const get = (name) => art.querySelector(".sprite-" + name);
+  const pivot = (name) => rig.limbs[name].pivot;
   const core = art.querySelector(".pixel-rider-core");
   const bob = reduced ? 0 : (bike ? -0.7 : -1.5) * Math.abs(swing);
   const mounting = state === "bike_mount" && step === 0;
@@ -196,17 +200,17 @@ function drawFrame(entry, now) {
     const pedaling = state === "bike_ride" && !reduced;
     const dx = pedaling ? 4 * swing : 0;
     const dy = pedaling ? 3 * lift : 0;
-    transform(get("leg_front"), -3 + dx, -9 + dy, -8 + 10 * swing, 65, 76);
-    transform(get("leg_back"), 5 - dx, -10 - dy, 8 - 10 * swing, 55, 76);
-    transform(get("arm_front"), 6, -3, -14, 80, 60);
-    transform(get("arm_back"), 7, -4, -9, 55, 60);
+    transform(get("leg_front"), -3 + dx, -9 + dy, -8 + 10 * swing, ...pivot("leg_front"));
+    transform(get("leg_back"), 5 - dx, -10 - dy, 8 - 10 * swing, ...pivot("leg_back"));
+    transform(get("arm_front"), 6, -3, -14, ...pivot("arm_front"));
+    transform(get("arm_back"), 7, -4, -9, ...pivot("arm_back"));
   } else {
     const standing = ["idle", "happy", "tired", "focused"].includes(state);
     const stride = standing ? 0 : swing;
-    transform(get("leg_front"), 4 * stride, Math.max(0, -2 * lift), -10 * stride, 65, 76);
-    transform(get("leg_back"), -4 * stride, Math.max(0, 2 * lift), 10 * stride, 55, 76);
-    transform(get("arm_front"), 2 * stride, -2 * stride, state === "happy" ? -36 : -6 * stride, 79, 60);
-    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride, 57, 60);
+    transform(get("leg_front"), 4 * stride, Math.max(0, -2 * lift), -10 * stride, ...pivot("leg_front"));
+    transform(get("leg_back"), -4 * stride, Math.max(0, 2 * lift), 10 * stride, ...pivot("leg_back"));
+    transform(get("arm_front"), 2 * stride, -2 * stride, state === "happy" ? -36 : -6 * stride, ...pivot("arm_front"));
+    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride, ...pivot("arm_back"));
   }
   renderFace(art, state, flags);
 }
@@ -259,11 +263,11 @@ export function mountRiderSprite(node, transport, catalog) {
   const art = document.createElement("div");
   art.className = "pixel-rider-art";
   art.setAttribute("aria-hidden", "true");
-  art.append(buildSprite(catalog.preset));
+  art.append(buildSprite(catalog.preset, catalog.rig));
   parent.appendChild(art);
   node.classList.add("has-pixel-rider");
   const entry = {
-    node, art, preset: catalog.preset, transport,
+    node, art, preset: catalog.preset, rig: catalog.rig, transport,
     state: null, stateStarted: performance.now(),
     mountUntil: transport === "bike" ? performance.now() + 650 : 0
   };
@@ -281,15 +285,11 @@ export function setRiderSlots(node, overrides = {}) {
   for (const name of ["head", "body", "backpack"]) {
     const override = overrides[name];
     if (!override) continue;
-    const spec = typeof override === "string" ? { src: override } : override;
-    if (!spec?.src?.startsWith("/riders/")) continue;
-    const part = entry.art.querySelector(`[data-part="${name}"]`);
-    const bitmap = part?.querySelector("image");
+    const src = typeof override === "string" ? override : override.src;
+    if (!/^\\/riders\\/presets\\/[a-z0-9-]+\\/[a-z0-9_-]+\\.webp$/.test(src || "")) continue;
+    const bitmap = entry.art.querySelector(`[data-part="${name}"] image`);
     if (!bitmap) continue;
-    bitmap.setAttribute("href", spec.src);
-    if (Array.isArray(spec.crop) && spec.crop.length === 4) {
-      part.querySelector("svg").setAttribute("viewBox", spec.crop.join(" "));
-    }
+    bitmap.setAttribute("href", src);
     changed = true;
   }
   return changed;
