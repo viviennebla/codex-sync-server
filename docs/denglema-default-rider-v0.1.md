@@ -4,9 +4,13 @@
 >
 > 范围：**默认人物与自行车 / 步行最小集成**。本 PR 不修改背景图片、赛道数、预设落点、拖动协议、个人上传、Usage 数据和其他载具行为。
 
-![头盔通勤客 v0.1 模块与状态设计板](assets/denglema/helmet-commuter-v01-design-board.svg)
+![已废弃的工程占位板（仅留追溯，不作为视觉验收基准）](assets/denglema/helmet-commuter-v01-design-board.svg)
 
 设计图（repo 自包含 SVG）对应实际 Slot 素材，便于维护者核对头盔、机身、橙色背包和骑车姿态。已确认的会话概念稿提供审美方向；这里的 SVG 是**按该方向新绘制的可加载原型素材**，不是从概念图自动切割出的最终像素动画帧。所有细节升级先做视觉验收，不静默改头部或体型。
+
+> **2026-10-21 视觉纠偏（优先级最高）**：用户明确否决手工拼接的粗糙 SVG。**唯一认可的美术基线是用户提供的《抽象人物预设方向》六角色设计稿中的第 1 号「头盔通勤客」**：大奶油白圆头盔、浅紫高光、超大深紫黑面罩、暖金色发光眼睛、圆形紫色耳侧模块、橙色软包、小圆身体与短四肢，整体像素插画质感、柔软渐层、非性别化。旧 `helmet-commuter-v01-design-board.svg` 是工程占位图，**不能作为美术规范或验收对照图**。
+>
+> **实现变更**：运行时现在使用从用户确认设计稿中提取的透明 `atlas.webp`，按 head / body / backpack / limbs 裁剪与动画，替代手绘粗糙 SVG。旧 head/body/backpack SVG 仍留作历史工程产物，但不由 manifest 加载。自行车为单独同色系 SVG，仍需要在实际浏览器中验收人物坐姿与车轮/手脚对位。当前不是逐帧手绘精品图集，不允许未经截图验收就宣称已完全还原概念稿。
 
 ## 0. 视觉不可偏移项
 
@@ -22,9 +26,8 @@
 | --- | --- |
 | `public/riders/manifest.json` | 默认 preset、允许试点的 transport |
 | `public/riders/presets/helmet-commuter/manifest.json` | 角色逻辑画布、slot 锚点、bike 锚点、动画帧数 |
-| `head.svg` | 右向头盔与无 Emoji 面罩；表情眼睛运行时绘制 |
-| `body.svg` | 无性别抽象躯体；四肢由共享 rig 控制 |
-| `backpack.svg` | 橙色背包，位于人物背后 |
+| `atlas.webp` | **当前实际加载资源**：从用户选定的 1 号角色原画提取的透明头盔、身、包、四肢像素图集 |
+| `head.svg` / `body.svg` / `backpack.svg` | 旧粗糙原型，仅历史参考；**禁止作为默认视觉使用** |
 | `bike.svg` | 同配色侧视自行车，独立于人物 |
 | `public/rider-runtime.js` | 读取 manifest、维护三槽位、计算状态与关键帧 |
 | `public/rider-runtime.css` | 画布缩放与图层，与 background/道路无关 |
