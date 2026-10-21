@@ -1,77 +1,23 @@
 {
+  "schema_version": 2,
   "id": "helmet-commuter",
   "label": "头盔通勤客",
   "view": "side-right",
-  "canvas": {
-    "width": 128,
-    "height": 100
-  },
-  "asset_canvas": {
-    "width": 176,
-    "height": 96
-  },
+  "rig": "/riders/rigs/compact-side-right-v1.json",
   "slots": {
-    "backpack": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        73,
-        0,
-        33,
-        43
-      ],
-      "x": 31,
-      "y": 38,
-      "width": 25,
-      "height": 33
-    },
-    "body": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        108,
-        0,
-        50,
-        29
-      ],
-      "x": 51,
-      "y": 56,
-      "width": 39,
-      "height": 23
-    },
-    "head": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        0,
-        0,
-        71,
-        62
-      ],
-      "x": 47,
-      "y": 17,
-      "width": 55,
-      "height": 48
-    }
+    "head": "/riders/presets/helmet-commuter/head.webp",
+    "body": "/riders/presets/helmet-commuter/body.webp",
+    "backpack": "/riders/presets/helmet-commuter/backpack.webp"
+  },
+  "limbs": {
+    "arm_back": "/riders/presets/helmet-commuter/arm_back.webp",
+    "arm_front": "/riders/presets/helmet-commuter/arm_front.webp",
+    "leg_back": "/riders/presets/helmet-commuter/leg_back.webp",
+    "leg_front": "/riders/presets/helmet-commuter/leg_front.webp"
   },
   "vehicles": {
     "bike": {
-      "src": "/riders/presets/helmet-commuter/bike.svg",
-      "x": 5,
-      "y": 28,
-      "width": 118,
-      "height": 61,
-      "anchors": {
-        "seat": [
-          60,
-          54
-        ],
-        "handle": [
-          90,
-          48
-        ],
-        "pedal": [
-          67,
-          75
-        ]
-      }
+      "src": "/riders/presets/helmet-commuter/bike.svg"
     }
   },
   "states": {
@@ -112,66 +58,5 @@
       "fps": 6
     }
   },
-  "note": "Source-matched pixel atlas extracted from approved concept; the three swappable modules and four animated limbs share fixed 128×100 coordinates. Retired blocky SVGs are not used at runtime.",
-  "atlas": {
-    "src": "/riders/presets/helmet-commuter/atlas.webp",
-    "width": 176,
-    "height": 96,
-    "origin": "approved-abstract-mascot-concept-v1",
-    "reference": "docs/denglema-default-rider-v0.1.md"
-  },
-  "limbs": {
-    "arm_back": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        133,
-        33,
-        23,
-        22
-      ],
-      "x": 43,
-      "y": 55,
-      "width": 18,
-      "height": 17
-    },
-    "arm_front": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        108,
-        33,
-        23,
-        23
-      ],
-      "x": 76,
-      "y": 55,
-      "width": 18,
-      "height": 18
-    },
-    "leg_back": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        140,
-        60,
-        23,
-        31
-      ],
-      "x": 49,
-      "y": 68,
-      "width": 18,
-      "height": 25
-    },
-    "leg_front": {
-      "src": "/riders/presets/helmet-commuter/atlas.webp",
-      "crop": [
-        108,
-        60,
-        30,
-        25
-      ],
-      "x": 63,
-      "y": 70,
-      "width": 24,
-      "height": 20
-    }
-  }
+  "note": "Only art identity and animation names. All placement/anchors are in shared rig; each component is an independent transparent image. No handwritten atlas crop regions."
 }
