@@ -45,6 +45,12 @@ export function formatDenglemaUploadMessage(harness, totalTokens) {
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "helmet-commuter-v01-2026-10",
+    emoji: "🪖",
+    message: "#75 默认角色换成头盔通勤客 · Emoji 小人终于可以下班了",
+    href: "/?season=halloween",
+  },
+  {
     id: "upload-event-token-units-2026-10",
     emoji: "🔢",
     message: "#77 上传动态支持 K/M 单位 · 逗号终于不用排长队了",

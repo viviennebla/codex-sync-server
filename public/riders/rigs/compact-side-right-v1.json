@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "id": "compact-side-right-v1",
+  "view": "side-right",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "layer_order": [
+    "leg_back",
+    "backpack",
+    "arm_back",
+    "body",
+    "leg_front",
+    "head",
+    "arm_front"
+  ],
+  "slots": {
+    "backpack": {
+      "x": 31,
+      "y": 38,
+      "width": 25,
+      "height": 33
+    },
+    "body": {
+      "x": 51,
+      "y": 56,
+      "width": 39,
+      "height": 23
+    },
+    "head": {
+      "x": 47,
+      "y": 17,
+      "width": 55,
+      "height": 48
+    }
+  },
+  "limbs": {
+    "arm_back": {
+      "x": 43,
+      "y": 55,
+      "width": 18,
+      "height": 17,
+      "pivot": [
+        55,
+        60
+      ]
+    },
+    "arm_front": {
+      "x": 76,
+      "y": 55,
+      "width": 18,
+      "height": 18,
+      "pivot": [
+        80,
+        60
+      ]
+    },
+    "leg_back": {
+      "x": 49,
+      "y": 68,
+      "width": 18,
+      "height": 25,
+      "pivot": [
+        58,
+        70
+      ],
+      "foot_anchor": [
+        11,
+        20
+      ]
+    },
+    "leg_front": {
+      "x": 63,
+      "y": 70,
+      "width": 24,
+      "height": 20,
+      "pivot": [
+        75,
+        72
+      ],
+      "foot_anchor": [
+        16,
+        16
+      ]
+    }
+  },
+  "vehicles": {
+    "bike": {
+      "x": 20,
+      "y": 46,
+      "width": 95,
+      "height": 47,
+      "anchors": {
+        "seat": [
+          51,
+          54
+        ],
+        "handle": [
+          88,
+          53
+        ],
+        "pedal": [
+          68,
+          78
+        ]
+      },
+      "art_canvas": [
+        124,
+        64
+      ],
+      "wheels": {
+        "rear": {
+          "center": [
+            24,
+            43
+          ],
+          "size": 42
+        },
+        "front": {
+          "center": [
+            100,
+            43
+          ],
+          "size": 42
+        }
+      },
+      "crank": {
+        "center": [
+          68,
+          78
+        ],
+        "radius": [
+          7,
+          5
+        ]
+      },
+      "pose": {
+        "hip_reference": [
+          65,
+          70
+        ],
+        "grip_front": [
+          88,
+          53
+        ],
+        "grip_back": [
+          83,
+          55
+        ],
+        "shoulder_front": [
+          79,
+          58
+        ],
+        "shoulder_back": [
+          59,
+          58
+        ],
+        "hand_front_anchor": [
+          15,
+          10
+        ],
+        "hand_back_anchor": [
+          15,
+          10
+        ],
+        "seated_tilt_degrees": 3
+      }
+    }
+  },
+  "expression": {
+    "x": 80,
+    "y": 36,
+    "width": 17,
+    "height": 17
+  },
+  "note": "Single right-facing rig: bike asset moves beneath avatar; pose anchors are actual on-screen bike contact coordinates, not atlas UVs. All joint endpoints use world-space target coordinates.",
+  "gait": {
+    "walk": [
+      {
+        "front": [
+          2,
+          0,
+          -24
+        ],
+        "back": [
+          -2,
+          0,
+          20
+        ]
+      },
+      {
+        "front": [
+          1,
+          0,
+          -12
+        ],
+        "back": [
+          -1,
+          -2,
+          8
+        ]
+      },
+      {
+        "front": [
+          -1,
+          0,
+          8
+        ],
+        "back": [
+          1,
+          -5,
+          -16
+        ]
+      },
+      {
+        "front": [
+          -2,
+          0,
+          20
+        ],
+        "back": [
+          2,
+          0,
+          -24
+        ]
+      },
+      {
+        "front": [
+          -1,
+          -2,
+          8
+        ],
+        "back": [
+          1,
+          0,
+          -12
+        ]
+      },
+      {
+        "front": [
+          1,
+          -5,
+          -16
+        ],
+        "back": [
+          -1,
+          0,
+          8
+        ]
+      }
+    ],
+    "stationary": {
+      "front": [
+        0,
+        0,
+        0
+      ],
+      "back": [
+        0,
+        0,
+        0
+      ]
+    },
+    "note": "Alternating six-phase walk: two leg sprite origins are normalized to one hip in the runtime. Foot X positions actually cross at half-cycle; one grounded boot and one lifted swing foot. Rotation is around the upper joint only; bike poses remain unchanged."
+  }
+}

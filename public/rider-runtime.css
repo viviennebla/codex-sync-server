@@ -1,0 +1,30 @@
+/* Default rider v0.1: native modular sprite layers; scene positioning remains unchanged.
+ * Pixel art draws at a single fixed right-facing angle, scaled only by the rider shell. */
+.rider.has-pixel-rider .rider-inner { display: none !important; }
+.pixel-rider-art {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 48%;
+  width: 151px;
+  height: 119px;
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 78%;
+  pointer-events: none;
+}
+.pixel-rider-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+.pixel-rider-svg image { image-rendering: pixelated; }
+.rider.has-pixel-rider .rider-message-bubble { max-width: 175px; }
+@media (max-width: 760px) {
+  .pixel-rider-art { width: 141px; height: 111px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pixel-rider-art, .pixel-rider-svg { animation: none !important; }
+}
