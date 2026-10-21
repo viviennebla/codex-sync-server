@@ -1468,11 +1468,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "riders/presets/helmet-commuter/atlas.webp", "image/webp");
       return;
     }
-    const riderAssetMatch = method === "GET" && url.pathname.match(
-      /^\/riders\/presets\/helmet-commuter\/(head|body|backpack|bike)\.svg$/
-    );
-    if (riderAssetMatch) {
-      await sendStatic(res, "riders/presets/helmet-commuter/" + riderAssetMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+    // Only the approved bike SVG and transparent character atlas are public.
+    // Retired head/body/backpack prototype SVGs are deliberately not served.
+    if (method === "GET" && url.pathname === "/riders/presets/helmet-commuter/bike.svg") {
+      await sendStatic(res, "riders/presets/helmet-commuter/bike.svg", "image/svg+xml; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
