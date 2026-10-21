@@ -109,7 +109,7 @@ test("emotions select distinct preloaded head images instead of drawing runtime 
   assert.equal(resolveEmotion("bike_ride", { celebrating: true }), "happy");
   assert.equal(resolveEmotion("walk"), "neutral");
   const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
-  assert.doesNotMatch(runtime, /pixel-expression-eyes|renderFace\\(/);
+  assert.doesNotMatch(runtime, /pixel-expression-eyes|renderFace/);
 });
 
 test("six-step walking gait alternates planted and lifted feet without spinning boots", async () => {
