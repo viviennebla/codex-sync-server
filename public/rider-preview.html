@@ -30,6 +30,14 @@
   .small strong{display:block;color:#fff0cf;margin-bottom:5px}
   .options {padding:18px;display:flex;gap:8px;flex-wrap:wrap}
   .foot {font-size:13px;color:#beacd6;line-height:1.8;margin-top:20px}
+  .qa-controls {display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:-8px 0 18px;padding:12px 16px;background:#29213f;border:1px solid #68528b;border-radius:14px}
+  .qa-controls label{display:flex;align-items:center;gap:7px;font-size:13px;color:#e2d5f0;cursor:pointer}
+  .qa-controls input{accent-color:#f3aa67;width:17px;height:17px}
+  .speed-buttons{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .speed-buttons button{padding:6px 10px;font-size:12px}
+  .debug-readout{background:#19162e;border:1px solid #68528b;border-radius:12px;margin-top:14px;padding:13px 16px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-size:12px;color:#cdbce7}
+  .debug-readout strong{display:block;color:#ffe6c3;font-size:13px;margin-top:5px;font-variant-numeric:tabular-nums}
+  @media(max-width:720px){.debug-readout{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
   @media(max-width:720px){.grid{grid-template-columns:1fr}.scene{height:240px}.metrics{grid-template-columns:1fr}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -47,9 +55,29 @@
     <button data-state="tired" aria-pressed="false">疲惫 / 刹车</button>
     <button data-state="coasting" aria-pressed="false">滑行</button>
   </div>
+  <div class="qa-controls" aria-label="动作调试控制">
+    <label><input type="checkbox" id="showAnchors"> 显示座椅 / 把手 / 脚踏锚点</label>
+    <label><input type="checkbox" id="showSkeleton"> 显示肢体连接线</label>
+    <div class="speed-buttons" aria-label="动画速度">
+      <span>动画速度</span>
+      <button type="button" data-speed="0.5" aria-pressed="false">0.5×</button>
+      <button type="button" data-speed="1" aria-pressed="true">1×</button>
+      <button type="button" data-speed="1.5" aria-pressed="false">1.5×</button>
+    </div>
+  </div>
   <div class="grid">
     <section class="panel"><h2>实际拼装 · 原始大小</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
     <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
+  </div>
+  <div class="debug-readout" aria-live="off">
+    <div>当前状态<strong id="qaState">载入中…</strong></div>
+    <div>使用头部<strong id="qaHead">—</strong></div>
+    <div>车轮角度 / 速度<strong id="qaWheel">—</strong></div>
+    <div>人物臀部 → 车座<strong id="qaSeat">—</strong></div>
+    <div>车把坐标<strong id="qaHandle">—</strong></div>
+    <div>脚踏坐标<strong id="qaPedal">—</strong></div>
+    <div>人物整体偏移<strong id="qaOffset">—</strong></div>
+    <div>载具状态<strong id="qaVisible">—</strong></div>
   </div>
   <div class="metrics">
     <div class="small"><strong>当前素材</strong>7 张部件 + 3 张独立表情头部 + 车架和车轮</div>
@@ -59,9 +87,32 @@
   <div class="foot">注意：这只是当前 PR 的程序渲染验收页。大图、动画与背景是否达到原始设计稿品质，需要以实际效果为准。页面使用项目现有 Rider Runtime，资源失败时不会显示伪造的人物。</div>
 </main>
 <script type="module">
-import {loadRiderCatalog,mountRiderSprite,disposeRiderSprite} from "/rider-runtime.js";
+import {loadRiderCatalog,mountRiderSprite,setRiderDebug,setRiderPlaybackRate,getRiderDebugSnapshot} from "/rider-runtime.js";
 const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动"};
 let catalog=null;
+let animationSpeed=1;
+function applyVisualControls() {
+  if (!catalog) return;
+  setRiderDebug(main,{
+    anchors:document.getElementById("showAnchors").checked,
+    skeleton:document.getElementById("showSkeleton").checked
+  });
+  for (const node of [main,tiny]) setRiderPlaybackRate(node,animationSpeed);
+}
+const point=arr=>arr?.map(v=>Number(v).toFixed(1)).join(", ") || "—";
+function refreshDiagnostics() {
+  const s=getRiderDebugSnapshot(main);
+  if (!s) return;
+  const write=(id,v)=>document.getElementById(id).textContent=v;
+  write("qaState",s.state+" / "+s.emotion);
+  write("qaHead",main.querySelector(".sprite-head image")?.getAttribute("href")?.split("/").pop() || "—");
+  write("qaWheel",s.wheelAngle.toFixed(1)+"° / "+s.wheelSpeed.toFixed(0)+"°/s");
+  write("qaSeat",point(s.hip)+" → "+point(s.seat));
+  write("qaHandle",point(s.handle)+" / 握点 "+point(s.frontGrip));
+  write("qaPedal",point(s.pedalFront));
+  write("qaOffset",point(s.coreOffset));
+  write("qaVisible",s.vehicleVisible?"自行车":"步行");
+}
 function stateClass(node,state) {
  node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");
  if(state==="idle")node.classList.add("is-chill");
@@ -75,8 +126,18 @@ function select(state) {
  document.querySelectorAll("[data-state]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.state===state)));
  for(const node of [main,tiny]) {stateClass(node,state);mountRiderSprite(node,["walk","idle","happy","focused"].includes(state)?"walk":"bike",catalog);}
  document.getElementById("stateLabel").textContent=labels[state];
+ applyVisualControls();refreshDiagnostics();
 }
 document.getElementById("modes").addEventListener("click",e=>{const b=e.target.closest("[data-state]");if(b)select(b.dataset.state);});
+document.getElementById("showAnchors").addEventListener("change",applyVisualControls);
+document.getElementById("showSkeleton").addEventListener("change",applyVisualControls);
+document.querySelector(".speed-buttons").addEventListener("click",e=>{
+ const button=e.target.closest("[data-speed]");if(!button)return;
+ animationSpeed=Number(button.dataset.speed);
+ document.querySelectorAll("[data-speed]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));
+ applyVisualControls();
+});
+window.setInterval(refreshDiagnostics,160);
 try{catalog=await loadRiderCatalog();select("bike");}catch(error){document.getElementById("stateLabel").textContent="素材加载失败："+error.message;}
 </script>
 </body></html>
