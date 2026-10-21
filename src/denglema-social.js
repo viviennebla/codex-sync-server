@@ -43,7 +43,7 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "upload-event-token-units-2026-10",
     emoji: "🔢",
-    message: "上传动态支持 K/M 单位 · 逗号终于不用排长队了",
+    message: "#77 上传动态支持 K/M 单位 · 逗号终于不用排长队了",
     href: "/",
   },
   {
