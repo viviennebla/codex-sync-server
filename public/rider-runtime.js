@@ -133,6 +133,15 @@ function buildSprite(preset, rig) {
   const art = { ...preset.slots, ...preset.limbs };
   const geometry = { ...rig.slots, ...rig.limbs };
   for (const name of rig.layer_order) {
+    if (name === "arm_back" || name === "arm_front") {
+      const side = name === "arm_front" ? "front" : "back";
+      const link = svg("g", {class:"pixel-arm-link pixel-arm-link-" + side, display:"none"});
+      link.append(svg("path", {class:"pixel-arm-outline",fill:"none",stroke:"#423277",
+        "stroke-width":9,"stroke-linecap":"round","stroke-linejoin":"round"}));
+      link.append(svg("path", {class:"pixel-arm-fill",fill:"none",stroke:"#d4c6f9",
+        "stroke-width":5.5,"stroke-linecap":"round","stroke-linejoin":"round"}));
+      core.append(link);
+    }
     core.append(partLayer(name, art[name], geometry[name]));
   }
   assembly.append(core);
@@ -143,6 +152,26 @@ function buildSprite(preset, rig) {
   }));
   assembly.append(brake);
   root.append(assembly);
+  const points = svg("g", {class:"pixel-debug-anchors",display:"none"});
+  for (const [key,color] of Object.entries({
+    seat:"#ffa957",handle:"#53e5ed",hip:"#ffed99",grip_front:"#7dffa2",
+    pedal_front:"#f778bf",pedal_back:"#b7bdff"
+  })) {
+    const marker = svg("g",{class:"pixel-anchor-"+key});
+    marker.append(svg("circle",{r:2.6,fill:color,stroke:"#211939","stroke-width":1}));
+    const label=svg("text",{x:4,y:-3,"font-size":6,fill:color,stroke:"#16122d",
+      "stroke-width":1.3,"paint-order":"stroke"});
+    label.textContent=key;
+    marker.append(label);
+    points.append(marker);
+  }
+  root.append(points);
+  const bones=svg("g",{class:"pixel-debug-skeleton",display:"none"});
+  for (const key of ["shoulder_to_grip","hip_to_pedal_front","hip_to_pedal_back"]) {
+    bones.append(svg("line",{class:"pixel-bone-"+key,stroke:"#56dbff",
+      "stroke-width":1.4,"stroke-dasharray":"3 2"}));
+  }
+  root.append(bones);
   return root;
 }
 
@@ -168,6 +197,18 @@ export function resolveEmotion(state, flags = {}) {
   if (flags.celebrating || flags.waving || state === "happy") return "happy";
   if (flags.fast || state === "focused") return "focused";
   return "neutral";
+}
+
+export function resolveBikeContactPose(rig) {
+  const bike=rig.vehicles.bike;
+  return {
+    seat:[...bike.anchors.seat],handle:[...bike.anchors.handle],
+    pedal:[...bike.anchors.pedal],
+    offset:[bike.anchors.seat[0]-bike.pose.hip_reference[0],
+            bike.anchors.seat[1]-bike.pose.hip_reference[1]],
+    hipReference:[...bike.pose.hip_reference],
+    frontGrip:[...bike.pose.grip_front],backGrip:[...bike.pose.grip_back]
+  };
 }
 
 export function pedalTargets(rig, angle) {
@@ -198,11 +239,45 @@ function updateHead(entry, state, flags) {
   entry.lastExpression = expression;
 }
 
-function poseLeg(part, geometry, target, angle = 0, lift = 0) {
+function poseLeg(part, geometry, worldTarget, coreOffset) {
   const anchor = geometry.foot_anchor;
-  const foot = [geometry.x + anchor[0], geometry.y + anchor[1]];
-  transform(part, target[0] - foot[0], target[1] - foot[1] + lift,
-    angle, ...geometry.pivot);
+  const foot=[geometry.x+anchor[0],geometry.y+anchor[1]];
+  transform(part,worldTarget[0]-coreOffset[0]-foot[0],
+    worldTarget[1]-coreOffset[1]-foot[1],0,...geometry.pivot);
+}
+
+function poseBikeArm(art,rig,side,coreOffset) {
+  const g=rig.limbs["arm_"+side],p=rig.vehicles.bike.pose;
+  const target=side==="front"?p.grip_front:p.grip_back;
+  const shoulder=side==="front"?p.shoulder_front:p.shoulder_back;
+  const tip=side==="front"?p.hand_front_anchor:p.hand_back_anchor;
+  const local=[target[0]-coreOffset[0],target[1]-coreOffset[1]];
+  transform(art.querySelector(".sprite-arm_"+side),
+    local[0]-g.x-tip[0],local[1]-g.y-tip[1],0,...g.pivot);
+  const elbow=[shoulder[0]+(local[0]-shoulder[0])*.53,
+    shoulder[1]+(local[1]-shoulder[1])*.2];
+  const d=`M${shoulder[0]} ${shoulder[1]} Q${elbow[0].toFixed(1)} ${elbow[1].toFixed(1)} ${local[0].toFixed(1)} ${local[1].toFixed(1)}`;
+  const link=art.querySelector(".pixel-arm-link-"+side);
+  link.setAttribute("display","");
+  link.querySelectorAll("path").forEach(path=>path.setAttribute("d",d));
+}
+
+function renderDebug(art, data) {
+  const anchors=art.querySelector(".pixel-debug-anchors");
+  if(anchors.getAttribute("display")!=="none"){
+    for(const [key,point] of Object.entries(data.points)){
+      const marker=art.querySelector(".pixel-anchor-"+key);
+      if(marker&&point)marker.setAttribute("transform",`translate(${point[0].toFixed(2)} ${point[1].toFixed(2)})`);
+    }
+  }
+  if(art.querySelector(".pixel-debug-skeleton").getAttribute("display")!=="none"){
+    for(const [key,pair] of Object.entries(data.bones)){
+      const line=art.querySelector(".pixel-bone-"+key);
+      if(!line||!pair||!pair[0]||!pair[1])continue;
+      line.setAttribute("x1",pair[0][0]);line.setAttribute("y1",pair[0][1]);
+      line.setAttribute("x2",pair[1][0]);line.setAttribute("y2",pair[1][1]);
+    }
+  }
 }
 
 function drawFrame(entry, now) {
