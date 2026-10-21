@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "id": "compact-side-right-v1",
+  "view": "side-right",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "layer_order": [
+    "leg_back",
+    "backpack",
+    "arm_back",
+    "body",
+    "leg_front",
+    "head",
+    "arm_front"
+  ],
+  "slots": {
+    "backpack": {
+      "x": 31,
+      "y": 38,
+      "width": 25,
+      "height": 33
+    },
+    "body": {
+      "x": 51,
+      "y": 56,
+      "width": 39,
+      "height": 23
+    },
+    "head": {
+      "x": 47,
+      "y": 17,
+      "width": 55,
+      "height": 48
+    }
+  },
+  "limbs": {
+    "arm_back": {
+      "x": 43,
+      "y": 55,
+      "width": 18,
+      "height": 17,
+      "pivot": [
+        55,
+        60
+      ]
+    },
+    "arm_front": {
+      "x": 76,
+      "y": 55,
+      "width": 18,
+      "height": 18,
+      "pivot": [
+        80,
+        60
+      ]
+    },
+    "leg_back": {
+      "x": 49,
+      "y": 68,
+      "width": 18,
+      "height": 25,
+      "pivot": [
+        55,
+        76
+      ]
+    },
+    "leg_front": {
+      "x": 63,
+      "y": 70,
+      "width": 24,
+      "height": 20,
+      "pivot": [
+        65,
+        76
+      ]
+    }
+  },
+  "vehicles": {
+    "bike": {
+      "x": 5,
+      "y": 28,
+      "width": 118,
+      "height": 61,
+      "anchors": {
+        "seat": [
+          60,
+          54
+        ],
+        "handle": [
+          90,
+          48
+        ],
+        "pedal": [
+          67,
+          75
+        ]
+      }
+    }
+  },
+  "expression": {
+    "x": 80,
+    "y": 36,
+    "width": 17,
+    "height": 17
+  },
+  "note": "Logical placement and articulation points shared by compatible presets; no texture crop positions. Texture atlas packing metadata is build-generated only."
+}
