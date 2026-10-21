@@ -1405,6 +1405,9 @@ async function saveDraggedRider(state) {
 }
 
 function attachOwnRiderDrag(node) {
+  node.addEventListener("dragstart", (event) => {
+    if (node._riderData?.user_id === me?.user_id) event.preventDefault();
+  });
   node.addEventListener("pointerdown", (event) => {
     const rider = node._riderData;
     if (
@@ -1438,19 +1441,25 @@ function attachOwnRiderDrag(node) {
       startClientY: event.clientY,
       moved: false,
     };
-    node.classList.add("is-dragging");
-
     const onMove = (moveEvent) => {
       const state = riderDragState;
       if (!state || state.node !== node || state.pointerId !== moveEvent.pointerId) return;
-      const position = pointerOfficePosition(moveEvent);
-      if (!position) return;
 
       const distance = Math.hypot(
         moveEvent.clientX - state.startClientX,
         moveEvent.clientY - state.startClientY,
       );
-      if (distance > 5) state.moved = true;
+      // Keep an ordinary tap/click untouched. Only capture the pointer once
+      // this is a real drag; otherwise the stage steals the rider's click.
+      if (!state.moved) {
+        if (distance <= 5) return;
+        state.moved = true;
+        node.classList.add("is-dragging");
+        stage.setPointerCapture(pointerId);
+      }
+
+      const position = pointerOfficePosition(moveEvent);
+      if (!position) return;
 
       if (hasHardOfficeCollision(position.lane, position.x, state.riderId)) {
         node.classList.add("is-drag-blocked");
@@ -1466,9 +1475,9 @@ function attachOwnRiderDrag(node) {
     };
 
     const cleanup = () => {
-      stage.removeEventListener("pointermove", onMove);
-      stage.removeEventListener("pointerup", onUp);
-      stage.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
       stage.removeEventListener("lostpointercapture", onCaptureLost);
       window.removeEventListener("blur", onBlur);
       try {
@@ -1496,13 +1505,13 @@ function attachOwnRiderDrag(node) {
     const onCancel = (cancelEvent) => finish(cancelEvent, true);
     const onCaptureLost = (lostEvent) => finish(lostEvent, true);
     const onBlur = () => finish(null, true);
-    stage.addEventListener("pointermove", onMove);
-    stage.addEventListener("pointerup", onUp);
-    stage.addEventListener("pointercancel", onCancel);
+    // Window owns the pending gesture, including pointer release outside
+    // the stage; the stage only captures after passing the drag threshold.
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
     stage.addEventListener("lostpointercapture", onCaptureLost);
     window.addEventListener("blur", onBlur);
-    stage.setPointerCapture(pointerId);
-    event.preventDefault();
   });
 }
 
