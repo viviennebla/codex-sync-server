@@ -3,12 +3,13 @@ import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { frameIndex, resolveSpriteState } from "../public/rider-runtime.js";
+import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, advanceWheel } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const riderDir = join(root, "riders/presets/helmet-commuter");
 const loadJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const parts = ["head", "body", "backpack", "arm_back", "arm_front", "leg_back", "leg_front"];
+const heads = ["head-happy.webp", "head-focused.webp", "head-tired.webp"];
 
 test("art manifest lists independent transparent resources and has no handwritten atlas crops", async () => {
   const catalog = await loadJson(join(root, "riders/manifest.json"));
@@ -20,10 +21,21 @@ test("art manifest lists independent transparent resources and has no handwritte
   assert.equal(rig.view, "side-right");
   assert.deepEqual(Object.keys(preset.slots), ["head", "body", "backpack"]);
   assert.deepEqual(Object.keys(preset.limbs), ["arm_back", "arm_front", "leg_back", "leg_front"]);
+  assert.deepEqual(Object.keys(preset.expressions), ["neutral", "happy", "focused", "tired"]);
+  for (const [emotion, path] of Object.entries(preset.expressions)) {
+    const image = await readFile(join(root, path.slice(1)));
+    assert.equal(image.subarray(0, 4).toString("ascii"), "RIFF", emotion);
+    assert.equal(image.subarray(8, 12).toString("ascii"), "WEBP", emotion);
+  }
+  assert.equal(preset.vehicles.bike.frame.endsWith("bike-frame.svg"), true);
+  assert.equal(preset.vehicles.bike.wheel.endsWith("bike-wheel.svg"), true);
   assert.deepEqual(new Set(rig.layer_order), new Set(parts));
   assert.doesNotMatch(JSON.stringify(preset), /"crop"|"atlas"|"x"|"y"|"width"|"height"/);
   const names = (await readdir(riderDir)).sort();
-  assert.deepEqual(names, [...parts.map(name => name + ".webp"), "bike.svg", "manifest.json"].sort());
+  assert.deepEqual(names, [
+    ...parts.map(name => name + ".webp"),
+    ...heads, "bike-frame.svg", "bike-wheel.svg", "manifest.json"
+  ].sort());
   for (const name of parts) {
     const path = (preset.slots[name] || preset.limbs[name]).slice(1);
     const file = await readFile(join(root, path));
@@ -84,4 +96,55 @@ test("retired art is absent and only the declared art paths are available", asyn
   const server = await readFile(join(root, "../src/server.js"), "utf8");
   assert.match(server, /riderPartMatch/);
   assert.doesNotMatch(server, /helmet-commuter\/atlas\.webp/);
+});
+
+test("emotions select distinct preloaded head images instead of drawing runtime visor paths", async () => {
+  const preset = await loadJson(join(riderDir, "manifest.json"));
+  assert.notEqual(preset.expressions.neutral, preset.expressions.happy);
+  assert.notEqual(preset.expressions.happy, preset.expressions.focused);
+  assert.notEqual(preset.expressions.focused, preset.expressions.tired);
+  assert.equal(resolveEmotion("happy"), "happy");
+  assert.equal(resolveEmotion("focused"), "focused");
+  assert.equal(resolveEmotion("bike_brake"), "tired");
+  assert.equal(resolveEmotion("bike_ride", { celebrating: true }), "happy");
+  assert.equal(resolveEmotion("walk"), "neutral");
+  const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
+  assert.doesNotMatch(runtime, /pixel-expression-eyes|renderFace\\(/);
+});
+
+test("six-step walking gait alternates planted and lifted feet without spinning boots", async () => {
+  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
+  const poses = Array.from({ length: 6 }, (_, i) => walkPose(rig, i));
+  assert.deepEqual(walkPose(rig, 6), poses[0]);
+  assert.equal(poses.length, rig.gait.walk.length);
+  assert.equal(poses[0].front[1], 0);
+  assert.equal(poses[3].back[1], 0);
+  for (const p of poses) {
+    for (const side of ["front", "back"]) {
+      const [dx, dy, angle] = p[side];
+      assert.ok(Math.abs(dx) <= 6 && Math.abs(dy) <= 6);
+      assert.ok(Math.abs(angle) <= 5, "whole foot should not spin freely");
+    }
+  }
+});
+
+test("pedal targets are antipodal; front and rear wheels move and brake independently of feet", async () => {
+  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
+  const {center, radius} = rig.vehicles.bike.crank;
+  for (let i = 0; i < 6; i++) {
+    const target = pedalTargets(rig, 2 * Math.PI * i / 6);
+    for (let axis = 0; axis < 2; axis++) {
+      assert.ok(Math.abs((target.front[axis] + target.back[axis]) / 2 - center[axis]) < 1e-9);
+      assert.ok(Math.abs(target.front[axis] - center[axis]) <= radius[axis] + 1e-9);
+    }
+  }
+  assert.equal(advanceWheel(0, 360, 250), 90);
+  assert.equal(advanceWheel(350, 360, 100), 26);
+  assert.equal(advanceWheel(45, 0, 300), 45);
+  assert.equal(rig.vehicles.bike.wheels.rear.center[1], rig.vehicles.bike.wheels.front.center[1]);
+  const frame = await readFile(join(riderDir, "bike-frame.svg"), "utf8");
+  const wheel = await readFile(join(riderDir, "bike-wheel.svg"), "utf8");
+  assert.match(frame, /viewBox/);
+  assert.match(wheel, /viewBox/);
+  assert.match(wheel, /stroke-dasharray/);
 });
