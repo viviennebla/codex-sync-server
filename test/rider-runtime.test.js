@@ -3,7 +3,7 @@ import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, walkLegTransform, advanceWheel } from "../public/rider-runtime.js";
+import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, walkLegTransform, walkBackLeading, advanceWheel } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const riderDir = join(root, "riders/presets/helmet-commuter");
@@ -179,7 +179,32 @@ test("every interpolated phase has a grounded support foot and no seam jump", as
   }
   const runtime = await readFile(join(root,"rider-runtime.js"),"utf8");
   assert.match(runtime,/const torsoBob = walking/);
-  assert.match(runtime,/walkLegTransform\(rig, name, pose\[key\]\)/);
+  assert.match(runtime,/walkLegTransform\(rig, name, pose\[key\], backLeading\)/);
+});
+
+test("trailing shoes face backwards after front/back crossing without foot teleporting", async () => {
+  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
+  assert.equal(walkBackLeading(rig, walkPose(rig, 0)), false);
+  assert.equal(walkBackLeading(rig, walkPose(rig, 3)), true);
+  const limbKeys = [["leg_front", "front"], ["leg_back", "back"]];
+  for (const frame of [0, 1, 2, 2.5, 3, 4, 5, 5.5]) {
+    const pose = walkPose(rig, frame);
+    for (const [name, key] of limbKeys) {
+      const original = walkingBoot(rig, name, pose[key]);
+      const geom = rig.limbs[name];
+      const [px, py] = geom.pivot;
+      const [dx, dy, angle] = walkLegTransform(rig, name, pose[key], true);
+      const radians = angle * Math.PI / 180;
+      const relX = geom.x + geom.foot_anchor[0] - px;
+      const relY = geom.y + geom.foot_anchor[1] - py;
+      const mirroredX = px + dx - relX * Math.cos(radians) - relY * Math.sin(radians);
+      const mirroredY = py + dy - relX * Math.sin(radians) + relY * Math.cos(radians);
+      assert.ok(Math.abs(mirroredX - original.x) < 1e-8, "mirrored boot must preserve its world X");
+      assert.ok(Math.abs(mirroredY - original.y) < 1e-8, "mirrored boot must preserve planted / lifted height");
+    }
+  }
+  const runtime = await readFile(join(root,"rider-runtime.js"),"utf8");
+  assert.match(runtime, /Bike poses always use their original unmirrored boot images/);
 });
 
 test("pedal targets are antipodal; front and rear wheels move and brake independently of feet", async () => {
