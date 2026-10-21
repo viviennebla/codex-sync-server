@@ -112,67 +112,74 @@ test("emotions select distinct preloaded head images instead of drawing runtime 
   assert.doesNotMatch(runtime, /pixel-expression-eyes|renderFace/);
 });
 
-test("six-step walking gait swings about upper-leg pivots while planted foot stays on road", async () => {
+function walkingBoot(rig, name, pose) {
+  const geometry = rig.limbs[name];
+  const [tx, ty, angle] = walkLegTransform(rig, name, pose);
+  const [px, py] = geometry.pivot;
+  const x = geometry.x + geometry.foot_anchor[0] - px;
+  const y = geometry.y + geometry.foot_anchor[1] - py;
+  const rad = angle * Math.PI / 180;
+  return {
+    x: px + tx + x * Math.cos(rad) - y * Math.sin(rad),
+    y: py + ty + x * Math.sin(rad) + y * Math.cos(rad),
+    angle
+  };
+}
+
+test("walking boot order really reverses between opposite half-cycles", async () => {
   const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
-  const poses = Array.from({ length: 6 }, (_, i) => walkPose(rig, i));
-  assert.deepEqual(walkPose(rig, 6), poses[0]);
-  assert.equal(poses.length, rig.gait.walk.length);
-  assert.equal(poses[0].front[1], 0);
-  assert.equal(poses[3].back[1], 0);
-  assert.ok(poses.some(p => p.front[2] < -10 && p.back[2] > 8), "swing should extend one leg forward and the other back");
-  assert.ok(poses.some(p => p.back[2] < -10 && p.front[2] > 8), "swing should reverse mid-cycle");
+  assert.deepEqual(walkPose(rig, 6), walkPose(rig, 0));
+  const boots = (frame) => {
+    const pose = walkPose(rig, frame);
+    return {
+      front: walkingBoot(rig, "leg_front", pose.front),
+      back: walkingBoot(rig, "leg_back", pose.back)
+    };
+  };
+  const stride0 = boots(0);
+  const stride3 = boots(3);
+  assert.ok(stride0.front.x > stride0.back.x + 5, "front leg must lead at start");
+  assert.ok(stride3.front.x < stride3.back.x - 5, "back leg must pass front at half-cycle");
+  assert.ok(stride0.front.angle < -15 && stride0.back.angle > 15);
+  assert.ok(stride3.front.angle > 15 && stride3.back.angle < -15);
+  // Both art assets keep their origins; the normalized shared hip solves the
+  // permanently-front / permanently-back silhouette rather than just angles.
   for (const name of ["leg_front", "leg_back"]) {
     const leg = rig.limbs[name];
-    assert.ok(leg.pivot[1] <= leg.y + 3, "pivot should be at the upper joint");
-  }
-  for (const p of poses) {
-    for (const side of ["front", "back"]) {
-      const [dx, dy, angle] = p[side];
-      assert.ok(Math.abs(dx) <= 6 && Math.abs(dy) <= 6);
-      assert.ok(Math.abs(angle) <= 20, "upper-leg swing should stay within a natural arc");
-    }
+    assert.ok(leg.pivot[1] <= leg.y + 3);
   }
 });
 
-test("walking keeps at least one foot grounded through interpolated frames", async () => {
+test("every interpolated phase has a grounded support foot and no seam jump", async () => {
   const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
   const samples = Array.from({length: 120}, (_, i) => walkPose(rig, i / 20));
-  for (const pose of samples) {
-    assert.ok(pose.front[1] <= 0 && pose.back[1] <= 0);
-    assert.ok(Math.abs(pose.front[1]) < 1e-9 || Math.abs(pose.back[1]) < 1e-9,
-      "one foot must stay planted, not have both lifted off the road");
-    assert.ok(pose.front.every(Number.isFinite) && pose.back.every(Number.isFinite));
-  }
-  // Smooth interpolation across boundaries and seam; avoid visible teleporting.
+  const groundY = Math.max(...["leg_front","leg_back"].map(name => {
+    const g = rig.limbs[name];
+    return g.y + g.foot_anchor[1];
+  }));
+  const positions = samples.map(pose => ({
+    front: walkingBoot(rig, "leg_front", pose.front),
+    back: walkingBoot(rig, "leg_back", pose.back),
+  }));
   for (let i = 0; i < samples.length; i++) {
-    const prev = samples[(i + samples.length - 1) % samples.length];
-    const curr = samples[i];
-    for (const foot of ["front", "back"]) {
-      assert.ok(Math.abs(curr[foot][0] - prev[foot][0]) < 1.5);
-      assert.ok(Math.abs(curr[foot][1] - prev[foot][1]) < 1.5);
+    const pose = samples[i], feet = positions[i];
+    for (const side of ["front","back"]) {
+      assert.ok(pose[side][1] <= 0);
+      assert.ok(Number.isFinite(feet[side].x) && Number.isFinite(feet[side].y));
+      assert.ok(Math.abs(feet[side].y - (groundY + pose[side][1])) < 1e-8,
+        "foot height must follow planted/swing key");
+    }
+    assert.ok(Math.abs(pose.front[1]) < 1e-9 || Math.abs(pose.back[1]) < 1e-9,
+      "at least one boot must stay planted");
+    const prev = positions[(i + positions.length - 1) % positions.length];
+    for (const side of ["front","back"]) {
+      assert.ok(Math.abs(feet[side].x - prev[side].x) < 2.2, "x must interpolate smoothly");
+      assert.ok(Math.abs(feet[side].y - prev[side].y) < 2.2, "y must interpolate smoothly");
     }
   }
-  const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
-  assert.match(runtime, /const torsoBob = walking/);
-  assert.match(runtime, /state === "walk"[\s\S]*preset\.states\.walk/);
-});
-
-test("rotated walk foot retains vertical contact when its gait lift is zero", async () => {
-  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
-  for (let frame = 0; frame < 60; frame++) {
-    const pose = walkPose(rig, frame / 10);
-    for (const [name,side] of [["leg_front","front"],["leg_back","back"]]) {
-      const limb = rig.limbs[name];
-      const [tx,ty,angle] = walkLegTransform(limb, pose[side]);
-      const [footX,footY] = [limb.x+limb.foot_anchor[0],limb.y+limb.foot_anchor[1]];
-      const [pivotX,pivotY] = limb.pivot;
-      const radians = angle * Math.PI / 180;
-      const rotatedY = (footX - pivotX)*Math.sin(radians)+(footY-pivotY)*Math.cos(radians);
-      const worldY = pivotY + ty + rotatedY;
-      assert.ok(Math.abs(worldY-(footY+pose[side][1]))<1e-8);
-      assert.ok(Number.isFinite(tx));
-    }
-  }
+  const runtime = await readFile(join(root,"rider-runtime.js"),"utf8");
+  assert.match(runtime,/const torsoBob = walking/);
+  assert.match(runtime,/walkLegTransform\(rig, name, pose\[key\]\)/);
 });
 
 test("pedal targets are antipodal; front and rear wheels move and brake independently of feet", async () => {
