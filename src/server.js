@@ -1488,6 +1488,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "riders/presets/helmet-commuter/" + bikePartMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/scene-layout.js") {
+      await sendStatic(res, "scene-layout.js", "text/javascript; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
       await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
       return;
