@@ -286,7 +286,7 @@ export function setRiderSlots(node, overrides = {}) {
     const override = overrides[name];
     if (!override) continue;
     const src = typeof override === "string" ? override : override.src;
-    if (!/^\\/riders\\/presets\\/[a-z0-9-]+\\/[a-z0-9_-]+\\.webp$/.test(src || "")) continue;
+    if (!/^\/riders\/presets\/[a-z0-9-]+\/[a-z0-9_-]+\.webp$/.test(src || "")) continue;
     const bitmap = entry.art.querySelector(`[data-part="${name}"] image`);
     if (!bitmap) continue;
     bitmap.setAttribute("href", src);
