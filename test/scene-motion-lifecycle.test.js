@@ -22,7 +22,7 @@ test("single scene overlay is wired without changing stored comment timers",asyn
  assert.match(app,/COMMENT_BUBBLE_MS = 7000/);
  assert.match(app,/if \(options\.pinned\)/);
  assert.match(runtime,/planBubbles/);
- assert.match(runtime,/setInterval\(\(\) =>/);
+ assert.match(runtime,/setInterval\\(\\(\\)\\s*=>/);
  assert.match(css,/\.scene-bubble-overlay/);
  assert.match(css,/pointer-events: none;/);
 });
