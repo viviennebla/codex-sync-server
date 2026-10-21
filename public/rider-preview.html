@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>蹬了吗 · 默认人物拼装验收</title>
+<link rel="icon" href="data:,">
 <style>
   :root { color-scheme:dark; font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif; background:#18162b; color:#f4efff; }
   * {box-sizing:border-box}
@@ -18,7 +19,7 @@
   .panel h2 {font-size:16px;margin:0;padding:16px 18px;border-bottom:1px solid #51416a}
   .scene {height:270px;position:relative;overflow:hidden;background:radial-gradient(circle at 70% 17%,#e9a86345 0 26px,transparent 45px),linear-gradient(180deg,#261d50 0 48%,#34306a 48% 52%,#252347 52% 76%,#191d43 76%)}
   .scene:after{content:"";position:absolute;top:70%;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,#dcc2f59c 0 28px,transparent 28px 67px)}
-  .rider {position:absolute;left:50%;top:46%;width:166px;height:136px;transform:translate(-50%,-40%) scale(.92);transform-origin:50% 70%}
+  .rider {position:absolute;left:50%;top:53%;width:166px;height:136px;transform:translate(-50%,-40%) scale(.92);transform-origin:50% 70%}
   .rider-motion{position:absolute;inset:0}
   .pixel-rider-art{position:absolute;left:50%;top:48%;width:151px;height:119px;transform:translate(-50%,-50%);pointer-events:none}
   .pixel-rider-svg{display:block;width:100%;height:100%;overflow:visible;image-rendering:pixelated}
@@ -41,6 +42,7 @@
     <button data-state="walk" aria-pressed="false">步行</button>
     <button data-state="idle" aria-pressed="false">待机</button>
     <button data-state="happy" aria-pressed="false">开心</button>
+    <button data-state="bike-happy" aria-pressed="false">骑车 + 开心</button>
     <button data-state="focused" aria-pressed="false">专注</button>
     <button data-state="tired" aria-pressed="false">疲惫 / 刹车</button>
     <button data-state="coasting" aria-pressed="false">滑行</button>
@@ -50,7 +52,7 @@
     <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
   </div>
   <div class="metrics">
-    <div class="small"><strong>当前素材</strong>7 张独立透明 WebP + 自行车 SVG</div>
+    <div class="small"><strong>当前素材</strong>7 张部件 + 3 张独立表情头部 + 车架和车轮</div>
     <div class="small"><strong>骨架管理</strong>compact-side-right-v1.json</div>
     <div class="small"><strong>状态切换</strong>同一组人物部件重新姿态组合</div>
   </div>
@@ -58,12 +60,12 @@
 </main>
 <script type="module">
 import {loadRiderCatalog,mountRiderSprite,disposeRiderSprite} from "/rider-runtime.js";
-const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环",walk:"步行",idle:"待机",happy:"开心 / 挥手",focused:"专注",tired:"疲惫 / 刹车",coasting:"滑行"};
+const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动"};
 let catalog=null;
 function stateClass(node,state) {
  node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");
  if(state==="idle")node.classList.add("is-chill");
- else if(state==="happy")node.classList.add("is-celebrating");
+ else if(state==="happy" || state==="bike-happy")node.classList.add("is-celebrating");
  else if(state==="focused")node.classList.add("is-fast");
  else if(state==="tired")node.classList.add("is-tired");
  else if(state==="coasting")node.classList.add("is-coasting");
