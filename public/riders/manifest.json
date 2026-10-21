@@ -6,7 +6,11 @@
   },
   "active_transports": [
     "bike",
-    "walk"
+    "walk",
+    "scooter",
+    "skateboard",
+    "surf",
+    "skate"
   ],
-  "note": "v0.1 pilots bike and walking. Other transports keep their original visual implementation."
+  "note": "All six transports use helmet-commuter sprite; profile avatar stays for identity only. Each vehicle has its own lightweight visual."
 }

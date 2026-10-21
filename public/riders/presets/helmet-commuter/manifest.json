@@ -19,6 +19,18 @@
     "bike": {
       "frame": "/riders/presets/helmet-commuter/bike-frame.svg",
       "wheel": "/riders/presets/helmet-commuter/bike-wheel.svg"
+    },
+    "scooter": {
+      "src": "/riders/presets/helmet-commuter/scooter.svg"
+    },
+    "skateboard": {
+      "src": "/riders/presets/helmet-commuter/skateboard.svg"
+    },
+    "surf": {
+      "src": "/riders/presets/helmet-commuter/surf.svg"
+    },
+    "skate": {
+      "src": "/riders/presets/helmet-commuter/skate.svg"
     }
   },
   "states": {
@@ -57,9 +69,41 @@
     "bike_brake": {
       "frames": 2,
       "fps": 6
+    },
+    "scooter_ride": {
+      "frames": 6,
+      "fps": 9
+    },
+    "scooter_glide": {
+      "frames": 2,
+      "fps": 4
+    },
+    "skateboard_ride": {
+      "frames": 6,
+      "fps": 9
+    },
+    "skateboard_glide": {
+      "frames": 2,
+      "fps": 4
+    },
+    "surf_ride": {
+      "frames": 6,
+      "fps": 9
+    },
+    "surf_glide": {
+      "frames": 2,
+      "fps": 4
+    },
+    "skate_ride": {
+      "frames": 6,
+      "fps": 9
+    },
+    "skate_glide": {
+      "frames": 2,
+      "fps": 4
     }
   },
-  "note": "Expression variants are independent full helmet sources. Bike chassis and rotating wheels are separate. Geometry lives in shared rig; no handwritten atlas crops.",
+  "note": "All six transports use shared helmet/limbs/expression assets; each vehicle supplies one independent SVG. Rig owns presentation geometry, not UV crops.",
   "expressions": {
     "neutral": "/riders/presets/helmet-commuter/head.webp",
     "happy": "/riders/presets/helmet-commuter/head-happy.webp",

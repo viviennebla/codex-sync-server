@@ -34,7 +34,8 @@ test("art manifest lists independent transparent resources and has no handwritte
   const names = (await readdir(riderDir)).sort();
   assert.deepEqual(names, [
     ...parts.map(name => name + ".webp"),
-    ...heads, "bike-frame.svg", "bike-wheel.svg", "manifest.json"
+    ...heads, "bike-frame.svg", "bike-wheel.svg",
+    "scooter.svg", "skateboard.svg", "surf.svg", "skate.svg", "manifest.json"
   ].sort());
   for (const name of parts) {
     const path = (preset.slots[name] || preset.limbs[name]).slice(1);
@@ -234,7 +235,7 @@ test("rider and bike bob together while a single visual offset raises the rider"
   assert.match(runtime, /assembly\.append\(vehicle\)/);
   assert.match(runtime, /assembly\.append\(core\)/);
   assert.match(runtime, /transform\(art\.querySelector\("\.pixel-rider-assembly"\), 0, bob\)/);
-  assert.match(runtime, /const riderLift = bike \? -12 : 0/);
+  assert.match(runtime, /const riderLift = bike \? -12 : otherVehicle/);
   assert.doesNotMatch(runtime, /seatOffset|handleOffset|perVehicleJointAnchors/);
 });
 

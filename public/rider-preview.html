@@ -46,13 +46,17 @@
     <button data-state="focused" aria-pressed="false">专注</button>
     <button data-state="tired" aria-pressed="false">疲惫 / 刹车</button>
     <button data-state="coasting" aria-pressed="false">滑行</button>
+    <button data-state="scooter" aria-pressed="false">滑板车</button>
+    <button data-state="skateboard" aria-pressed="false">滑板</button>
+    <button data-state="surf" aria-pressed="false">冲浪</button>
+    <button data-state="skate" aria-pressed="false">轮滑</button>
   </div>
   <div class="grid">
     <section class="panel"><h2>实际拼装 · 原始大小</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
     <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
   </div>
   <div class="metrics">
-    <div class="small"><strong>当前素材</strong>7 张部件 + 3 张独立表情头部 + 车架和车轮</div>
+    <div class="small"><strong>当前素材</strong>7 张部件 + 3 张表情头部 + 6 种独立载具</div>
     <div class="small"><strong>骨架管理</strong>compact-side-right-v1.json</div>
     <div class="small"><strong>状态切换</strong>同一组人物部件重新姿态组合</div>
   </div>
@@ -60,7 +64,7 @@
 </main>
 <script type="module">
 import {loadRiderCatalog,mountRiderSprite,disposeRiderSprite} from "/rider-runtime.js";
-const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动"};
+const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 轮子旋转 / 单脚滑行",skateboard:"滑板 · 平衡摇摆",surf:"冲浪 · 波浪起伏",skate:"轮滑 · 双脚交替滑行"};
 let catalog=null;
 function stateClass(node,state) {
  node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");
@@ -73,7 +77,8 @@ function stateClass(node,state) {
 function select(state) {
  if(!catalog)return;
  document.querySelectorAll("[data-state]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.state===state)));
- for(const node of [main,tiny]) {stateClass(node,state);mountRiderSprite(node,["walk","idle","happy","focused"].includes(state)?"walk":"bike",catalog);}
+ for(const node of [main,tiny]) {stateClass(node,state);mountRiderSprite(node,["scooter","skateboard","surf","skate"].includes(state)
+   ? state : ["walk","idle","happy","focused"].includes(state) ? "walk" : "bike",catalog);}
  document.getElementById("stateLabel").textContent=labels[state];
 }
 document.getElementById("modes").addEventListener("click",e=>{const b=e.target.closest("[data-state]");if(b)select(b.dataset.state);});
