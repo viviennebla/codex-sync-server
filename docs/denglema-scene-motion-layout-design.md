@@ -139,3 +139,20 @@ const stageRect = document.querySelector(".race-stage").getBoundingClientRect();
 - 新增 `test/scene-layout-integration.test.js`：检查模块接线/手势保存/动画入口与服务器静态路由，另保留原 7 项几何单测。
 
 **待下一阶段**：Phase B 才处理人物尺寸与脚底锚点、像素级人物占位碰撞、自动漂移冷却；Phase C 处理气泡 Overlay。这次只让布局适配器成为首页坐标计算的真实入口，避免与 Sprite Runtime 的职责交叉。合并前应在 Desktop/375px 浏览器预览、真实跨道路拖动和普通 `?season=off` 中验收视觉布局及落点。
+
+## 8. 单分支分阶段截图验收（2026-10-21）
+
+依用户要求，Phase A/B/C/D 全部在 `feat/denglema-scene-layout-wiring` 上完成，最终只交付同一个 PR #79。每阶段单独做 Chromium Desktop/375px 截图验收，不再拆分小 PR。
+
+![Phase A/B/C/D desktop and mobile screenshot QA](assets/denglema-scene-motion-phase-qa-20261021.webp)
+
+| 阶段 | 已实现 | 截图/行为验收 |
+| --- | --- | --- |
+| A · 双布局接线 | `scene-layout.js` 接入真实 `#lane` DOM、静态路由与拖动；保留 4→2 | 1440/375 下只有两条万圣节道路；普通 `?season=off` 恢复四车道；六名预览 Rider 可见 |
+| B · 人物占位与自动移动 | `scene-placement.js` 按道路实际宽度适配人物尺度、稳定位置/优先手动锚点；去掉万圣节内层 1.13 重复放大；道路铺满背景，事件栏独立悬浮；`canShiftRider` + 随机停顿与 9s 冷却 | 375px 每道路的三名人物恢复可辨识与相互间距；1440 图像比例自然；自动漂移不跨路、不穿过邻人 |
+| C · Bubble Overlay | `bubble-layout.js` 与 `scene-bubble-runtime.js` 独立渲染留言/动作气泡，先排 pinned，再排普通留言与动作；全局避开页面边界、顶部导航与动态栏 | 桌面/375 注入多条长中文测试消息，不见气泡互盖；狭窄情况下低优先级气泡可不显示 |
+| D · 动作生命周期 | `MOTION_ACTIONS[].duration` 作为唯一动作结束源，CSS 的 `animationend` 不再提前结束动作 | 强制 `?motion=wave`，约 2s 仍在动作中、3.5s 已结束，无 JS 页面异常；正常四车道截图作为回退对照 |
+
+隔离工作区完成的 `npm test` 是 **104/104**（截图后的中间基线），后续提交还要再次全量回归。截图使用 `?preview=1` 的六名虚拟骑手，非线上真实用户，C 阶段通过控制台向三人注入多条专用长留言。截图仅证明布局/视觉表现，不代表已通过真实用户登录拖动持久化的 E2E 验收。
+
+**保留边界**：不修改用户位置存储/上传/身份；六种交通方式的美术由 Sprite Session 维护。人数远超道路可容纳容量时仍可出现 `crowded` 软降级，目前没有启用 `+N` 聚合 UI；留到单独 UX 验收，不能隐形删除人物。普通四车道的动画与缩放保持原状。
