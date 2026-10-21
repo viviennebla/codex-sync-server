@@ -35,7 +35,8 @@ export function loadRiderCatalog() {
       await preloadArt([
         ...Object.values(preset.slots),
         ...Object.values(preset.limbs),
-        preset.vehicles?.bike?.src
+        ...Object.values(preset.expressions || {}),
+        ...Object.values(preset.vehicles?.bike || {})
       ].filter(Boolean));
       return {
         id: root.default_preset,
@@ -100,32 +101,37 @@ function buildSprite(preset, rig) {
     focusable: "false"
   });
   root.append(svg("ellipse", {cx: 66, cy: 94, rx: 42, ry: 3, fill: "#20163d", opacity: ".32"}));
+  // Compose wheels behind the frame; rotate them independently around axle centers.
   const bike = rig.vehicles.bike;
-  root.append(svg("image", {
-    class: "pixel-vehicle", href: preset.vehicles.bike.src,
-    x: bike.x, y: bike.y, width: bike.width, height: bike.height,
+  const [sourceW, sourceH] = bike.art_canvas;
+  const vehicle = svg("g", {
+    class: "pixel-vehicle",
+    transform: `translate(${bike.x} ${bike.y}) scale(${bike.width / sourceW} ${bike.height / sourceH})`
+  });
+  for (const role of ["rear", "front"]) {
+    const wheel = bike.wheels[role];
+    const [cx, cy] = wheel.center;
+    const diameter = wheel.size;
+    const group = svg("g", {class: "pixel-wheel pixel-wheel-" + role});
+    group.append(svg("image", {
+      href: preset.vehicles.bike.wheel,
+      x: cx - diameter / 2, y: cy - diameter / 2,
+      width: diameter, height: diameter, preserveAspectRatio: "none"
+    }));
+    vehicle.append(group);
+  }
+  vehicle.append(svg("image", {
+    class: "pixel-bike-frame", href: preset.vehicles.bike.frame,
+    x: 0, y: 0, width: sourceW, height: sourceH,
     preserveAspectRatio: "none"
   }));
+  root.append(vehicle);
   const core = svg("g", {class: "pixel-rider-core"});
   const art = { ...preset.slots, ...preset.limbs };
   const geometry = { ...rig.slots, ...rig.limbs };
   for (const name of rig.layer_order) {
     core.append(partLayer(name, art[name], geometry[name]));
   }
-  const expression = svg("g", {class: "pixel-expression", display: "none"});
-  // This patch sits fully inside the dark visor; the default golden pixel eyes
-  // are retained unmodified. Only exceptional expressions draw over them.
-  expression.append(svg("rect", {
-    x: rig.expression.x, y: rig.expression.y,
-    width: rig.expression.width, height: rig.expression.height,
-    rx: 7, fill: "#20163d"
-  }));
-  expression.append(svg("path", {
-    class: "pixel-expression-eyes",
-    stroke: "#ffe88d", "stroke-width": 2.6, "stroke-linecap": "round",
-    fill: "none"
-  }));
-  core.append(expression);
   root.append(core);
   const brake = svg("g", {class: "pixel-bike-brake", opacity: 0});
   brake.append(svg("path", {
@@ -153,18 +159,44 @@ function transform(part, dx = 0, dy = 0, angle = 0, pivotX = 65, pivotY = 68) {
     `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) rotate(${angle.toFixed(2)} ${pivotX} ${pivotY})`);
 }
 
-function renderFace(art, state, flags) {
-  const expression = art.querySelector(".pixel-expression");
-  const eyes = art.querySelector(".pixel-expression-eyes");
-  const emotion = flags.tired || state === "bike_brake"
-    ? "tired"
-    : flags.celebrating || flags.waving || state === "happy"
-      ? "happy"
-      : flags.fast || state === "focused" ? "focused" : "neutral";
-  expression.setAttribute("display", emotion === "neutral" ? "none" : "");
-  if (emotion === "happy") eyes.setAttribute("d", "M82 44q2-4 4 0m4 0q2-4 4 0");
-  else if (emotion === "tired") eyes.setAttribute("d", "M82 45h4m5 0h4");
-  else if (emotion === "focused") eyes.setAttribute("d", "M83 40l3 7m6-7v7");
+export function resolveEmotion(state, flags = {}) {
+  if (flags.tired || state === "tired" || state === "bike_brake") return "tired";
+  if (flags.celebrating || flags.waving || state === "happy") return "happy";
+  if (flags.fast || state === "focused") return "focused";
+  return "neutral";
+}
+
+export function pedalTargets(rig, angle) {
+  const {center, radius} = rig.vehicles.bike.crank;
+  return {
+    front: [center[0] + radius[0] * Math.cos(angle), center[1] + radius[1] * Math.sin(angle)],
+    back: [center[0] - radius[0] * Math.cos(angle), center[1] - radius[1] * Math.sin(angle)]
+  };
+}
+
+export function walkPose(rig, frame) {
+  const rows = rig.gait.walk;
+  return rows[((Math.floor(frame) % rows.length) + rows.length) % rows.length];
+}
+
+export function advanceWheel(angleDegrees, speedDegreesPerSecond, elapsedMs) {
+  return (angleDegrees + speedDegreesPerSecond * Math.max(0, elapsedMs) / 1000) % 360;
+}
+
+function updateHead(entry, state, flags) {
+  const expression = resolveEmotion(state, flags);
+  if (entry.lastExpression === expression) return;
+  const image = entry.art.querySelector(".sprite-head image");
+  const source = entry.preset.expressions?.[expression] || entry.preset.slots.head;
+  image?.setAttribute("href", source);
+  entry.lastExpression = expression;
+}
+
+function poseLeg(part, geometry, target, angle = 0, lift = 0) {
+  const anchor = geometry.foot_anchor;
+  const foot = [geometry.x + anchor[0], geometry.y + anchor[1]];
+  transform(part, target[0] - foot[0], target[1] - foot[1] + lift,
+    angle, ...geometry.pivot);
 }
 
 function drawFrame(entry, now) {
@@ -182,37 +214,58 @@ function drawFrame(entry, now) {
   const step = reduced ? 0 : frameIndex(state, now - entry.stateStarted, preset.states);
   const frames = Math.max(1, preset.states[state]?.frames || 1);
   const phase = 2 * Math.PI * step / frames;
-  const swing = reduced ? 0 : Math.sin(phase);
-  const lift = reduced ? 0 : Math.cos(phase);
   const get = (name) => art.querySelector(".sprite-" + name);
   const pivot = (name) => rig.limbs[name].pivot;
   const core = art.querySelector(".pixel-rider-core");
-  const bob = reduced ? 0 : (bike ? -0.7 : -1.5) * Math.abs(swing);
   const mounting = state === "bike_mount" && step === 0;
-  const sleepy = state === "tired" || state === "bike_brake";
-  transform(core, mounting ? -6 : 0, bob + (sleepy ? 1 : 0));
+  // Keep feet on the road in walk mode; bob only the bike rider by <= 1 px.
+  const bob = bike && !reduced ? -0.65 * Math.abs(Math.sin(phase)) : 0;
+  transform(core, mounting ? -4 : 0, bob + (state === "tired" ? 1 : 0));
   const vehicle = art.querySelector(".pixel-vehicle");
   vehicle.style.display = bike ? "" : "none";
   art.querySelector(".pixel-bike-brake").setAttribute("opacity",
     state === "bike_brake" && !reduced ? "1" : "0");
 
   if (bike) {
-    const pedaling = state === "bike_ride" && !reduced;
-    const dx = pedaling ? 4 * swing : 0;
-    const dy = pedaling ? 3 * lift : 0;
-    transform(get("leg_front"), -3 + dx, -9 + dy, -8 + 10 * swing, ...pivot("leg_front"));
-    transform(get("leg_back"), 5 - dx, -10 - dy, 8 - 10 * swing, ...pivot("leg_back"));
-    transform(get("arm_front"), 6, -3, -14, ...pivot("arm_front"));
-    transform(get("arm_back"), 7, -4, -9, ...pivot("arm_back"));
+    const moving = state === "bike_ride" && !reduced;
+    const wheelTarget = reduced ? 0 : state === "bike_ride" ? 560
+      : state === "bike_glide" ? 350 : state === "bike_mount" ? 55 : 0;
+    const dt = Math.min(120, Math.max(0, now - (entry.lastWheelAt ?? now)));
+    entry.lastWheelAt = now;
+    entry.wheelSpeed += (wheelTarget - entry.wheelSpeed) * Math.min(1, dt / 220);
+    entry.wheelAngle = advanceWheel(entry.wheelAngle, entry.wheelSpeed, dt);
+    for (const role of ["rear", "front"]) {
+      const [cx, cy] = rig.vehicles.bike.wheels[role].center;
+      const wheel = art.querySelector(".pixel-wheel-" + role);
+      wheel.setAttribute("transform", `rotate(${entry.wheelAngle.toFixed(1)} ${cx} ${cy})`);
+    }
+
+    // Foot endpoints trace the pedal circle 180 degrees apart. The image body
+    // stays intact, moving each discrete boot sprite as a whole rather than
+    // arbitrarily spinning it about the hip.
+    const crankAngle = moving ? phase : state === "bike_glide" ? Math.PI / 2
+      : state === "bike_brake" ? Math.PI : 0;
+    const feet = pedalTargets(rig, crankAngle);
+    poseLeg(get("leg_front"), rig.limbs.leg_front, feet.front, 0);
+    poseLeg(get("leg_back"), rig.limbs.leg_back, feet.back, 0);
+    // Hand-grips stay anchored at the handlebar for the full pedal loop.
+    transform(get("arm_front"), 5, -4, -10, ...pivot("arm_front"));
+    transform(get("arm_back"), 7, -4, -8, ...pivot("arm_back"));
   } else {
-    const standing = ["idle", "happy", "tired", "focused"].includes(state);
-    const stride = standing ? 0 : swing;
-    transform(get("leg_front"), 4 * stride, Math.max(0, -2 * lift), -10 * stride, ...pivot("leg_front"));
-    transform(get("leg_back"), -4 * stride, Math.max(0, 2 * lift), 10 * stride, ...pivot("leg_back"));
-    transform(get("arm_front"), 2 * stride, -2 * stride, state === "happy" ? -36 : -6 * stride, ...pivot("arm_front"));
-    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride, ...pivot("arm_back"));
+    entry.lastWheelAt = now; // avoid jumping wheel phase on switching back
+    entry.wheelSpeed = 0;
+    const pose = state === "walk" && !reduced ? walkPose(rig, step) : rig.gait.stationary;
+    for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
+      const [dx, dy, angle] = pose[key];
+      transform(get(name), dx, dy, angle, ...pivot(name));
+    }
+    const stride = state === "walk" && !reduced ? Math.sin(phase) : 0;
+    transform(get("arm_front"), 2 * stride, -2 * stride,
+      state === "happy" ? -36 : -6 * stride, ...pivot("arm_front"));
+    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride,
+      ...pivot("arm_back"));
   }
-  renderFace(art, state, flags);
+  updateHead(entry, state, flags);
 }
 
 function animate(now) {
@@ -268,7 +321,8 @@ export function mountRiderSprite(node, transport, catalog) {
   node.classList.add("has-pixel-rider");
   const entry = {
     node, art, preset: catalog.preset, rig: catalog.rig, transport,
-    state: null, stateStarted: performance.now(),
+    state: null, stateStarted: performance.now(), lastExpression: null,
+    wheelAngle: 0, wheelSpeed: 0, lastWheelAt: performance.now(),
     mountUntil: transport === "bike" ? performance.now() + 650 : 0
   };
   mounted.set(node, entry);
