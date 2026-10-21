@@ -21,14 +21,18 @@ public/riders/
 │   └── compact-side-right-v1.json  # 共用坐标系、部件摆放、关节 pivot、自行车锚点
 └── presets/helmet-commuter/
     ├── manifest.json               # 仅列素材路径 + 动画定义 + rig 引用
-    ├── head.webp                   # 右侧头盔
+    ├── head.webp                   # 默认圆眼头盔
+    ├── head-happy.webp             # 独立开心头盔（弯眼）
+    ├── head-focused.webp           # 独立专注头盔
+    ├── head-tired.webp             # 独立疲惫头盔
     ├── body.webp                   # 身体
     ├── backpack.webp               # 橙色背包
     ├── arm_back.webp
     ├── arm_front.webp
     ├── leg_back.webp
     ├── leg_front.webp
-    └── bike.svg                    # 独立的自行车外观
+    ├── bike-frame.svg              # 无车轮的车架
+    └── bike-wheel.svg              # 可独立旋转的车轮素材
 ```
 
 ### 谁管理什么
@@ -47,9 +51,10 @@ public/riders/
 ## 3. 模块拼装
 
 - 共用 128×100 逻辑画布。默认 preset 指向 `/riders/rigs/compact-side-right-v1.json`。
-- 视觉顺序：地面阴影 → 自行车（有时）→ 后腿 → 背包 → 后手臂 → 身体 → 前腿 → 头 → 前手臂 → 表情。
+- 视觉顺序：地面阴影 → **独立前后轮** → 自行车车架 → 后腿 → 背包 → 后手臂 → 身体 → 前腿 → **当前状态的完整头部素材** → 前手臂。表情直接换完整头盔，运行时不在面罩上临时画两条线。
 - 更换 Head、Body、Backpack 时只换图片路径；不修改摆放坐标、骑行锚点和其它部件切图区域。
-- 逻辑动画：`idle` 4、`walk` 4、`happy` 3、`focused` 3、`tired` 3；`bike_mount` 2、`bike_ride` 6、`bike_glide` 2、`bike_brake` 2。
+- 逻辑动画：`idle` 4、`walk` **6 段落脚姿态**、`happy` 3、`focused` 3、`tired` 3；`bike_mount` 2、`bike_ride` 6、`bike_glide` 2、`bike_brake` 2。
+- 步行脚掌通过离散关键姿态保持着地，不再用整条腿大角度旋转；骑车脚掌目标点与曲柄围绕同一中心作前后 180° 相位差运动。车轮跟随速度连续旋转，滑行继续滚动，刹车减速；以上关节 / 车轴锚点属于共享 `rig.json`。
 - 这里的帧是基于相同独立部件的 rig 姿态；**不是已经逐帧精绘的 6 张骑行 PNG**。待实际画面确认后再做更精细的动作图。
 
 ## 4. 资源清理与防止混淆
@@ -61,8 +66,12 @@ public/riders/
 
 ## 5. 最低验收
 
-1. CI `npm test`、`node --check` 通过；七张 WebP 独立加载，旧 `atlas.webp` 和旧 SVG URL 是 404。
+1. CI `npm test`、`node --check` 通过；七张部件 WebP + 三种额外表情头部 + `bike-frame.svg` / `bike-wheel.svg` 均能独立加载，旧 `atlas.webp`、`bike.svg` 和旧占位 SVG URL 是 404。
 2. 头盔、手臂、背包在 1440/375px 不错位；背景仍保持已有双道路和普通版本旧车道。
 3. 待机、步行、骑行、滑行、刹车、开心/专注/疲惫动画不破坏轮胎/手脚对位，尊重 reduced-motion。
 4. 自己人物拖动、留言气泡、设备绑定、使用量不受影响。
 5. **完成真实浏览器截图视觉验收前，不直接合并 PR #75**。
+
+## 6. 动画预览（PR #75）
+
+在隔离预览环境打开 `/rider-preview`，可切换骑行、滑行、刹车、步行、开心、**骑车时开心**、专注和疲惫。该页面调用与首页相同的 `rider-runtime.js` 和 Manifest，是程序拼装结果，不是新生成的概念图。验证需记录实际浏览器截屏及车轮角度变化，并确认小尺寸可读性。
