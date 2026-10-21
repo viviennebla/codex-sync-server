@@ -382,17 +382,19 @@ function drawFrame(entry, now) {
       wheel.setAttribute("transform", `rotate(${entry.wheelAngle.toFixed(1)} ${cx} ${cy})`);
     }
 
-    // Foot endpoints trace the pedal circle 180 degrees apart. The image body
-    // stays intact, moving each discrete boot sprite as a whole rather than
-    // arbitrarily spinning it about the hip.
+    // The whole rider is visually lifted for its helmet profile, while the bike
+    // remains at road height. Ease the boots halfway back toward the pedals:
+    // full lift correction makes the reused walking shoes hang beneath the frame.
+    // This is a visual alignment, not a new per-vehicle joint system.
     const crankAngle = moving ? phase : state === "bike_glide" ? Math.PI / 2
       : state === "bike_brake" ? Math.PI : 0;
     const feet = pedalTargets(rig, crankAngle);
-    poseLeg(get("leg_front"), rig.limbs.leg_front, feet.front, 0);
-    poseLeg(get("leg_back"), rig.limbs.leg_back, feet.back, 0);
-    // Hand-grips stay anchored at the handlebar for the full pedal loop.
-    transform(get("arm_front"), 5, -4, -10, ...pivot("arm_front"));
-    transform(get("arm_back"), 7, -4, -8, ...pivot("arm_back"));
+    poseLeg(get("leg_front"), rig.limbs.leg_front, [feet.front[0], feet.front[1] - riderLift * 0.5], 0);
+    poseLeg(get("leg_back"), rig.limbs.leg_back, [feet.back[0], feet.back[1] - riderLift * 0.5], 0);
+    // Move the existing arm sprites closer to the bars, not in front of the
+    // chest. A future grip-specific arm asset may improve the silhouette.
+    transform(get("arm_front"), 13, 0, -10, ...pivot("arm_front"));
+    transform(get("arm_back"), 16, 0, -8, ...pivot("arm_back"));
   } else {
     entry.lastWheelAt = now; // avoid jumping wheel phase on switching back
     entry.wheelSpeed = 0;
