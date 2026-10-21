@@ -31,7 +31,25 @@ const HEARTBEAT_RATE_CV_MIN = 0.9;
 
 export const DENGLEMA_PRODUCT_TIMEZONE = "Asia/Shanghai";
 
+export function formatDenglemaTokenCount(value) {
+  const n = Number(value || 0);
+  if (n >= 10000000) return (n / 1000000).toFixed(1) + "M";
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + "M";
+  if (n >= 100000) return Math.round(n / 1000) + "K";
+  return n.toLocaleString("en-US");
+}
+
+export function formatDenglemaUploadMessage(harness, totalTokens) {
+  return "更新了 " + harness + " usage · " + formatDenglemaTokenCount(totalTokens) + " token";
+}
+
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
+  {
+    id: "upload-event-token-units-2026-10",
+    emoji: "🔢",
+    message: "#77 上传动态支持 K/M 单位 · 逗号终于不用排长队了",
+    href: "/",
+  },
   {
     id: "halloween-clean-layer-assets-2026-10",
     emoji: "🎃",
@@ -326,7 +344,11 @@ export async function readDenglemaEvents(stateDir = "state", options = {}) {
     return {
       id: item.id,
       kind: item.kind,
-      message: item.message,
+      message: item.kind === "upload"
+        && typeof item.meta?.harness === "string"
+        && Number.isFinite(item.meta?.total_tokens)
+        ? formatDenglemaUploadMessage(item.meta.harness, item.meta.total_tokens)
+        : item.message,
       created_at: item.created_at,
       meta: item.meta || null,
       expires_at: item.expires_at || null,

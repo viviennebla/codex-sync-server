@@ -18,10 +18,44 @@ import {
   appendDenglemaEvent,
   backfillHistoricalJoinEvents,
   ensureDenglemaReleaseAnnouncements,
+  formatDenglemaTokenCount,
+  formatDenglemaUploadMessage,
   readDenglemaEvents,
   syncLeaderboardLeader,
   syncUserAchievements,
 } from "../src/denglema-social.js";
+
+test("upload events use the same K/M token units as the leaderboard", () => {
+  assert.equal(formatDenglemaTokenCount(0), "0");
+  assert.equal(formatDenglemaTokenCount(99999), "99,999");
+  assert.equal(formatDenglemaTokenCount(100000), "100K");
+  assert.equal(formatDenglemaTokenCount(999499), "999K");
+  assert.equal(formatDenglemaTokenCount(1000000), "1.00M");
+  assert.equal(formatDenglemaTokenCount(1234567), "1.23M");
+  assert.equal(formatDenglemaTokenCount(10000000), "10.0M");
+  assert.equal(formatDenglemaTokenCount(63724971), "63.7M");
+});
+
+test("stored upload events immediately display abbreviated totals without changing metadata", async (t) => {
+  const root = await withRoot(t, "denglema-upload-token-display-");
+  const now = new Date("2026-10-21T03:00:00Z");
+  await createWebUser({ display_name: "Rider" }, root, {
+    userId: "rider",
+    recoveryCode: "UPLOAD-RIDER",
+    now: () => now,
+  });
+  await appendDenglemaEvent({
+    kind: "upload",
+    user_id: "rider",
+    message: "更新了 codex usage · 63,724,971 token",
+    meta: { harness: "codex", total_tokens: 63724971 },
+  }, root, { now: () => now });
+  const events = await readDenglemaEvents(root, { now: () => now });
+  const upload = events.find((event) => event.kind === "upload");
+  assert.equal(upload.message, "更新了 codex usage · 63.7M token");
+  assert.equal(upload.meta.total_tokens, 63724971);
+  assert.equal(formatDenglemaUploadMessage("codex", 63724971), upload.message);
+});
 
 async function withRoot(t, prefix) {
   const root = await mkdtemp(join(tmpdir(), prefix));
