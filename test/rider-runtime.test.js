@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -58,4 +58,16 @@ test("approved helmet character has no default ghost outfit and no emoji face", 
   const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
   assert.doesNotMatch(runtime, /emoji-avatar|halloweenCostumeEmoji/);
   assert.doesNotMatch(JSON.stringify(preset), /ghost|witch|pumpkin_costume/);
+});
+
+test("retired helmet prototype art is absent from the active repository", async () => {
+  const names = (await readdir(riderDir)).sort();
+  assert.deepEqual(names, ["atlas.webp", "bike.svg", "manifest.json"]);
+  await assert.rejects(
+    access(join(root, "../docs/assets/denglema/helmet-commuter-v01-design-board.svg")),
+    { code: "ENOENT" }
+  );
+  const server = await readFile(join(root, "../src/server.js"), "utf8");
+  assert.doesNotMatch(server, /\(head\|body\|backpack\|bike\)/);
+  assert.match(server, /helmet-commuter\/bike\.svg/);
 });
