@@ -1464,12 +1464,19 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "riders/presets/helmet-commuter/manifest.json", "application/json; charset=utf-8");
       return;
     }
-    if (method === "GET" && url.pathname === "/riders/presets/helmet-commuter/atlas.webp") {
-      await sendStatic(res, "riders/presets/helmet-commuter/atlas.webp", "image/webp");
+    if (method === "GET" && url.pathname === "/riders/rigs/compact-side-right-v1.json") {
+      await sendStatic(res, "riders/rigs/compact-side-right-v1.json", "application/json; charset=utf-8");
       return;
     }
-    // Only the approved bike SVG and transparent character atlas are public.
-    // Retired head/body/backpack prototype SVGs are deliberately not served.
+    const riderPartMatch = method === "GET" && url.pathname.match(
+      /^\\/riders\\/presets\\/helmet-commuter\\/(head|body|backpack|arm_back|arm_front|leg_back|leg_front)\\.webp$/
+    );
+    if (riderPartMatch) {
+      await sendStatic(res, "riders/presets/helmet-commuter/" + riderPartMatch[1] + ".webp", "image/webp");
+      return;
+    }
+    // Only listed modular art parts and the approved bike are served.
+    // An untrusted path cannot be used to browse other files.
     if (method === "GET" && url.pathname === "/riders/presets/helmet-commuter/bike.svg") {
       await sendStatic(res, "riders/presets/helmet-commuter/bike.svg", "image/svg+xml; charset=utf-8");
       return;
