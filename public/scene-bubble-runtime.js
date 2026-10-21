@@ -113,3 +113,14 @@ export function syncSceneBubbles(enabled,pinnedRiderId) {
     },160);
   }
 }
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (trackingTimer) clearInterval(trackingTimer);
+      trackingTimer = null;
+    } else if (overlay?.isConnected && overlay.children.length) {
+      syncSceneBubbles(true, currentPinnedRider);
+    }
+  });
+}
