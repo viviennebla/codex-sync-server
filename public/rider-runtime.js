@@ -193,6 +193,29 @@ export function walkPose(rig, frame) {
   };
 }
 
+/**
+ * Swing an entire pixel leg about its upper attachment. Keep the ground
+ * contact point at its original height during stance; negative lift raises
+ * the boot. This affects walking only, never bike pedal positioning.
+ */
+export function walkLegTransform(geometry, pose) {
+  const [shiftX, liftY, angle] = pose;
+  const [pivotX, pivotY] = geometry.pivot;
+  const [footX, footY] = [
+    geometry.x + geometry.foot_anchor[0],
+    geometry.y + geometry.foot_anchor[1]
+  ];
+  const relativeX = footX - pivotX;
+  const relativeY = footY - pivotY;
+  const radians = angle * Math.PI / 180;
+  const rotatedY = relativeX * Math.sin(radians) + relativeY * Math.cos(radians);
+  // The extra translation cancels any vertical movement caused by pivot
+  // rotation, preserving the planted boot's height while it swings.
+  const contactCorrectionY = relativeY - rotatedY;
+  return [shiftX, liftY + contactCorrectionY, angle];
+}
+
+
 export function advanceWheel(angleDegrees, speedDegreesPerSecond, elapsedMs) {
   return (angleDegrees + speedDegreesPerSecond * Math.max(0, elapsedMs) / 1000) % 360;
 }
@@ -284,12 +307,14 @@ function drawFrame(entry, now) {
     const pose = walking ? walkPose(rig, step) : rig.gait.stationary;
     // The torso has a subtle rise/fall, while both feet keep their own
     // independent planted-ground and swing trajectories.
-    const torsoBob = walking ? -1.1 * Math.abs(Math.sin(phase)) : 0;
+    const torsoBob = walking ? -0.6 * Math.abs(Math.sin(phase)) : 0;
     for (const name of ["head", "body", "backpack"]) {
       transform(get(name), 0, torsoBob);
     }
     for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
-      const [dx, dy, angle] = pose[key];
+      const [dx, dy, angle] = walking
+        ? walkLegTransform(rig.limbs[name], pose[key])
+        : pose[key];
       transform(get(name), dx, dy, angle, ...pivot(name));
     }
     const stride = walking ? Math.sin(phase) : 0;
