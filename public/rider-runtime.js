@@ -133,15 +133,6 @@ function buildSprite(preset, rig) {
   const art = { ...preset.slots, ...preset.limbs };
   const geometry = { ...rig.slots, ...rig.limbs };
   for (const name of rig.layer_order) {
-    if (name === "arm_back" || name === "arm_front") {
-      const side = name === "arm_front" ? "front" : "back";
-      const link = svg("g", {class:"pixel-arm-link pixel-arm-link-" + side, display:"none"});
-      link.append(svg("path", {class:"pixel-arm-outline",fill:"none",stroke:"#423277",
-        "stroke-width":9,"stroke-linecap":"round","stroke-linejoin":"round"}));
-      link.append(svg("path", {class:"pixel-arm-fill",fill:"none",stroke:"#d4c6f9",
-        "stroke-width":5.5,"stroke-linecap":"round","stroke-linejoin":"round"}));
-      core.append(link);
-    }
     core.append(partLayer(name, art[name], geometry[name]));
   }
   assembly.append(core);
@@ -152,26 +143,6 @@ function buildSprite(preset, rig) {
   }));
   assembly.append(brake);
   root.append(assembly);
-  const points = svg("g", {class:"pixel-debug-anchors",display:"none"});
-  for (const [key,color] of Object.entries({
-    seat:"#ffa957",handle:"#53e5ed",hip:"#ffed99",grip_front:"#7dffa2",
-    pedal_front:"#f778bf",pedal_back:"#b7bdff"
-  })) {
-    const marker = svg("g",{class:"pixel-anchor-"+key});
-    marker.append(svg("circle",{r:2.6,fill:color,stroke:"#211939","stroke-width":1}));
-    const label=svg("text",{x:4,y:-3,"font-size":6,fill:color,stroke:"#16122d",
-      "stroke-width":1.3,"paint-order":"stroke"});
-    label.textContent=key;
-    marker.append(label);
-    points.append(marker);
-  }
-  root.append(points);
-  const bones=svg("g",{class:"pixel-debug-skeleton",display:"none"});
-  for (const key of ["shoulder_to_grip","hip_to_pedal_front","hip_to_pedal_back"]) {
-    bones.append(svg("line",{class:"pixel-bone-"+key,stroke:"#56dbff",
-      "stroke-width":1.4,"stroke-dasharray":"3 2"}));
-  }
-  root.append(bones);
   return root;
 }
 
@@ -197,18 +168,6 @@ export function resolveEmotion(state, flags = {}) {
   if (flags.celebrating || flags.waving || state === "happy") return "happy";
   if (flags.fast || state === "focused") return "focused";
   return "neutral";
-}
-
-export function resolveBikeContactPose(rig) {
-  const bike=rig.vehicles.bike;
-  return {
-    seat:[...bike.anchors.seat],handle:[...bike.anchors.handle],
-    pedal:[...bike.anchors.pedal],
-    offset:[bike.anchors.seat[0]-bike.pose.hip_reference[0],
-            bike.anchors.seat[1]-bike.pose.hip_reference[1]],
-    hipReference:[...bike.pose.hip_reference],
-    frontGrip:[...bike.pose.grip_front],backGrip:[...bike.pose.grip_back]
-  };
 }
 
 export function pedalTargets(rig, angle) {
@@ -239,45 +198,11 @@ function updateHead(entry, state, flags) {
   entry.lastExpression = expression;
 }
 
-function poseLeg(part, geometry, worldTarget, coreOffset) {
+function poseLeg(part, geometry, target, angle = 0, lift = 0) {
   const anchor = geometry.foot_anchor;
-  const foot=[geometry.x+anchor[0],geometry.y+anchor[1]];
-  transform(part,worldTarget[0]-coreOffset[0]-foot[0],
-    worldTarget[1]-coreOffset[1]-foot[1],0,...geometry.pivot);
-}
-
-function poseBikeArm(art,rig,side,coreOffset) {
-  const g=rig.limbs["arm_"+side],p=rig.vehicles.bike.pose;
-  const target=side==="front"?p.grip_front:p.grip_back;
-  const shoulder=side==="front"?p.shoulder_front:p.shoulder_back;
-  const tip=side==="front"?p.hand_front_anchor:p.hand_back_anchor;
-  const local=[target[0]-coreOffset[0],target[1]-coreOffset[1]];
-  transform(art.querySelector(".sprite-arm_"+side),
-    local[0]-g.x-tip[0],local[1]-g.y-tip[1],0,...g.pivot);
-  const elbow=[shoulder[0]+(local[0]-shoulder[0])*.53,
-    shoulder[1]+(local[1]-shoulder[1])*.2];
-  const d=`M${shoulder[0]} ${shoulder[1]} Q${elbow[0].toFixed(1)} ${elbow[1].toFixed(1)} ${local[0].toFixed(1)} ${local[1].toFixed(1)}`;
-  const link=art.querySelector(".pixel-arm-link-"+side);
-  link.setAttribute("display","");
-  link.querySelectorAll("path").forEach(path=>path.setAttribute("d",d));
-}
-
-function renderDebug(art, data) {
-  const anchors=art.querySelector(".pixel-debug-anchors");
-  if(anchors.getAttribute("display")!=="none"){
-    for(const [key,point] of Object.entries(data.points)){
-      const marker=art.querySelector(".pixel-anchor-"+key);
-      if(marker&&point)marker.setAttribute("transform",`translate(${point[0].toFixed(2)} ${point[1].toFixed(2)})`);
-    }
-  }
-  if(art.querySelector(".pixel-debug-skeleton").getAttribute("display")!=="none"){
-    for(const [key,pair] of Object.entries(data.bones)){
-      const line=art.querySelector(".pixel-bone-"+key);
-      if(!line||!pair||!pair[0]||!pair[1])continue;
-      line.setAttribute("x1",pair[0][0]);line.setAttribute("y1",pair[0][1]);
-      line.setAttribute("x2",pair[1][0]);line.setAttribute("y2",pair[1][1]);
-    }
-  }
+  const foot = [geometry.x + anchor[0], geometry.y + anchor[1]];
+  transform(part, target[0] - foot[0], target[1] - foot[1] + lift,
+    angle, ...geometry.pivot);
 }
 
 function drawFrame(entry, now) {
@@ -292,91 +217,64 @@ function drawFrame(entry, now) {
     entry.stateStarted = now;
   }
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const speed = entry.playbackRate || 1;
-  const step = reduced ? 0 : frameIndex(state, (now - entry.stateStarted) * speed, preset.states);
+  const step = reduced ? 0 : frameIndex(state, now - entry.stateStarted, preset.states);
   const frames = Math.max(1, preset.states[state]?.frames || 1);
   const phase = 2 * Math.PI * step / frames;
-  const get = name => art.querySelector(".sprite-" + name);
-  const pivot = name => rig.limbs[name].pivot;
+  const get = (name) => art.querySelector(".sprite-" + name);
+  const pivot = (name) => rig.limbs[name].pivot;
   const core = art.querySelector(".pixel-rider-core");
-  const contacts = resolveBikeContactPose(rig);
-  const mounting = state === "bike_mount";
-  const progress = mounting
-    ? Math.min(1, Math.max(0, (now - entry.mountStarted) / (650 / speed))) : 1;
-  const ease = progress * progress * (3 - 2 * progress);
-  const coreOffset = bike
-    ? contacts.offset.map(v => v * ease)
-    : [0, state === "tired" ? 1 : 0];
-  // Wheel centers and the frame never bob: the rider's hip stays on the seat.
-  transform(art.querySelector(".pixel-rider-assembly"), 0, 0);
-  transform(core, coreOffset[0], coreOffset[1]);
-  art.querySelector(".pixel-vehicle").style.display = bike ? "" : "none";
+  const mounting = state === "bike_mount" && step === 0;
+  // A single lift seats the character visually above any vehicle; its moving
+  // assembly then carries rider + vehicle together (wheels still spin inside it).
+  // No transport-specific seat/handle/foot coordinates are introduced.
+  const riderLift = bike ? -12 : 0;
+  const bob = bike && !reduced ? -0.65 * Math.abs(Math.sin(phase)) : 0;
+  transform(art.querySelector(".pixel-rider-assembly"), 0, bob);
+  transform(core, mounting ? -4 : 0, riderLift + (state === "tired" ? 1 : 0));
+  const vehicle = art.querySelector(".pixel-vehicle");
+  vehicle.style.display = bike ? "" : "none";
   art.querySelector(".pixel-bike-brake").setAttribute("opacity",
     state === "bike_brake" && !reduced ? "1" : "0");
 
-  let feet = null;
   if (bike) {
+    const moving = state === "bike_ride" && !reduced;
+    const wheelTarget = reduced ? 0 : state === "bike_ride" ? 560
+      : state === "bike_glide" ? 350 : state === "bike_mount" ? 55 : 0;
     const dt = Math.min(120, Math.max(0, now - (entry.lastWheelAt ?? now)));
     entry.lastWheelAt = now;
-    const wheelTarget = reduced ? 0 : state === "bike_ride" ? 560 * speed
-      : state === "bike_glide" ? 350 * speed : state === "bike_mount" ? 55 * speed : 0;
     entry.wheelSpeed += (wheelTarget - entry.wheelSpeed) * Math.min(1, dt / 220);
     entry.wheelAngle = advanceWheel(entry.wheelAngle, entry.wheelSpeed, dt);
-    for (const role of ["rear","front"]) {
-      const [cx,cy] = rig.vehicles.bike.wheels[role].center;
-      art.querySelector(".pixel-wheel-"+role)
-        .setAttribute("transform", `rotate(${entry.wheelAngle.toFixed(1)} ${cx} ${cy})`);
+    for (const role of ["rear", "front"]) {
+      const [cx, cy] = rig.vehicles.bike.wheels[role].center;
+      const wheel = art.querySelector(".pixel-wheel-" + role);
+      wheel.setAttribute("transform", `rotate(${entry.wheelAngle.toFixed(1)} ${cx} ${cy})`);
     }
 
-    const crankAngle = state === "bike_ride" && !reduced ? phase
-      : state === "bike_glide" ? Math.PI/2 : state === "bike_brake" ? Math.PI : 0;
-    feet = pedalTargets(rig, crankAngle);
-    poseLeg(get("leg_front"),rig.limbs.leg_front,feet.front,coreOffset);
-    poseLeg(get("leg_back"),rig.limbs.leg_back,feet.back,coreOffset);
-    poseBikeArm(art,rig,"front",coreOffset);
-    poseBikeArm(art,rig,"back",coreOffset);
-    transform(get("head"),2,-0.5,0);
-    transform(get("body"),0,0,0);
-    transform(get("backpack"),0,0,0);
+    // Foot endpoints trace the pedal circle 180 degrees apart. The image body
+    // stays intact, moving each discrete boot sprite as a whole rather than
+    // arbitrarily spinning it about the hip.
+    const crankAngle = moving ? phase : state === "bike_glide" ? Math.PI / 2
+      : state === "bike_brake" ? Math.PI : 0;
+    const feet = pedalTargets(rig, crankAngle);
+    poseLeg(get("leg_front"), rig.limbs.leg_front, feet.front, 0);
+    poseLeg(get("leg_back"), rig.limbs.leg_back, feet.back, 0);
+    // Hand-grips stay anchored at the handlebar for the full pedal loop.
+    transform(get("arm_front"), 5, -4, -10, ...pivot("arm_front"));
+    transform(get("arm_back"), 7, -4, -8, ...pivot("arm_back"));
   } else {
-    entry.lastWheelAt = now;
+    entry.lastWheelAt = now; // avoid jumping wheel phase on switching back
     entry.wheelSpeed = 0;
-    for (const side of ["front","back"]) {
-      art.querySelector(".pixel-arm-link-"+side).setAttribute("display","none");
+    const pose = state === "walk" && !reduced ? walkPose(rig, step) : rig.gait.stationary;
+    for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
+      const [dx, dy, angle] = pose[key];
+      transform(get(name), dx, dy, angle, ...pivot(name));
     }
-    for (const name of ["head","body","backpack"]) transform(get(name),0,0,0);
-    const pose = state==="walk" && !reduced ? walkPose(rig,step) : rig.gait.stationary;
-    for(const [name,key] of [["leg_front","front"],["leg_back","back"]]) {
-      const [dx,dy,angle] = pose[key];
-      transform(get(name),dx,dy,angle,...pivot(name));
-    }
-    const stride=state==="walk" && !reduced ? Math.sin(phase) : 0;
-    transform(get("arm_front"),2*stride,-2*stride,
-      state==="happy" ? -36 : -6*stride,...pivot("arm_front"));
-    transform(get("arm_back"),-2*stride,2*stride,6*stride,...pivot("arm_back"));
+    const stride = state === "walk" && !reduced ? Math.sin(phase) : 0;
+    transform(get("arm_front"), 2 * stride, -2 * stride,
+      state === "happy" ? -36 : -6 * stride, ...pivot("arm_front"));
+    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride,
+      ...pivot("arm_back"));
   }
-  const hip = contacts.hipReference.map((n,i)=>n+coreOffset[i]);
-  entry.snapshot = {
-    state,emotion:resolveEmotion(state,flags),playbackRate:speed,
-    wheelAngle:entry.wheelAngle,wheelSpeed:entry.wheelSpeed,
-    coreOffset,seat:contacts.seat,handle:contacts.handle,
-    frontGrip:contacts.frontGrip,backGrip:contacts.backGrip,
-    hip,pedalFront:feet?.front||null,pedalBack:feet?.back||null,vehicleVisible:bike
-  };
-  renderDebug(art,{
-    points:{
-      seat:contacts.seat,handle:contacts.handle,hip,
-      grip_front:contacts.frontGrip,pedal_front:feet?.front,pedal_back:feet?.back
-    },
-    bones:{
-      shoulder_to_grip:[
-        rig.vehicles.bike.pose.shoulder_front.map((n,i)=>n+coreOffset[i]),
-        contacts.frontGrip
-      ],
-      hip_to_pedal_front:[hip,feet?.front],
-      hip_to_pedal_back:[hip,feet?.back]
-    }
-  });
   updateHead(entry, state, flags);
 }
 
@@ -417,7 +315,6 @@ export function mountRiderSprite(node, transport, catalog) {
   if (existing) {
     if (existing.transport !== transport) {
       existing.transport = transport;
-      existing.mountStarted = performance.now();
       existing.mountUntil = transport === "bike" ? performance.now() + 650 : 0;
       existing.state = null;
     }
@@ -436,9 +333,7 @@ export function mountRiderSprite(node, transport, catalog) {
     node, art, preset: catalog.preset, rig: catalog.rig, transport,
     state: null, stateStarted: performance.now(), lastExpression: null,
     wheelAngle: 0, wheelSpeed: 0, lastWheelAt: performance.now(),
-    mountStarted: performance.now(),
-    mountUntil: transport === "bike" ? performance.now() + 650 : 0,
-    playbackRate: 1, snapshot: null
+    mountUntil: transport === "bike" ? performance.now() + 650 : 0
   };
   mounted.set(node, entry);
   drawFrame(entry, performance.now());
@@ -480,29 +375,6 @@ export function setRiderSlots(node, overrides = {}) {
     changed = true;
   }
   return changed;
-}
-
-export function setRiderPlaybackRate(node, rate = 1) {
-  const entry = mounted.get(node);
-  if (!entry) return false;
-  entry.playbackRate = Math.max(.25,Math.min(2,Number(rate)||1));
-  entry.stateStarted = performance.now();
-  return true;
-}
-
-export function setRiderDebug(node,{anchors=false,skeleton=false}={}) {
-  const entry=mounted.get(node);
-  if(!entry)return false;
-  entry.art.querySelector(".pixel-debug-anchors")
-    ?.setAttribute("display",anchors?"":"none");
-  entry.art.querySelector(".pixel-debug-skeleton")
-    ?.setAttribute("display",skeleton?"":"none");
-  return true;
-}
-
-export function getRiderDebugSnapshot(node) {
-  const value=mounted.get(node)?.snapshot;
-  return value ? {...value} : null;
 }
 
 export function disposeRiderSprite(node) {
