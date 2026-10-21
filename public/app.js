@@ -1589,6 +1589,9 @@ function renderRiders(riders) {
       lane.appendChild(node);
     }
 
+    updateRiderNode(node, rider);
+    // updateRiderNode applies the legacy avatar scale; the scene planner
+    // is the single size authority in the Halloween two-road layout.
     if (halloweenEnabled && Number.isFinite(rider.sceneScale)) {
       node.style.setProperty("--scale", String(rider.sceneScale));
       if (!riderDragState || riderDragState.riderId !== rider.user_id) {
@@ -1596,7 +1599,6 @@ function renderRiders(riders) {
         node.dataset.drift = "0";
       }
     }
-    updateRiderNode(node, rider);
     if (pixelRiderCatalog) mountRiderSprite(node, transportFor(rider), pixelRiderCatalog);
     updateRiderMessageButton(node, rider.user_id);
   });
