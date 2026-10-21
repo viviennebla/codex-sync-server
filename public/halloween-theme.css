@@ -53,6 +53,9 @@ body.season-halloween .app-shell::before {
  * stack the old inner 1.13 zoom on top of that road-relative scale. */
 body.season-halloween .rider-inner { transform: scale(1); }
 body.season-halloween .race-stage {
+  /* The two painted roads span the full scene width; the event rail is a
+   * separate overlay, not a permanent left column in the road geometry. */
+  margin-left: 0;
   position: relative;
   z-index: 1;
   background: transparent;
