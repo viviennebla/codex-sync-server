@@ -64,3 +64,14 @@ export function planRiderPlacement(riders, layout, opts = {}) {
   }
   return result;
 }
+
+// Check the *moving* actor rectangle against road edges and occupied rects.
+// This operates in viewport pixels, not the old 7.5% lane-distance proxy.
+export function canShiftRider(current, lane, shiftPx, others = [], margin = 4) {
+  if (!current || !lane || !Number.isFinite(shiftPx)) return false;
+  const l = current.left + shiftPx, right = current.right + shiftPx;
+  if (![l,right,lane.left,lane.right].every(Number.isFinite) ||
+      l < lane.left + margin || right > lane.right - margin) return false;
+  return others.every(other =>
+    !other || right + margin <= other.left || l >= other.right + margin);
+}
