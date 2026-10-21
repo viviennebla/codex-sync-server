@@ -1,4 +1,5 @@
 import { mountThemeLayers } from "./theme-runtime.js";
+import { planRiderPlacement } from "./scene-placement.js";
 import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
@@ -1532,8 +1533,13 @@ function renderRiders(riders) {
     .sort((a, b) => Number(b.today_tokens || 0) - Number(a.today_tokens || 0))[0];
   const leaderId = realLeader?.user_id || null;
 
-  visibleRiders = positionPlan(lanePlan(riders)).map((rider) => ({
+  const planned = positionPlan(lanePlan(riders));
+  const domLayout = readLaneLayout(document.querySelector(".race-stage"), layoutMode);
+  const positions = halloweenEnabled ? planRiderPlacement(planned, domLayout) : null;
+  visibleRiders = planned.map((rider) => ({
     ...rider,
+    x: positions?.get(rider.user_id)?.x ?? rider.x,
+    sceneScale: positions?.get(rider.user_id)?.scale ?? null,
     is_leader: rider.user_id === leaderId,
   }));
 
@@ -1563,7 +1569,8 @@ function renderRiders(riders) {
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
       const isPixelRider = ["bike", "walk"].includes(transportFor(rider));
-      node.style.setProperty("--scale", String(isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter)));
+      node.style.setProperty("--scale", String(rider.sceneScale ??
+        (isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter))));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
@@ -1582,6 +1589,13 @@ function renderRiders(riders) {
       lane.appendChild(node);
     }
 
+    if (halloweenEnabled && Number.isFinite(rider.sceneScale)) {
+      node.style.setProperty("--scale", String(rider.sceneScale));
+      if (!riderDragState || riderDragState.riderId !== rider.user_id) {
+        node.style.left = "";
+        node.dataset.drift = "0";
+      }
+    }
     updateRiderNode(node, rider);
     if (pixelRiderCatalog) mountRiderSprite(node, transportFor(rider), pixelRiderCatalog);
     updateRiderMessageButton(node, rider.user_id);
