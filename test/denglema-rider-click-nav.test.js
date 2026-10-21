@@ -53,6 +53,7 @@ function makeHarness() {
     document: { querySelector: () => stage },
     me: { user_id: "own" },
     previewMode: false,
+    currentRiderX: (rider) => rider.x,
     pointerOfficePosition: () => ({ lane: 1, x: 55 }),
     hasHardOfficeCollision: () => false,
     $: () => ({ appendChild() {} }),
