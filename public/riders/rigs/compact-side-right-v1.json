@@ -179,74 +179,74 @@
     "walk": [
       {
         "front": [
-          4,
+          2,
           0,
-          -18
+          -24
         ],
         "back": [
-          -4,
+          -2,
           0,
-          15
+          20
         ]
       },
       {
         "front": [
-          2,
+          1,
           0,
-          -10
+          -12
         ],
         "back": [
-          -3,
-          -3,
-          9
+          -1,
+          -2,
+          8
+        ]
+      },
+      {
+        "front": [
+          -1,
+          0,
+          8
+        ],
+        "back": [
+          1,
+          -5,
+          -16
         ]
       },
       {
         "front": [
           -2,
           0,
-          6
-        ],
-        "back": [
-          1,
-          -5,
-          -10
-        ]
-      },
-      {
-        "front": [
-          -4,
-          0,
-          15
-        ],
-        "back": [
-          4,
-          0,
-          -18
-        ]
-      },
-      {
-        "front": [
-          -3,
-          -3,
-          9
+          20
         ],
         "back": [
           2,
           0,
-          -10
+          -24
+        ]
+      },
+      {
+        "front": [
+          -1,
+          -2,
+          8
+        ],
+        "back": [
+          1,
+          0,
+          -12
         ]
       },
       {
         "front": [
           1,
           -5,
-          -10
+          -16
         ],
         "back": [
-          -2,
+          -1,
           0,
-          6
+          8
         ]
       }
     ],
@@ -262,6 +262,6 @@
         0
       ]
     },
-    "note": "Six interpolated steps. Feet rotate about upper-leg joints; negative angle swings the foot forward in SVG coordinates. Plant compensation preserves support-foot contact with the road. Bike pose is unchanged."
+    "note": "Alternating six-phase walk: two leg sprite origins are normalized to one hip in the runtime. Foot X positions actually cross at half-cycle; one grounded boot and one lifted swing foot. Rotation is around the upper joint only; bike poses remain unchanged."
   }
 }
