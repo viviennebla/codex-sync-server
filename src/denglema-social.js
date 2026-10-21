@@ -45,6 +45,12 @@ export function formatDenglemaUploadMessage(harness, totalTokens) {
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "rider-click-profile-nav-fix-2026-10",
+    emoji: "🛠️",
+    message: "骑手可点可拖、主页导航解开了 · 按钮终于不用练站立了",
+    href: "/me",
+  },
+  {
     id: "upload-event-token-units-2026-10",
     emoji: "🔢",
     message: "#77 上传动态支持 K/M 单位 · 逗号终于不用排长队了",
