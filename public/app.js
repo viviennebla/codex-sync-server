@@ -1,4 +1,5 @@
 import { mountThemeLayers } from "./theme-runtime.js";
+import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -68,6 +69,14 @@ let pairingCommandMode = "shell";
 let previewMode = false;
 let officeLayoutVersion = 0;
 let riderDragState = null;
+let pixelRiderCatalog = null;
+// Load art independently from usage/race data; keep existing art if asset loading fails.
+void loadRiderCatalog().then((catalog) => {
+  pixelRiderCatalog = catalog;
+  document.querySelectorAll(".rider").forEach((node) => {
+    if (node._riderData) mountRiderSprite(node, transportFor(node._riderData), catalog);
+  });
+}).catch(() => {});
 const OFFICE_X_MIN = 22;
 const OFFICE_X_MAX = 78;
 const OFFICE_HARD_GAP = 7.5;
@@ -1255,6 +1264,10 @@ function updateRiderNode(node, rider) {
   }
 
   const nextTransport = transportFor(rider);
+  // Changing transport updates display size without touching the saved office position.
+  const visualJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
+  const pixelActive = ["bike", "walk"].includes(nextTransport);
+  node.style.setProperty("--scale", String(pixelActive ? 0.92 + visualJitter * 0.3 : 1.06 + visualJitter));
   if (node.dataset.transport !== nextTransport) {
     const currentTransport = node.querySelector(".transport");
     currentTransport?.insertAdjacentHTML("afterend", transportMarkup(nextTransport));
@@ -1538,6 +1551,7 @@ function renderRiders(riders) {
       clearTimeout(riderMessageTimers.get(riderId));
       riderMessageTimers.delete(riderId);
       if (pinnedMessageRiderId === riderId) pinnedMessageRiderId = null;
+      disposeRiderSprite(node);
       node.remove();
     }
   });
@@ -1550,7 +1564,8 @@ function renderRiders(riders) {
       lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-      node.style.setProperty("--scale", String(1.06 + sizeJitter));
+      const isPixelRider = ["bike", "walk"].includes(transportFor(rider));
+      node.style.setProperty("--scale", String(isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter)));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
@@ -1570,6 +1585,7 @@ function renderRiders(riders) {
     }
 
     updateRiderNode(node, rider);
+    if (pixelRiderCatalog) mountRiderSprite(node, transportFor(rider), pixelRiderCatalog);
     updateRiderMessageButton(node, rider.user_id);
   });
 

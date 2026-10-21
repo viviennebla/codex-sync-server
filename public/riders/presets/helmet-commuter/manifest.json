@@ -1,0 +1,69 @@
+{
+  "schema_version": 2,
+  "id": "helmet-commuter",
+  "label": "头盔通勤客",
+  "view": "side-right",
+  "rig": "/riders/rigs/compact-side-right-v1.json",
+  "slots": {
+    "head": "/riders/presets/helmet-commuter/head.webp",
+    "body": "/riders/presets/helmet-commuter/body.webp",
+    "backpack": "/riders/presets/helmet-commuter/backpack.webp"
+  },
+  "limbs": {
+    "arm_back": "/riders/presets/helmet-commuter/arm_back.webp",
+    "arm_front": "/riders/presets/helmet-commuter/arm_front.webp",
+    "leg_back": "/riders/presets/helmet-commuter/leg_back.webp",
+    "leg_front": "/riders/presets/helmet-commuter/leg_front.webp"
+  },
+  "vehicles": {
+    "bike": {
+      "frame": "/riders/presets/helmet-commuter/bike-frame.svg",
+      "wheel": "/riders/presets/helmet-commuter/bike-wheel.svg"
+    }
+  },
+  "states": {
+    "idle": {
+      "frames": 4,
+      "fps": 5
+    },
+    "walk": {
+      "frames": 6,
+      "fps": 9
+    },
+    "happy": {
+      "frames": 3,
+      "fps": 6
+    },
+    "focused": {
+      "frames": 3,
+      "fps": 6
+    },
+    "tired": {
+      "frames": 3,
+      "fps": 4
+    },
+    "bike_mount": {
+      "frames": 2,
+      "fps": 4
+    },
+    "bike_ride": {
+      "frames": 6,
+      "fps": 10
+    },
+    "bike_glide": {
+      "frames": 2,
+      "fps": 5
+    },
+    "bike_brake": {
+      "frames": 2,
+      "fps": 6
+    }
+  },
+  "note": "Expression variants are independent full helmet sources. Bike chassis and rotating wheels are separate. Geometry lives in shared rig; no handwritten atlas crops.",
+  "expressions": {
+    "neutral": "/riders/presets/helmet-commuter/head.webp",
+    "happy": "/riders/presets/helmet-commuter/head-happy.webp",
+    "focused": "/riders/presets/helmet-commuter/head-focused.webp",
+    "tired": "/riders/presets/helmet-commuter/head-tired.webp"
+  }
+}

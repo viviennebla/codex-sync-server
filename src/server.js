@@ -1448,6 +1448,46 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "halloween-theme.css", "text/css; charset=utf-8");
       return;
     }
+    if (method === "GET" && (url.pathname === "/rider-preview" || url.pathname === "/rider-preview.html")) {
+      await sendStatic(res, "rider-preview.html", "text/html; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/rider-runtime.js") {
+      await sendStatic(res, "rider-runtime.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/rider-runtime.css") {
+      await sendStatic(res, "rider-runtime.css", "text/css; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/riders/manifest.json") {
+      await sendStatic(res, "riders/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/riders/presets/helmet-commuter/manifest.json") {
+      await sendStatic(res, "riders/presets/helmet-commuter/manifest.json", "application/json; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/riders/rigs/compact-side-right-v1.json") {
+      await sendStatic(res, "riders/rigs/compact-side-right-v1.json", "application/json; charset=utf-8");
+      return;
+    }
+    const riderPartMatch = method === "GET" && url.pathname.match(
+      /^\/riders\/presets\/helmet-commuter\/(head|head-happy|head-focused|head-tired|body|backpack|arm_back|arm_front|leg_back|leg_front)\.webp$/
+    );
+    if (riderPartMatch) {
+      await sendStatic(res, "riders/presets/helmet-commuter/" + riderPartMatch[1] + ".webp", "image/webp");
+      return;
+    }
+    // Only listed modular art parts and the approved bike are served.
+    // An untrusted path cannot be used to browse other files.
+    const bikePartMatch = method === "GET" && url.pathname.match(
+      /^\/riders\/presets\/helmet-commuter\/(bike-frame|bike-wheel)\.svg$/
+    );
+    if (bikePartMatch) {
+      await sendStatic(res, "riders/presets/helmet-commuter/" + bikePartMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
       await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
       return;
