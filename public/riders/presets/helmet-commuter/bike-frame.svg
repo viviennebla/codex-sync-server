@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 64">
+<defs>
+ <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#cde8ff"/><stop offset=".45" stop-color="#72abde"/><stop offset="1" stop-color="#4b61b5"/></linearGradient>
+</defs>
+<!-- Frame coordinates share the same 124x64 coordinate space as the wheels. -->
+<g stroke-linecap="round" stroke-linejoin="round" fill="none">
+ <path d="M24 43 45 16 63 43 24 43 81 19 63 43 100 43 81 19 45 16" stroke="#2b214f" stroke-width="7"/>
+ <path d="M24 43 45 16 63 43 24 43 81 19 63 43 100 43 81 19 45 16" stroke="url(#metal)" stroke-width="4.2"/>
+ <path d="M24 43 45 16 63 43M81 19 100 43" stroke="#f2d9ff" stroke-width="1" opacity=".9"/>
+ <path d="M45 16 41 11M81 19 88 9 102 9" stroke="#2b214f" stroke-width="6"/>
+ <path d="M45 16 41 11M81 19 88 9 102 9" stroke="#8d78d3" stroke-width="3.4"/>
+ <path d="M34 11h15M95 9h11" stroke="#322750" stroke-width="5.7"/>
+ <path d="M34 10h14M95 8h10" stroke="#ffbd79" stroke-width="3"/>
+ <path d="M62 42l6 5h8" stroke="#35315e" stroke-width="4.5"/>
+ <path d="M63 43l5 4h8" stroke="#e0cbff" stroke-width="2.4"/>
+</g>
+<circle cx="63" cy="43" r="5.7" fill="#302451" stroke="#ac8ad2" stroke-width="1.5"/>
+<circle cx="63" cy="43" r="3.2" fill="#ffbc7b"/>
+</svg>
