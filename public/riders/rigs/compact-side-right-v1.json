@@ -87,22 +87,22 @@
   },
   "vehicles": {
     "bike": {
-      "x": 5,
-      "y": 28,
-      "width": 118,
-      "height": 61,
+      "x": 20,
+      "y": 46,
+      "width": 95,
+      "height": 47,
       "anchors": {
         "seat": [
-          60,
+          51,
           54
         ],
         "handle": [
-          90,
-          48
+          88,
+          53
         ],
         "pedal": [
-          67,
-          75
+          68,
+          78
         ]
       },
       "art_canvas": [
@@ -127,13 +127,44 @@
       },
       "crank": {
         "center": [
-          67,
-          75
+          68,
+          78
         ],
         "radius": [
-          9,
-          7
+          7,
+          5
         ]
+      },
+      "pose": {
+        "hip_reference": [
+          65,
+          70
+        ],
+        "grip_front": [
+          88,
+          53
+        ],
+        "grip_back": [
+          83,
+          55
+        ],
+        "shoulder_front": [
+          79,
+          58
+        ],
+        "shoulder_back": [
+          59,
+          58
+        ],
+        "hand_front_anchor": [
+          15,
+          10
+        ],
+        "hand_back_anchor": [
+          15,
+          10
+        ],
+        "seated_tilt_degrees": 3
       }
     }
   },
@@ -143,7 +174,7 @@
     "width": 17,
     "height": 17
   },
-  "note": "Position, grounded walk poses, crank and wheel centers are reusable skeleton data; no texture crop/UV metadata.",
+  "note": "Single right-facing rig: bike asset moves beneath avatar; pose anchors are actual on-screen bike contact coordinates, not atlas UVs. All joint endpoints use world-space target coordinates.",
   "gait": {
     "walk": [
       {
