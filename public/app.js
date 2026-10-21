@@ -1,5 +1,6 @@
 import { mountThemeLayers } from "./theme-runtime.js";
 import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
+import { syncSceneBubbles } from "./scene-bubble-runtime.js";
 import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
@@ -421,6 +422,7 @@ function syncMessageLayer() {
     ".rider.is-coasting",
   ].join(",")));
   stage?.classList.toggle("message-layer-active", hasOpenBubble);
+  if (halloweenEnabled) syncSceneBubbles(hasOpenBubble, pinnedMessageRiderId);
 }
 
 function updateRiderMessageButton(node, riderId) {
@@ -1602,6 +1604,11 @@ function renderRiders(riders) {
     if (pixelRiderCatalog) mountRiderSprite(node, transportFor(rider), pixelRiderCatalog);
     updateRiderMessageButton(node, rider.user_id);
   });
+  if (halloweenEnabled) {
+    // New roster/positions may change message head anchors while an action is
+    // playing. Global overlay owns all bubble placement, not each rider.
+    syncMessageLayer();
+  }
 
   const total = visibleRiders
     .filter((rider) => !rider.demo)
