@@ -1,4 +1,5 @@
 import { mountThemeLayers } from "./theme-runtime.js";
+import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
 const $ = (id) => document.getElementById(id);
@@ -105,7 +106,8 @@ const productDayPart = (type) => dateParts.find((part) => part.type === type)?.v
 const productDay = [productDayPart("year"), productDayPart("month"), productDayPart("day")].join("-");
 const halloweenEnabled = season === "halloween"
   || (season !== "off" && productDay >= "2026-10-18" && productDay <= "2026-11-01");
-const seasonalTrackLanes = halloweenEnabled ? [1, 3] : [1, 2, 3, 4];
+const layoutMode = halloweenEnabled ? LAYOUT_MODE.HALLOWEEN : LAYOUT_MODE.OFFICE;
+const seasonalTrackLanes = visibleLaneIds(layoutMode);
 document.body.classList.toggle("season-halloween", halloweenEnabled);
 if (halloweenEnabled) void mountThemeLayers("halloween").catch(() => {});
 
@@ -907,7 +909,7 @@ function lanePlan(riders) {
     if (Number.isInteger(manualLane) && manualLane >= 1 && manualLane <= 4) {
       // Project existing four-lane saved positions into two visible tracks.
       // The original saved lane is not changed until the user drags again.
-      const trackLane = halloweenEnabled ? (manualLane <= 2 ? 1 : 3) : manualLane;
+      const trackLane = resolveVisualLane(layoutMode, manualLane);
       laneById.set(rider.user_id, trackLane);
       counts[trackLane - 1] += 1;
     }
@@ -1358,17 +1360,13 @@ function hasHardOfficeCollision(lane, x, riderId) {
 
 function pointerOfficePosition(event) {
   const stage = document.querySelector(".race-stage");
-  const rect = stage?.getBoundingClientRect();
-  if (!rect || rect.width <= 0 || rect.height <= 0) return null;
-  const x = Math.max(
-    OFFICE_X_MIN,
-    Math.min(OFFICE_X_MAX, ((event.clientX - rect.left) / rect.width) * 100),
-  );
-  const relativeY = (event.clientY - rect.top) / rect.height;
-  const lane = halloweenEnabled
-    ? (relativeY < 0.70 ? 1 : 3)
-    : Math.max(1, Math.min(4, Math.floor(relativeY * 4) + 1));
-  return { lane, x: Math.round(x * 10) / 10 };
+  const layout = readLaneLayout(stage, layoutMode);
+  // The existing DOM is the spatial contract. If a road has not rendered,
+  // do not guess a third road or persist an unverified drop position.
+  return pointerToLayoutPosition(layout, event, {
+    minX: OFFICE_X_MIN,
+    maxX: OFFICE_X_MAX,
+  });
 }
 
 function rollbackRiderDrag(state) {
