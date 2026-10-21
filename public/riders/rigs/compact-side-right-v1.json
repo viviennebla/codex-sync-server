@@ -185,38 +185,38 @@
         ],
         "back": [
           -5,
-          -5,
+          0,
           0
         ]
       },
       {
         "front": [
-          3,
+          2,
           0,
           0
         ],
         "back": [
           -2,
-          -5,
+          -4,
           0
         ]
       },
       {
         "front": [
-          -1,
           -2,
-          -2
+          0,
+          0
         ],
         "back": [
-          3,
-          -2,
+          2,
+          -4,
           0
         ]
       },
       {
         "front": [
           -5,
-          -5,
+          0,
           0
         ],
         "back": [
@@ -228,25 +228,25 @@
       {
         "front": [
           -2,
-          -5,
+          -4,
           0
         ],
         "back": [
-          3,
+          2,
           0,
           0
         ]
       },
       {
         "front": [
-          3,
-          -2,
+          2,
+          -4,
           0
         ],
         "back": [
-          -1,
           -2,
-          -2
+          0,
+          0
         ]
       }
     ],
@@ -262,6 +262,6 @@
         0
       ]
     },
-    "note": "Walk cycle is six smooth-interpolated alternating foot poses. A planted foot remains on the road while the opposite foot swings forward. Only walking uses this gait; vehicle animation is unaffected."
+    "note": "Continuous six-phase alternating stance: one foot is always planted (y=0) while the other swings forward above the road. Walk-only gait, no impact on bike."
   }
 }
