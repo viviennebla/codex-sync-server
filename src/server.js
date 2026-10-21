@@ -1492,6 +1492,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "scene-layout.js", "text/javascript; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/scene-placement.js") {
+      await sendStatic(res, "scene-placement.js", "text/javascript; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
       await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
       return;
