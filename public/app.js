@@ -1,5 +1,5 @@
 import { mountThemeLayers } from "./theme-runtime.js";
-import { planRiderPlacement } from "./scene-placement.js";
+import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
 import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
@@ -1849,6 +1849,7 @@ function scheduleDirector() {
 function scheduleAmbientDrift() {
   clearInterval(ambientTimer);
   ambientTimer = setInterval(() => {
+    if (document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     visibleRiders.forEach((rider) => {
       const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
       if (
@@ -1856,12 +1857,34 @@ function scheduleAmbientDrift() {
         || activeMotion.has(rider.user_id)
         || riderDragState?.riderId === rider.user_id
       ) return;
+
+      // Pixel scene uses real road/actor rectangles and a movement cooldown.
+      // Keep ordinary four-lane office drift unchanged until its own visual QA.
+      if (halloweenEnabled) {
+        if (node.matches(":hover") || node.classList.contains("has-message") ||
+            Number(node.dataset.driftAfter || 0) > Date.now()) return;
+        if (Math.random() < 0.45) return; // Pauses are part of the scene.
+        const current = Number(node.dataset.drift || 0);
+        const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - .5) * 1.4));
+        const candidate = Math.max(0, Math.min(100, rider.x + next));
+        const lane = node.parentElement;
+        const laneRect = lane?.getBoundingClientRect();
+        const actorRect = node.getBoundingClientRect();
+        if (!laneRect || !actorRect) return;
+        const shiftPx = (candidate - currentRiderX(rider)) / 100 * laneRect.width;
+        const others = [...lane.querySelectorAll(".rider")]
+          .filter(other => other !== node)
+          .map(other => other.getBoundingClientRect());
+        if (!canShiftRider(actorRect, laneRect, shiftPx, others)) return;
+        node.dataset.drift = String(next);
+        node.dataset.driftAfter = String(Date.now() + 9000);
+        node.style.left = candidate + "%";
+        return;
+      }
+
       const current = Number(node.dataset.drift || 0);
       const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
-      const candidate = Math.max(
-        OFFICE_X_MIN,
-        Math.min(OFFICE_X_MAX, Number(rider.x || 50) + next),
-      );
+      const candidate = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, rider.x + next));
       if (hasHardOfficeCollision(rider.lane, candidate, rider.user_id)) return;
       node.dataset.drift = String(next);
       node.style.left = candidate + "%";
