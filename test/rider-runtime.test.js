@@ -3,7 +3,7 @@ import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, advanceWheel } from "../public/rider-runtime.js";
+import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, advanceWheel, resolveBikeContactPose } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const riderDir = join(root, "riders/presets/helmet-commuter");
@@ -157,4 +157,31 @@ test("rider and bike bob together while a single visual offset raises the rider"
   assert.match(runtime, /transform\(art\.querySelector\("\.pixel-rider-assembly"\), 0, bob\)/);
   assert.match(runtime, /const riderLift = bike \? -12 : 0/);
   assert.doesNotMatch(runtime, /seatOffset|handleOffset|perVehicleJointAnchors/);
+});
+
+test("bike seat and rider hip share world coordinates; pedals compensate translated torso", async () => {
+  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
+  const pose = resolveBikeContactPose(rig);
+  const worldHip = pose.hipReference.map((coordinate, axis) => coordinate + pose.offset[axis]);
+  assert.deepEqual(worldHip, pose.seat, "seated rider hip must coincide with the visible seat");
+  const bike = rig.vehicles.bike;
+  assert.ok(bike.y > 35, "bike should sit below torso with tires on the road");
+  assert.ok(bike.width <= 105, "bicycle should remain smaller than original oversized frame");
+  const [rearX,rearY] = bike.wheels.rear.center;
+  const displayedWheelY = bike.y + bike.height / bike.art_canvas[1] * rearY;
+  assert.ok(displayedWheelY > pose.seat[1] + 20, "tires must be below the seat");
+  const visibleFoot = pedalTargets(rig, Math.PI / 3).front;
+  const leg = rig.limbs.leg_front;
+  const artFoot = [leg.x + leg.foot_anchor[0],leg.y + leg.foot_anchor[1]];
+  const correction = visibleFoot.map((point,i) => point - pose.offset[i] - artFoot[i]);
+  const finalWorldFoot = artFoot.map((point,i) => point + correction[i] + pose.offset[i]);
+  finalWorldFoot.forEach((v,i) => assert.ok(Math.abs(v-visibleFoot[i]) < 1e-9));
+});
+
+test("acceptance preview exposes a real interactive state picker", async () => {
+  const page = await readFile(join(root, "rider-preview.html"), "utf8");
+  for (const state of ["bike","walk","idle","happy","bike-happy","tired","coasting"]) {
+    assert.match(page, new RegExp('data-state="' + state + '"'));
+  }
+  assert.match(page, /mountRiderSprite/);
 });
