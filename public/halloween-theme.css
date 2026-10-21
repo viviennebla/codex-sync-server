@@ -49,6 +49,9 @@ body.season-halloween .app-shell::before {
   /* The base is an unlit master; glowing pumpkins are in their own aligned mask. */
   filter: none;
 }
+/* Actor visual size is controlled by the road placement planner. Do not
+ * stack the old inner 1.13 zoom on top of that road-relative scale. */
+body.season-halloween .rider-inner { transform: scale(1); }
 body.season-halloween .race-stage {
   position: relative;
   z-index: 1;
