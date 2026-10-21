@@ -187,7 +187,9 @@ function updateHead(entry, state, flags) {
   const expression = resolveEmotion(state, flags);
   if (entry.lastExpression === expression) return;
   const image = entry.art.querySelector(".sprite-head image");
-  const source = entry.preset.expressions?.[expression] || entry.preset.slots.head;
+  const source = entry.headOverride
+    ? (entry.headOverride[expression] || entry.headOverride.neutral)
+    : (entry.preset.expressions?.[expression] || entry.preset.slots.head);
   image?.setAttribute("href", source);
   entry.lastExpression = expression;
 }
@@ -335,15 +337,33 @@ export function mountRiderSprite(node, transport, catalog) {
 export function setRiderSlots(node, overrides = {}) {
   const entry = mounted.get(node);
   if (!entry) return false;
+  const allowed = (path) =>
+    /^\/riders\/presets\/[a-z0-9-]+\/[a-z0-9_-]+\.webp$/.test(path || "");
   let changed = false;
   for (const name of ["head", "body", "backpack"]) {
     const override = overrides[name];
     if (!override) continue;
+    if (name === "head") {
+      // A new head may supply a complete emotional set or just one static head.
+      // A single-asset override stays selected through future state transitions.
+      const choices = typeof override === "string"
+        ? { neutral: override }
+        : override.expressions || (override.src ? { neutral: override.src } : override);
+      const entries = Object.entries(choices);
+      if (!entries.length || !entries.every(([emotion, src]) =>
+        ["neutral", "happy", "focused", "tired"].includes(emotion) && allowed(src)
+      ) || !allowed(choices.neutral)) continue;
+      entry.headOverride = choices;
+      entry.lastExpression = null;
+      updateHead(entry, entry.state || "idle", flagsFor(entry.node));
+      changed = true;
+      continue;
+    }
     const src = typeof override === "string" ? override : override.src;
-    if (!/^\/riders\/presets\/[a-z0-9-]+\/[a-z0-9_-]+\.webp$/.test(src || "")) continue;
-    const bitmap = entry.art.querySelector(`[data-part="${name}"] image`);
-    if (!bitmap) continue;
-    bitmap.setAttribute("href", src);
+    if (!allowed(src)) continue;
+    const image = entry.art.querySelector(`[data-part="${name}"] image`);
+    if (!image) continue;
+    image.setAttribute("href", src);
     changed = true;
   }
   return changed;
