@@ -1775,17 +1775,10 @@ function triggerMotion(rider, node, action, options = {}) {
     syncMessageLayer();
   };
 
-  const onEnd = (event) => {
-    if (event.target !== motion) return;
-    motion.removeEventListener("animationend", onEnd);
-    finish();
-  };
-
-  motion?.addEventListener("animationend", onEnd);
-  window.setTimeout(() => {
-    motion?.removeEventListener("animationend", onEnd);
-    finish();
-  }, action.duration + 180);
+  // The Director owns action lifetime. CSS keyframes (e.g. 1.5s sway)
+  // are visual sub-animations and must not cancel a 3.2s social action.
+  // Keep one idempotent timeout as the completion signal for CSS and Sprite.
+  window.setTimeout(finish, action.duration);
   return true;
 }
 
