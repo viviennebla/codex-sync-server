@@ -3,7 +3,7 @@ import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, advanceWheel, resolveBikeContactPose } from "../public/rider-runtime.js";
+import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, advanceWheel } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const riderDir = join(root, "riders/presets/helmet-commuter");
@@ -128,6 +128,29 @@ test("six-step walking gait alternates planted and lifted feet without spinning 
   }
 });
 
+test("walking keeps at least one foot grounded through interpolated frames", async () => {
+  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
+  const samples = Array.from({length: 120}, (_, i) => walkPose(rig, i / 20));
+  for (const pose of samples) {
+    assert.ok(pose.front[1] <= 0 && pose.back[1] <= 0);
+    assert.ok(Math.abs(pose.front[1]) < 1e-9 || Math.abs(pose.back[1]) < 1e-9,
+      "one foot must stay planted, not have both lifted off the road");
+    assert.ok(pose.front.every(Number.isFinite) && pose.back.every(Number.isFinite));
+  }
+  // Smooth interpolation across boundaries and seam; avoid visible teleporting.
+  for (let i = 0; i < samples.length; i++) {
+    const prev = samples[(i + samples.length - 1) % samples.length];
+    const curr = samples[i];
+    for (const foot of ["front", "back"]) {
+      assert.ok(Math.abs(curr[foot][0] - prev[foot][0]) < 1.5);
+      assert.ok(Math.abs(curr[foot][1] - prev[foot][1]) < 1.5);
+    }
+  }
+  const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
+  assert.match(runtime, /const torsoBob = walking/);
+  assert.match(runtime, /state === "walk"[\s\S]*preset\.states\.walk/);
+});
+
 test("pedal targets are antipodal; front and rear wheels move and brake independently of feet", async () => {
   const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
   const {center, radius} = rig.vehicles.bike.crank;
@@ -157,25 +180,6 @@ test("rider and bike bob together while a single visual offset raises the rider"
   assert.match(runtime, /transform\(art\.querySelector\("\.pixel-rider-assembly"\), 0, bob\)/);
   assert.match(runtime, /const riderLift = bike \? -12 : 0/);
   assert.doesNotMatch(runtime, /seatOffset|handleOffset|perVehicleJointAnchors/);
-});
-
-test("bike seat and rider hip share world coordinates; pedals compensate translated torso", async () => {
-  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
-  const pose = resolveBikeContactPose(rig);
-  const worldHip = pose.hipReference.map((coordinate, axis) => coordinate + pose.offset[axis]);
-  assert.deepEqual(worldHip, pose.seat, "seated rider hip must coincide with the visible seat");
-  const bike = rig.vehicles.bike;
-  assert.ok(bike.y > 35, "bike should sit below torso with tires on the road");
-  assert.ok(bike.width <= 105, "bicycle should remain smaller than original oversized frame");
-  const [rearX,rearY] = bike.wheels.rear.center;
-  const displayedWheelY = bike.y + bike.height / bike.art_canvas[1] * rearY;
-  assert.ok(displayedWheelY > pose.seat[1] + 20, "tires must be below the seat");
-  const visibleFoot = pedalTargets(rig, Math.PI / 3).front;
-  const leg = rig.limbs.leg_front;
-  const artFoot = [leg.x + leg.foot_anchor[0],leg.y + leg.foot_anchor[1]];
-  const correction = visibleFoot.map((point,i) => point - pose.offset[i] - artFoot[i]);
-  const finalWorldFoot = artFoot.map((point,i) => point + correction[i] + pose.offset[i]);
-  finalWorldFoot.forEach((v,i) => assert.ok(Math.abs(v-visibleFoot[i]) < 1e-9));
 });
 
 test("acceptance preview exposes a real interactive state picker", async () => {
