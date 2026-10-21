@@ -198,21 +198,35 @@ export function walkPose(rig, frame) {
  * contact point at its original height during stance; negative lift raises
  * the boot. This affects walking only, never bike pedal positioning.
  */
-export function walkLegTransform(geometry, pose) {
+export function walkLegTransform(rig, name, pose) {
+  const geometry = rig.limbs[name];
   const [shiftX, liftY, angle] = pose;
   const [pivotX, pivotY] = geometry.pivot;
   const [footX, footY] = [
     geometry.x + geometry.foot_anchor[0],
     geometry.y + geometry.foot_anchor[1]
   ];
+  const front = rig.limbs.leg_front;
+  const back = rig.limbs.leg_back;
+  // The sprites have different source-art origins. Normalize both leg roots
+  // to one walking hip; otherwise the "front" boot always stays in front,
+  // even when its swing angle reverses.
+  const walkHipX = (front.pivot[0] + back.pivot[0]) / 2;
+  const groundY = Math.max(
+    front.y + front.foot_anchor[1],
+    back.y + back.foot_anchor[1]
+  );
   const relativeX = footX - pivotX;
   const relativeY = footY - pivotY;
   const radians = angle * Math.PI / 180;
   const rotatedY = relativeX * Math.sin(radians) + relativeY * Math.cos(radians);
-  // The extra translation cancels any vertical movement caused by pivot
-  // rotation, preserving the planted boot's height while it swings.
-  const contactCorrectionY = relativeY - rotatedY;
-  return [shiftX, liftY + contactCorrectionY, angle];
+  // "translate then rotate" in the SVG transform keeps the rotation center at
+  // the upper joint. Foot height follows the planted/swinging gait position.
+  return [
+    walkHipX - pivotX + shiftX,
+    groundY + liftY - (pivotY + rotatedY),
+    angle
+  ];
 }
 
 
@@ -313,7 +327,7 @@ function drawFrame(entry, now) {
     }
     for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
       const [dx, dy, angle] = walking
-        ? walkLegTransform(rig.limbs[name], pose[key])
+        ? walkLegTransform(rig, name, pose[key])
         : pose[key];
       transform(get(name), dx, dy, angle, ...pivot(name));
     }
