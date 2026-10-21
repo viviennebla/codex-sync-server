@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {planRiderPlacement} from "../public/scene-placement.js";
+import {planRiderPlacement, canShiftRider} from "../public/scene-placement.js";
 
 const layout = (width, ids=[1,3]) => ({
   mode: "halloween-two-road",
@@ -47,4 +47,15 @@ test("two road placement never creates a third lane and is stable across refresh
 test("invalid dimensions fail instead of producing invalid coordinates",()=>{
  assert.equal(planRiderPlacement(riders(2),{lanes:[{id:1,rect:{width:0}}]}),null);
  assert.equal(planRiderPlacement(null,layout(375)),null);
+});
+
+test("ambient drift stays inside existing road and cannot pass through a neighbor", () => {
+  const lane={left:0,right:375};
+  const actor={left:110,right:210};
+  assert.equal(canShiftRider(actor,lane,10,[]),true);
+  assert.equal(canShiftRider(actor,lane,-120,[]),false);
+  assert.equal(canShiftRider(actor,lane,190,[]),false);
+  assert.equal(canShiftRider(actor,lane,10,[{left:215,right:300}]),false);
+  assert.equal(canShiftRider(actor,lane,0,[{left:230,right:300}]),true);
+  assert.equal(canShiftRider(actor,lane,NaN,[]),false);
 });
