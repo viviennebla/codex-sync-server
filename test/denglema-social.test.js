@@ -18,10 +18,22 @@ import {
   appendDenglemaEvent,
   backfillHistoricalJoinEvents,
   ensureDenglemaReleaseAnnouncements,
+  formatDenglemaTokenCount,
   readDenglemaEvents,
   syncLeaderboardLeader,
   syncUserAchievements,
 } from "../src/denglema-social.js";
+
+test("upload events use the same K/M token units as the leaderboard", () => {
+  assert.equal(formatDenglemaTokenCount(0), "0");
+  assert.equal(formatDenglemaTokenCount(99999), "99,999");
+  assert.equal(formatDenglemaTokenCount(100000), "100K");
+  assert.equal(formatDenglemaTokenCount(999499), "999K");
+  assert.equal(formatDenglemaTokenCount(1000000), "1.00M");
+  assert.equal(formatDenglemaTokenCount(1234567), "1.23M");
+  assert.equal(formatDenglemaTokenCount(10000000), "10.0M");
+  assert.equal(formatDenglemaTokenCount(63724971), "63.7M");
+});
 
 async function withRoot(t, prefix) {
   const root = await mkdtemp(join(tmpdir(), prefix));
