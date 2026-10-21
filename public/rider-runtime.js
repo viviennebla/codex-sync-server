@@ -180,7 +180,17 @@ export function pedalTargets(rig, angle) {
 
 export function walkPose(rig, frame) {
   const rows = rig.gait.walk;
-  return rows[((Math.floor(frame) % rows.length) + rows.length) % rows.length];
+  const position = ((frame % rows.length) + rows.length) % rows.length;
+  const index = Math.floor(position);
+  const amount = position - index;
+  // Smoothstep keeps planted feet on the ground and prevents abrupt frame jumps.
+  const eased = amount * amount * (3 - 2 * amount);
+  const next = (index + 1) % rows.length;
+  const blend = (a, b) => a.map((value, axis) => value + (b[axis] - value) * eased);
+  return {
+    front: blend(rows[index].front, rows[next].front),
+    back: blend(rows[index].back, rows[next].back)
+  };
 }
 
 export function advanceWheel(angleDegrees, speedDegreesPerSecond, elapsedMs) {
@@ -217,8 +227,10 @@ function drawFrame(entry, now) {
     entry.stateStarted = now;
   }
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const step = reduced ? 0 : frameIndex(state, now - entry.stateStarted, preset.states);
   const frames = Math.max(1, preset.states[state]?.frames || 1);
+  const step = reduced ? 0 : state === "walk"
+    ? ((now - entry.stateStarted) * (preset.states.walk?.fps || 9) / 1000) % frames
+    : frameIndex(state, now - entry.stateStarted, preset.states);
   const phase = 2 * Math.PI * step / frames;
   const get = (name) => art.querySelector(".sprite-" + name);
   const pivot = (name) => rig.limbs[name].pivot;
@@ -237,6 +249,10 @@ function drawFrame(entry, now) {
     state === "bike_brake" && !reduced ? "1" : "0");
 
   if (bike) {
+    // Restore the neutral torso if this rider has just switched from walking.
+    for (const name of ["head", "body", "backpack"]) {
+      transform(get(name), 0, 0);
+    }
     const moving = state === "bike_ride" && !reduced;
     const wheelTarget = reduced ? 0 : state === "bike_ride" ? 560
       : state === "bike_glide" ? 350 : state === "bike_mount" ? 55 : 0;
@@ -264,16 +280,23 @@ function drawFrame(entry, now) {
   } else {
     entry.lastWheelAt = now; // avoid jumping wheel phase on switching back
     entry.wheelSpeed = 0;
-    const pose = state === "walk" && !reduced ? walkPose(rig, step) : rig.gait.stationary;
+    const walking = state === "walk" && !reduced;
+    const pose = walking ? walkPose(rig, step) : rig.gait.stationary;
+    // The torso has a subtle rise/fall, while both feet keep their own
+    // independent planted-ground and swing trajectories.
+    const torsoBob = walking ? -1.1 * Math.abs(Math.sin(phase)) : 0;
+    for (const name of ["head", "body", "backpack"]) {
+      transform(get(name), 0, torsoBob);
+    }
     for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
       const [dx, dy, angle] = pose[key];
       transform(get(name), dx, dy, angle, ...pivot(name));
     }
-    const stride = state === "walk" && !reduced ? Math.sin(phase) : 0;
-    transform(get("arm_front"), 2 * stride, -2 * stride,
-      state === "happy" ? -36 : -6 * stride, ...pivot("arm_front"));
-    transform(get("arm_back"), -2 * stride, 2 * stride, 6 * stride,
-      ...pivot("arm_back"));
+    const stride = walking ? Math.sin(phase) : 0;
+    transform(get("arm_front"), 2.2 * stride, torsoBob - 1.5 * stride,
+      state === "happy" ? -36 : -12 * stride, ...pivot("arm_front"));
+    transform(get("arm_back"), -2.2 * stride, torsoBob + 1.5 * stride,
+      12 * stride, ...pivot("arm_back"));
   }
   updateHead(entry, state, flags);
 }
