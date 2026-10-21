@@ -181,72 +181,72 @@
         "front": [
           5,
           0,
-          -3
+          0
         ],
         "back": [
           -5,
-          -4,
-          3
+          -5,
+          0
         ]
       },
       {
         "front": [
           3,
           0,
-          -1
-        ],
-        "back": [
-          -4,
-          -3,
-          2
-        ]
-      },
-      {
-        "front": [
-          0,
-          -3,
           0
         ],
         "back": [
-          0,
-          0,
+          -2,
+          -5,
           0
         ]
       },
       {
         "front": [
-          -4,
-          -4,
-          3
+          -1,
+          -2,
+          -2
+        ],
+        "back": [
+          3,
+          -2,
+          0
+        ]
+      },
+      {
+        "front": [
+          -5,
+          -5,
+          0
         ],
         "back": [
           5,
           0,
-          -3
+          0
         ]
       },
       {
         "front": [
-          -3,
-          -3,
-          2
+          -2,
+          -5,
+          0
         ],
         "back": [
           3,
           0,
-          -1
+          0
         ]
       },
       {
         "front": [
-          0,
-          0,
+          3,
+          -2,
           0
         ],
         "back": [
-          0,
-          -3,
-          0
+          -1,
+          -2,
+          -2
         ]
       }
     ],
@@ -261,6 +261,7 @@
         0,
         0
       ]
-    }
+    },
+    "note": "Walk cycle is six smooth-interpolated alternating foot poses. A planted foot remains on the road while the opposite foot swings forward. Only walking uses this gait; vehicle animation is unaffected."
   }
 }
