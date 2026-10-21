@@ -9,27 +9,31 @@ function desiredX(rider, width) {
   return Number.isFinite(n) ? clamp(n, 0, 100) / 100 * width : width / 2;
 }
 
-// Scan available room in small pixel increments. Manual anchors have priority;
-// every automatic rider keeps its stable preferred coordinate when possible.
-function nearestFreeCenter(preferred, lo, hi, half, placed, minGap) {
-  if (hi < lo) return lo;
-  const desired = clamp(preferred, lo, hi);
-  const fits = (x) => placed.every((other) =>
-    Math.abs(x - other.center) >= half + other.half + minGap);
-  if (fits(desired)) return desired;
-  const samples = Math.max(1, Math.ceil((hi - lo) / 3));
-  let best = null;
-  let bestCost = Infinity;
-  for (let i = 0; i <= samples; i++) {
-    const x = lo + (hi - lo) * i / samples;
-    if (!fits(x)) continue;
-    const cost = Math.abs(x - desired);
-    if (cost < bestCost) {
-      best = x;
-      bestCost = cost;
-    }
-  }
-  return best;
+// Distribute a whole lane as one unit. Greedy nearest-slot placement can
+// strand the last rider even if all riders fit, so use constrained forward
+// packing followed by one common translation.
+function centersForLane(people, width, scale, baseWidth, padding, gap) {
+  const half = baseWidth * scale / 2;
+  const lo = Math.max(half, padding + half);
+  const hi = Math.max(lo, Math.min(width - half, width - padding - half));
+  const requiredStep = baseWidth * scale + gap;
+  const availableStep = people.length > 1 ? (hi - lo) / (people.length - 1) : requiredStep;
+  const step = Math.min(requiredStep, availableStep);
+  const crowded = step + 0.001 < requiredStep;
+  const order = [...people].sort((a,b) =>
+    desiredX(a,width) - desiredX(b,width) || String(a.user_id).localeCompare(String(b.user_id)));
+  const centers = order.map(p=>clamp(desiredX(p,width),lo,hi));
+  for(let i=1;i<centers.length;i++) centers[i]=Math.max(centers[i],centers[i-1]+step);
+  // A single shift preserves order and spacing. Prefer the user's saved
+  // anchor where possible; do not persist our temporary adjustment.
+  const shiftLow = lo-centers[0];
+  const shiftHigh = hi-centers[centers.length-1];
+  const manualIndex = order.findIndex(p=>p.office_position && Number.isFinite(Number(p.office_position.x)));
+  const requestedShift = manualIndex >= 0
+    ? desiredX(order[manualIndex],width)-centers[manualIndex]
+    : order.reduce((sum,p,i)=>sum+desiredX(p,width)-centers[i],0)/order.length;
+  const shift = clamp(requestedShift,shiftLow,shiftHigh);
+  return order.map((p,i)=>({rider:p,center:centers[i]+shift,crowded}));
 }
 
 export function planRiderPlacement(riders, layout, opts = {}) {
@@ -48,27 +52,12 @@ export function planRiderPlacement(riders, layout, opts = {}) {
     if (!people.length) continue;
     const capacity = (width - padding * 2 - gap * (people.length - 1)) / (baseWidth * people.length);
     const scale = Math.max(minScale, Math.min(baseScale, capacity));
-    const half = baseWidth * scale / 2;
-    const lo = Math.max(half, padding + half);
-    const hi = Math.min(width - half, width - padding - half);
-    const placed = [];
-    const order = [...people].sort((a, b) => {
-      const manualA = Number.isFinite(Number(a.office_position?.x)) && a.office_position != null;
-      const manualB = Number.isFinite(Number(b.office_position?.x)) && b.office_position != null;
-      if (manualA !== manualB) return manualA ? -1 : 1;
-      const dx = desiredX(a, width) - desiredX(b, width);
-      return dx || String(a.user_id).localeCompare(String(b.user_id));
-    });
-    for (const rider of order) {
-      const preferred = desiredX(rider, width);
-      const found = nearestFreeCenter(preferred, lo, hi, half, placed, gap);
-      const center = found ?? clamp(preferred, lo, Math.max(lo, hi));
-      placed.push({center, half});
+    for (const {rider, center, crowded} of centersForLane(people,width,scale,baseWidth,padding,gap)) {
       result.set(rider.user_id, {
         lane: lane.id,
         x: Math.round(1000 * center / width) / 10,
         scale: Math.round(scale * 1000) / 1000,
-        crowded: found === null,
+        crowded,
         widthPx: baseWidth * scale,
       });
     }
