@@ -40,6 +40,7 @@ import {
 import {
   DENGLEMA_ACHIEVEMENTS,
   DENGLEMA_PRODUCT_TIMEZONE,
+  formatDenglemaTokenCount,
   addDenglemaComment,
   appendDenglemaEvent,
   readDenglemaEvents,
@@ -1152,7 +1153,7 @@ const server = createServer(async (req, res) => {
         if (result.accepted_delta > 0) {
           try {
             const harness = String(body?.harness || "agent").trim().toLowerCase() || "agent";
-            const total = Number(result.accepted_total || 0).toLocaleString("en-US");
+            const total = formatDenglemaTokenCount(result.accepted_total);
             await appendDenglemaEvent({
               kind: "upload",
               user_id: installation.user_id,
