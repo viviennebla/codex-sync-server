@@ -39,6 +39,10 @@ export function formatDenglemaTokenCount(value) {
   return n.toLocaleString("en-US");
 }
 
+export function formatDenglemaUploadMessage(harness, totalTokens) {
+  return "更新了 " + harness + " usage · " + formatDenglemaTokenCount(totalTokens) + " token";
+}
+
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "upload-event-token-units-2026-10",
@@ -340,7 +344,11 @@ export async function readDenglemaEvents(stateDir = "state", options = {}) {
     return {
       id: item.id,
       kind: item.kind,
-      message: item.message,
+      message: item.kind === "upload"
+        && typeof item.meta?.harness === "string"
+        && Number.isFinite(item.meta?.total_tokens)
+        ? formatDenglemaUploadMessage(item.meta.harness, item.meta.total_tokens)
+        : item.message,
       created_at: item.created_at,
       meta: item.meta || null,
       expires_at: item.expires_at || null,
