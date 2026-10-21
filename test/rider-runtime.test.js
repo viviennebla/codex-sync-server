@@ -3,7 +3,7 @@ import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, advanceWheel } from "../public/rider-runtime.js";
+import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, walkLegTransform, advanceWheel } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const riderDir = join(root, "riders/presets/helmet-commuter");
@@ -112,18 +112,24 @@ test("emotions select distinct preloaded head images instead of drawing runtime 
   assert.doesNotMatch(runtime, /pixel-expression-eyes|renderFace/);
 });
 
-test("six-step walking gait alternates planted and lifted feet without spinning boots", async () => {
+test("six-step walking gait swings about upper-leg pivots while planted foot stays on road", async () => {
   const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
   const poses = Array.from({ length: 6 }, (_, i) => walkPose(rig, i));
   assert.deepEqual(walkPose(rig, 6), poses[0]);
   assert.equal(poses.length, rig.gait.walk.length);
   assert.equal(poses[0].front[1], 0);
   assert.equal(poses[3].back[1], 0);
+  assert.ok(poses.some(p => p.front[2] < -10 && p.back[2] > 8), "swing should extend one leg forward and the other back");
+  assert.ok(poses.some(p => p.back[2] < -10 && p.front[2] > 8), "swing should reverse mid-cycle");
+  for (const name of ["leg_front", "leg_back"]) {
+    const leg = rig.limbs[name];
+    assert.ok(leg.pivot[1] <= leg.y + 3, "pivot should be at the upper joint");
+  }
   for (const p of poses) {
     for (const side of ["front", "back"]) {
       const [dx, dy, angle] = p[side];
       assert.ok(Math.abs(dx) <= 6 && Math.abs(dy) <= 6);
-      assert.ok(Math.abs(angle) <= 5, "whole foot should not spin freely");
+      assert.ok(Math.abs(angle) <= 20, "upper-leg swing should stay within a natural arc");
     }
   }
 });
@@ -149,6 +155,24 @@ test("walking keeps at least one foot grounded through interpolated frames", asy
   const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
   assert.match(runtime, /const torsoBob = walking/);
   assert.match(runtime, /state === "walk"[\s\S]*preset\.states\.walk/);
+});
+
+test("rotated walk foot retains vertical contact when its gait lift is zero", async () => {
+  const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
+  for (let frame = 0; frame < 60; frame++) {
+    const pose = walkPose(rig, frame / 10);
+    for (const [name,side] of [["leg_front","front"],["leg_back","back"]]) {
+      const limb = rig.limbs[name];
+      const [tx,ty,angle] = walkLegTransform(limb, pose[side]);
+      const [footX,footY] = [limb.x+limb.foot_anchor[0],limb.y+limb.foot_anchor[1]];
+      const [pivotX,pivotY] = limb.pivot;
+      const radians = angle * Math.PI / 180;
+      const rotatedY = (footX - pivotX)*Math.sin(radians)+(footY-pivotY)*Math.cos(radians);
+      const worldY = pivotY + ty + rotatedY;
+      assert.ok(Math.abs(worldY-(footY+pose[side][1]))<1e-8);
+      assert.ok(Number.isFinite(tx));
+    }
+  }
 });
 
 test("pedal targets are antipodal; front and rear wheels move and brake independently of feet", async () => {
