@@ -1473,7 +1473,7 @@ const server = createServer(async (req, res) => {
       return;
     }
     const riderPartMatch = method === "GET" && url.pathname.match(
-      /^\/riders\/presets\/helmet-commuter\/(head|body|backpack|arm_back|arm_front|leg_back|leg_front)\.webp$/
+      /^\/riders\/presets\/helmet-commuter\/(head|head-happy|head-focused|head-tired|body|backpack|arm_back|arm_front|leg_back|leg_front)\.webp$/
     );
     if (riderPartMatch) {
       await sendStatic(res, "riders/presets/helmet-commuter/" + riderPartMatch[1] + ".webp", "image/webp");
@@ -1481,8 +1481,11 @@ const server = createServer(async (req, res) => {
     }
     // Only listed modular art parts and the approved bike are served.
     // An untrusted path cannot be used to browse other files.
-    if (method === "GET" && url.pathname === "/riders/presets/helmet-commuter/bike.svg") {
-      await sendStatic(res, "riders/presets/helmet-commuter/bike.svg", "image/svg+xml; charset=utf-8");
+    const bikePartMatch = method === "GET" && url.pathname.match(
+      /^\/riders\/presets\/helmet-commuter\/(bike-frame|bike-wheel)\.svg$/
+    );
+    if (bikePartMatch) {
+      await sendStatic(res, "riders/presets/helmet-commuter/" + bikePartMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
