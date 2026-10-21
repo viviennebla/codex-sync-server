@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>蹬了吗 · 默认人物拼装验收</title>
+<style>
+  :root { color-scheme:dark; font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif; background:#18162b; color:#f4efff; }
+  * {box-sizing:border-box}
+  body { margin:0; background: radial-gradient(circle at 85% 0,#413066 0,transparent 34%),linear-gradient(#201838,#111a34); min-height:100vh; }
+  main {max-width:1100px; margin:auto; padding:26px 22px 56px}
+  h1 {margin:0; font-size:clamp(23px,4vw,36px)} .sub {color:#beaedc; line-height:1.6; font-size:14px; margin:10px 0 22px}
+  .tabs {display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 22px}
+  button {cursor:pointer;border:1px solid #7259a3;background:#312549;color:#f7edff;padding:9px 15px;border-radius:12px;font-weight:700}
+  button[aria-pressed=true]{background:#f0b073;color:#322044;border-color:#f0b073}
+  .grid {display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .panel {border:1px solid #69518d;border-radius:18px;background:#231d3ad9;box-shadow:0 12px 32px #09071d4a;overflow:hidden}
+  .panel h2 {font-size:16px;margin:0;padding:16px 18px;border-bottom:1px solid #51416a}
+  .scene {height:270px;position:relative;overflow:hidden;background:radial-gradient(circle at 70% 17%,#e9a86345 0 26px,transparent 45px),linear-gradient(180deg,#261d50 0 48%,#34306a 48% 52%,#252347 52% 76%,#191d43 76%)}
+  .scene:after{content:"";position:absolute;top:70%;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,#dcc2f59c 0 28px,transparent 28px 67px)}
+  .rider {position:absolute;left:50%;top:46%;width:166px;height:136px;transform:translate(-50%,-40%) scale(.92);transform-origin:50% 70%}
+  .rider-motion{position:absolute;inset:0}
+  .pixel-rider-art{position:absolute;left:50%;top:48%;width:151px;height:119px;transform:translate(-50%,-50%);pointer-events:none}
+  .pixel-rider-svg{display:block;width:100%;height:100%;overflow:visible;image-rendering:pixelated}
+  .pixel-rider-svg image{image-rendering:pixelated}
+  .label{text-align:center;color:#d9c9f0;font-size:13px;padding:13px}
+  .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+  .small{background:#241d3c;border:1px solid #604979;border-radius:12px;padding:14px;font-size:13px;color:#cbb9e8}
+  .small strong{display:block;color:#fff0cf;margin-bottom:5px}
+  .options {padding:18px;display:flex;gap:8px;flex-wrap:wrap}
+  .foot {font-size:13px;color:#beacd6;line-height:1.8;margin-top:20px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}.scene{height:240px}.metrics{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body><main>
+  <h1>头盔通勤客 · 拼装与动画验收</h1>
+  <p class="sub">PR #75 真实人物素材 + 共享 Rig + 运行时动画。这里显示程序拼好的效果，不是 AI 概念渲染。仅用于视觉验收，不连接账号、Usage 或线上赛道。</p>
+  <div class="tabs" id="modes" aria-label="人物状态">
+    <button data-state="bike" aria-pressed="true">🚲 骑行</button>
+    <button data-state="walk" aria-pressed="false">步行</button>
+    <button data-state="idle" aria-pressed="false">待机</button>
+    <button data-state="happy" aria-pressed="false">开心</button>
+    <button data-state="focused" aria-pressed="false">专注</button>
+    <button data-state="tired" aria-pressed="false">疲惫 / 刹车</button>
+    <button data-state="coasting" aria-pressed="false">滑行</button>
+  </div>
+  <div class="grid">
+    <section class="panel"><h2>实际拼装 · 原始大小</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
+    <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
+  </div>
+  <div class="metrics">
+    <div class="small"><strong>当前素材</strong>7 张独立透明 WebP + 自行车 SVG</div>
+    <div class="small"><strong>骨架管理</strong>compact-side-right-v1.json</div>
+    <div class="small"><strong>状态切换</strong>同一组人物部件重新姿态组合</div>
+  </div>
+  <div class="foot">注意：这只是当前 PR 的程序渲染验收页。大图、动画与背景是否达到原始设计稿品质，需要以实际效果为准。页面使用项目现有 Rider Runtime，资源失败时不会显示伪造的人物。</div>
+</main>
+<script type="module">
+import {loadRiderCatalog,mountRiderSprite,disposeRiderSprite} from "/rider-runtime.js";
+const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环",walk:"步行",idle:"待机",happy:"开心 / 挥手",focused:"专注",tired:"疲惫 / 刹车",coasting:"滑行"};
+let catalog=null;
+function stateClass(node,state) {
+ node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");
+ if(state==="idle")node.classList.add("is-chill");
+ else if(state==="happy")node.classList.add("is-celebrating");
+ else if(state==="focused")node.classList.add("is-fast");
+ else if(state==="tired")node.classList.add("is-tired");
+ else if(state==="coasting")node.classList.add("is-coasting");
+}
+function select(state) {
+ if(!catalog)return;
+ document.querySelectorAll("[data-state]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.state===state)));
+ for(const node of [main,tiny]) {stateClass(node,state);mountRiderSprite(node,["walk","idle","happy","focused"].includes(state)?"walk":"bike",catalog);}
+ document.getElementById("stateLabel").textContent=labels[state];
+}
+document.getElementById("modes").addEventListener("click",e=>{const b=e.target.closest("[data-state]");if(b)select(b.dataset.state);});
+try{catalog=await loadRiderCatalog();select("bike");}catch(error){document.getElementById("stateLabel").textContent="素材加载失败："+error.message;}
+</script>
+</body></html>
