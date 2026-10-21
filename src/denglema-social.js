@@ -47,7 +47,7 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
     id: "rider-click-profile-nav-fix-2026-10",
     emoji: "🛠️",
-    message: "骑手可点可拖、主页导航解开了 · 按钮终于不用练站立了",
+    message: "#78 骑手可点可拖、主页导航解开了 · 按钮终于不用练站立了",
     href: "/me",
   },
   {
