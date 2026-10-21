@@ -45,6 +45,12 @@ export function formatDenglemaUploadMessage(harness, totalTokens) {
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "rider-click-profile-nav-fix-2026-10",
+    emoji: "🛠️",
+    message: "#78 骑手可点可拖、主页导航解开了 · 按钮终于不用练站立了",
+    href: "/me",
+  },
+  {
     id: "helmet-commuter-v01-2026-10",
     emoji: "🪖",
     message: "#75 默认角色换成头盔通勤客 · Emoji 小人终于可以下班了",

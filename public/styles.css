@@ -1658,22 +1658,60 @@ button { font: inherit; }
 }
 .profile-topbar {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "brand back" "actions actions";
   align-items: center;
-  gap: 18px;
+  column-gap: 14px;
+  row-gap: 14px;
   margin-bottom: 18px;
 }
-.profile-topbar .brand { justify-self: center; }
+.profile-topbar .brand { grid-area: brand; justify-self: start; }
 .profile-back {
-  justify-self: start;
+  grid-area: back;
+  justify-self: end;
+  white-space: nowrap;
   color: #4f5c70;
   text-decoration: none;
   font-weight: 850;
 }
 .profile-actions {
-  justify-self: end;
+  grid-area: actions;
+  justify-self: stretch;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.profile-actions .profile-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  box-shadow: none;
+  color: #5b6072;
+  font-size: 12px;
+}
+.profile-actions .profile-button:hover {
+  transform: none;
+  background: rgba(140,122,198,.12);
+}
+.profile-actions .manual-refresh-button {
+  white-space: nowrap;
+  padding: 9px 11px;
+}
+.profile-actions .bind-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+  padding: 10px 15px;
+  font-size: 12px;
+}
+.profile-actions a:focus-visible,
+.profile-actions button:focus-visible {
+  outline: 2px solid #5479c6;
+  outline-offset: 2px;
 }
 .profile-hero-card,
 .profile-panel {
@@ -1956,12 +1994,9 @@ button { font: inherit; }
   .top-actions { gap: 6px; }
   .bind-button, .upload-button, .devices-button, .profile-button { padding: 9px 10px; font-size: 11px; }
   .today-total { display: none; }
-  .profile-topbar {
-    grid-template-columns: 1fr auto;
-    align-items: start;
-  }
-  .profile-topbar .brand { display: none; }
-  .profile-actions { flex-wrap: wrap; justify-content: end; }
+  .profile-topbar { row-gap: 12px; }
+  .profile-actions { justify-content: flex-start; }
+  .profile-actions .bind-button { margin-left: 0; }
   .profile-hero-card {
     grid-template-columns: auto 1fr;
     padding: 20px;
