@@ -1448,6 +1448,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "halloween-theme.css", "text/css; charset=utf-8");
       return;
     }
+    if (method === "GET" && (url.pathname === "/rider-preview" || url.pathname === "/rider-preview.html")) {
+      await sendStatic(res, "rider-preview.html", "text/html; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/rider-runtime.js") {
       await sendStatic(res, "rider-runtime.js", "text/javascript; charset=utf-8");
       return;
