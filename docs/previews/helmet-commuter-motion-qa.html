@@ -256,7 +256,7 @@ function walkPose(rig, frame) {
  * contact point at its original height during stance; negative lift raises
  * the boot. This affects walking only, never bike pedal positioning.
  */
-function walkLegTransform(rig, name, pose) {
+function walkLegTransform(rig, name, pose, mirrored = false) {
   const geometry = rig.limbs[name];
   const [shiftX, liftY, angle] = pose;
   const [pivotX, pivotY] = geometry.pivot;
@@ -278,13 +278,31 @@ function walkLegTransform(rig, name, pose) {
   const relativeY = footY - pivotY;
   const radians = angle * Math.PI / 180;
   const rotatedY = relativeX * Math.sin(radians) + relativeY * Math.cos(radians);
-  // "translate then rotate" in the SVG transform keeps the rotation center at
-  // the upper joint. Foot height follows the planted/swinging gait position.
+  // Mirroring around the hip reverses the original foot's relative X.
+  // Cancel that displacement so the foot keeps its planned ground contact.
+  const flipX = mirrored ? 2 * relativeX * Math.cos(radians) : 0;
+  const flipY = mirrored ? 2 * relativeX * Math.sin(radians) : 0;
   return [
-    walkHipX - pivotX + shiftX,
-    groundY + liftY - (pivotY + rotatedY),
+    walkHipX - pivotX + shiftX + flipX,
+    groundY + liftY - (pivotY + rotatedY) + flipY,
     angle
   ];
+}
+
+/** A shoe should point backward only when its leg is the trailing leg.
+ * The two source images have opposite toe directions, so their image
+ * orientation switches together when their visible X ordering reverses. */
+function walkBackLeading(rig, pose) {
+  const footX = (name, step) => {
+    const limb = rig.limbs[name];
+    const [dx,,angle] = walkLegTransform(rig, name, step);
+    const rad = angle * Math.PI / 180;
+    const [px,py] = limb.pivot;
+    const relX = limb.x + limb.foot_anchor[0] - px;
+    const relY = limb.y + limb.foot_anchor[1] - py;
+    return px + dx + relX * Math.cos(rad) - relY * Math.sin(rad);
+  };
+  return footX("leg_back", pose.back) > footX("leg_front", pose.front);
 }
 
 
@@ -344,6 +362,9 @@ function drawFrame(entry, now) {
     state === "bike_brake" && !reduced ? "1" : "0");
 
   if (bike) {
+    // Bike poses always use their original unmirrored boot images.
+    get("leg_front")?.querySelector("image")?.removeAttribute("transform");
+    get("leg_back")?.querySelector("image")?.removeAttribute("transform");
     // Restore the neutral torso if this rider has just switched from walking.
     for (const name of ["head", "body", "backpack"]) {
       transform(get(name), 0, 0);
@@ -383,9 +404,22 @@ function drawFrame(entry, now) {
     for (const name of ["head", "body", "backpack"]) {
       transform(get(name), 0, torsoBob);
     }
+    const backLeading = walking && walkBackLeading(rig, pose);
     for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
+      // Front art has a right-facing shoe; rear art has a left-facing shoe.
+      // When the rear leg overtakes the front leg, mirror both images so the
+      // leading toe always faces forward and the trailing toe points back.
+      // Only their image contents flip; the leg group stays hip-anchored.
+      const image = get(name)?.querySelector("image");
+      const [pivotX] = pivot(name);
+      const mirrorValue = backLeading ? `translate(${2 * pivotX} 0) scale(-1 1)` : "";
+      if (mirrorValue) {
+        if (image?.getAttribute("transform") !== mirrorValue) image?.setAttribute("transform", mirrorValue);
+      } else {
+        image?.removeAttribute("transform"); // Restore original art for walk's other half and bike.
+      }
       const [dx, dy, angle] = walking
-        ? walkLegTransform(rig, name, pose[key])
+        ? walkLegTransform(rig, name, pose[key], backLeading)
         : pose[key];
       transform(get(name), dx, dy, angle, ...pivot(name));
     }
