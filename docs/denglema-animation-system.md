@@ -24,10 +24,10 @@
 | --- | --- | --- | --- | --- |
 | **初始排位** | `renderRiders()`；首次和重载 | 选择 visible lane 与基准 `x`；稳定 hash + 间距 | 手动位置优先；万圣节逻辑 1/2→视觉 1，3/4→视觉 3 | Layout |
 | **Ambient Drift 自动漂移** | `setInterval` 每 **4200ms** | 尝试 X 增量 `[-0.7,+0.7]` 百分点；累计偏移 `[-2.2,+2.2]`；最终限制 `22–78%`，通过 `left` 过渡 | 动作中、本人拖动中跳过；同可见 lane 小于 `7.5` 百分点碰撞即取消；无 API 保存 | Locomotion |
-| **位置过渡** | `.rider { transition:left 6.4s cubic-bezier(...) }` | DOM 的实际屏幕 X | 当前 4.2s 调度比 6.4s 过渡更频繁；会连续追目标 | Locomotion |
+| **位置过渡** | `.rider { transition:left 6.4s cubic-bezier(...) }` | DOM 的实际屏幕 X | 普通四车道仍沿用 4.2s 尝试；万圣节增加冷却/随机停顿，防止过渡追逐 | Locomotion |
 | **Director** | 单次 `setTimeout` 延迟 **2600–5200ms**，运行后重新安排 | 从可用骑手选动作，不直接存储位置 | 没人则空轮询；`activeMotion` 禁止重入，拖动时 `triggerMotion` 拒绝 | Action |
 | **双人招手** | Director 有多人时，概率 **34%** 先尝试 | 同显示 lane 且 `x` 相距 **≤22** 百分点，触发两人 `wave`、互动文字 | 不跨 lane；当前邻近判断基于 `visibleRiders.x`，**不是漂移后的视觉位置** | Interaction |
-| **动作终结** | 监听 `rider-motion.animationend`；同时 `action.duration+180ms` 超时兜底 | 清除 `is-*`、气泡表演 props 与 `activeMotion` | `finish()` 幂等，避免重复清理 | Action |
+| **动作终结** | 仅由 `MOTION_ACTIONS[].duration` 的 JS timeout 终结，CSS keyframe 只负责视觉 | 清除 `is-*`、气泡表演 props 与 `activeMotion` | `finish()` 幂等，避免重复清理 | Action |
 | **实时数据** | **20000ms** | 重读 riders、events，可能触发布局/留言变化 | 拖动中跳过 riders reload；隐藏页面不刷新 | Runtime |
 | **最近留言** | 新留言被自动展示后 **7000ms** 隐藏 | 人物旁的 `.rider-message-bubble` | 用户置顶时不会被自动超时关闭；只有一个 pinned rider | Bubble |
 | **季节灯光** | CSS **4.1s** `halloweenPumpkinBreath` | Glow 层 `opacity: .10→1`，`screen` 混合 | `prefers-reduced-motion` 固定 `.55` | Theme |
@@ -35,7 +35,7 @@
 
 **重要区分**：`Locomotion` 是屏幕上位置变化，`Action` 是角色局部姿势/步态，`Interaction` 是两个骑手之间的事件；三者同屏并存但各自拥有状态。**不能只盘点 `MOTION_ACTIONS` 就宣称动画系统完整**。
 
-**当前已知技术债**：漂移每 4.2s VS left 过渡 6.4s；相邻判定可能忽略视觉漂移；碰撞检查为百分比而非人物足迹；隐藏页面虽停调度，但已开始的部分 CSS 动效仅通过 `.is-background-paused` 显式暂停，不保证所有动效都暂停。待布局工程处理，不能把计划写成现状。
+**当前已知技术债**：普通四车道仍用旧 4.2s 漂移/百分比间距；万圣节已加入物理占位检查与 9s 冷却；双人招手仍按记录的 X 判邻近；隐藏页面虽停调度，但已开始的部分 CSS 动效仅通过 `.is-background-paused` 显式暂停，不保证所有动效都暂停。待布局工程处理，不能把计划写成现状。
 
 ## 3. Actor 状态与动作字典
 
@@ -54,7 +54,7 @@
 | `bonk` | `is-bonking` | 2200ms | 撞墙式疲惫、掉速的趣味表现 |
 | `celebrate` | `is-celebrating` | 1900ms | 小幅庆祝动作 |
 
-**不要混淆动作持续时间与 CSS 关键帧时长**：例如 `wave` JS 生命期 3200ms，但 `socialSway` CSS 1.5s 动画结束可能更早触发 `animationend`。这里必须进一步决定谁拥有 Action 生命周期，不能只改某个 CSS 毫秒值就假设生效全长。
+**动作时间合同（2026-10-21 合并前分支）**：`wave` JS 生命期 3200ms，而 `socialSway` CSS 仍只有 1.5s；现已改为仅 JS `action.duration` 控制动作结束，CSS `animationend` 不会提前终结。修改 CSS 动画长度不等于修改 Director 生命周期。
 
 额外持久/派生态：`is-chill`, `is-tired`, `is-quota-hurry/panic`, `quota-emotion-sweat/gloom/sleepy`, transport mode `bike/scooter/skateboard/walk/surf/skate`, 头像配饰、皇冠和称号。它们可能改变步态、表情与特效，但**不是第 11 种 Director 动作**。
 
@@ -111,7 +111,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 1. **先分类**：Layout（位置）、Locomotion（自动移动）、Director（动作）、Interaction/Bubble（社交）、Theme/UI（装饰）；如果一个改动跨两类，说明谁是坐标写入者。
 2. **更新总账**：涉及的新动作补 `MOTION_ACTIONS` 表；CSS 新 `@keyframes` 补下方清单和「当前启用/未启用」状态；不是所有动画都在 `MOTION_ACTIONS`。
 3. **检查交互组合**：自动漂移 × 跨道拖动；Director × 近期留言；持续蹬车 × 临时动作；人物缩放 × hitbox；气泡 × event rail；普通四车道 × 万圣节双道路。
-4. **完整时序**：定时周期、`animationend`、超时兜底、恢复/卸载/标签页隐藏；不要产生隐藏定时器或持续无效 reflow。
+4. **完整时序**：定时周期、动作统一 JS 生命周期与场景漂移冷却、恢复/卸载/标签页隐藏；不要产生隐藏定时器或持续无效 reflow。
 5. **降级测试**：`?preview=1&motion=wave`（其他动作也可）、`?season=halloween`、`?season=off`、375px 和桌面、DPR、多人/零 token、`prefers-reduced-motion`，并确保静态猫蝙蝠/Glow 不覆盖拖动。
 6. **保持边界**：这里不修改 Usage、server 用户数据或美术文件；未来 Sprite 资源会话提供帧宽高、脚底锚点、FPS，本会话负责 Runtime。
 7. **执行 `node --test test/animation-inventory.test.js`**，通过后再执行 `npm test`；此静态测试只检查盘点完整性，**不能代替浏览器视觉验收**。
