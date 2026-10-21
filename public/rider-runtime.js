@@ -101,6 +101,9 @@ function buildSprite(preset, rig) {
     focusable: "false"
   });
   root.append(svg("ellipse", {cx: 66, cy: 94, rx: 42, ry: 3, fill: "#20163d", opacity: ".32"}));
+  // Vehicle and character share a single animated assembly.
+  // Changing transport requires just one visual character lift, not new joint anchors.
+  const assembly = svg("g", {class: "pixel-rider-assembly"});
   // Compose wheels behind the frame; rotate them independently around axle centers.
   const bike = rig.vehicles.bike;
   const [sourceW, sourceH] = bike.art_canvas;
@@ -125,20 +128,21 @@ function buildSprite(preset, rig) {
     x: 0, y: 0, width: sourceW, height: sourceH,
     preserveAspectRatio: "none"
   }));
-  root.append(vehicle);
+  assembly.append(vehicle);
   const core = svg("g", {class: "pixel-rider-core"});
   const art = { ...preset.slots, ...preset.limbs };
   const geometry = { ...rig.slots, ...rig.limbs };
   for (const name of rig.layer_order) {
     core.append(partLayer(name, art[name], geometry[name]));
   }
-  root.append(core);
+  assembly.append(core);
   const brake = svg("g", {class: "pixel-bike-brake", opacity: 0});
   brake.append(svg("path", {
     d: "M8 89h8m-11 4h9", stroke: "#ffb66c",
     "stroke-width": 2.3, "stroke-linecap": "round"
   }));
-  root.append(brake);
+  assembly.append(brake);
+  root.append(assembly);
   return root;
 }
 
@@ -220,9 +224,13 @@ function drawFrame(entry, now) {
   const pivot = (name) => rig.limbs[name].pivot;
   const core = art.querySelector(".pixel-rider-core");
   const mounting = state === "bike_mount" && step === 0;
-  // Keep feet on the road in walk mode; bob only the bike rider by <= 1 px.
+  // A single lift seats the character visually above any vehicle; its moving
+  // assembly then carries rider + vehicle together (wheels still spin inside it).
+  // No transport-specific seat/handle/foot coordinates are introduced.
+  const riderLift = bike ? -12 : 0;
   const bob = bike && !reduced ? -0.65 * Math.abs(Math.sin(phase)) : 0;
-  transform(core, mounting ? -4 : 0, bob + (state === "tired" ? 1 : 0));
+  transform(art.querySelector(".pixel-rider-assembly"), 0, bob);
+  transform(core, mounting ? -4 : 0, riderLift + (state === "tired" ? 1 : 0));
   const vehicle = art.querySelector(".pixel-vehicle");
   vehicle.style.display = bike ? "" : "none";
   art.querySelector(".pixel-bike-brake").setAttribute("opacity",
