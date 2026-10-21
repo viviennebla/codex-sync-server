@@ -64,6 +64,10 @@
       "pivot": [
         55,
         76
+      ],
+      "foot_anchor": [
+        11,
+        20
       ]
     },
     "leg_front": {
@@ -74,6 +78,10 @@
       "pivot": [
         65,
         76
+      ],
+      "foot_anchor": [
+        16,
+        16
       ]
     }
   },
@@ -96,6 +104,36 @@
           67,
           75
         ]
+      },
+      "art_canvas": [
+        124,
+        64
+      ],
+      "wheels": {
+        "rear": {
+          "center": [
+            24,
+            43
+          ],
+          "size": 42
+        },
+        "front": {
+          "center": [
+            100,
+            43
+          ],
+          "size": 42
+        }
+      },
+      "crank": {
+        "center": [
+          67,
+          75
+        ],
+        "radius": [
+          9,
+          7
+        ]
       }
     }
   },
@@ -105,5 +143,93 @@
     "width": 17,
     "height": 17
   },
-  "note": "Logical placement and articulation points shared by compatible presets; no texture crop positions. Texture atlas packing metadata is build-generated only."
+  "note": "Position, grounded walk poses, crank and wheel centers are reusable skeleton data; no texture crop/UV metadata.",
+  "gait": {
+    "walk": [
+      {
+        "front": [
+          5,
+          0,
+          -3
+        ],
+        "back": [
+          -5,
+          -4,
+          3
+        ]
+      },
+      {
+        "front": [
+          3,
+          0,
+          -1
+        ],
+        "back": [
+          -4,
+          -3,
+          2
+        ]
+      },
+      {
+        "front": [
+          0,
+          -3,
+          0
+        ],
+        "back": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "front": [
+          -4,
+          -4,
+          3
+        ],
+        "back": [
+          5,
+          0,
+          -3
+        ]
+      },
+      {
+        "front": [
+          -3,
+          -3,
+          2
+        ],
+        "back": [
+          3,
+          0,
+          -1
+        ]
+      },
+      {
+        "front": [
+          0,
+          0,
+          0
+        ],
+        "back": [
+          0,
+          -3,
+          0
+        ]
+      }
+    ],
+    "stationary": {
+      "front": [
+        0,
+        0,
+        0
+      ],
+      "back": [
+        0,
+        0,
+        0
+      ]
+    }
+  }
 }
