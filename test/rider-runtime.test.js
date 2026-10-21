@@ -148,3 +148,13 @@ test("pedal targets are antipodal; front and rear wheels move and brake independ
   assert.match(wheel, /viewBox/);
   assert.match(wheel, /stroke-dasharray/);
 });
+
+test("rider and bike bob together while a single visual offset raises the rider", async () => {
+  const runtime = await readFile(join(root, "rider-runtime.js"), "utf8");
+  assert.match(runtime, /pixel-rider-assembly/);
+  assert.match(runtime, /assembly\.append\(vehicle\)/);
+  assert.match(runtime, /assembly\.append\(core\)/);
+  assert.match(runtime, /transform\(art\.querySelector\("\.pixel-rider-assembly"\), 0, bob\)/);
+  assert.match(runtime, /const riderLift = bike \? -12 : 0/);
+  assert.doesNotMatch(runtime, /seatOffset|handleOffset|perVehicleJointAnchors/);
+});
