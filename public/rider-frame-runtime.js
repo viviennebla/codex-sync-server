@@ -78,7 +78,7 @@ function draw(e,now){
  e.head.hidden=false;
  e.emoji.hidden=appearance.head_mode!=="emoji";
  if(e.head.getAttribute("src")!==head)e.head.src=head;
- const layout=preset.emoji_head||{left_percent:65,top_percent:46,font_size_px:18,visor_width_px:29,visor_height_px:32};
+ const layout=preset.emoji_head||{left_percent:65,top_percent:46,font_size_px:22,visor_width_px:23,visor_height_px:24};
  e.emoji.style.left=layout.left_percent+"%";
  e.emoji.style.top=layout.top_percent+"%";
  e.emoji.style.fontSize=layout.font_size_px+"px";
