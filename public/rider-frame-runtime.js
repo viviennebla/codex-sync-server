@@ -22,7 +22,7 @@ export function resolveAppearance(value={},catalog,identity={}) {
  const preset=typeof a.preset==="string"&&catalog?.presets?.[a.preset]?a.preset:(catalog?.default_preset||"helmet-commuter");
  const raw=typeof a.head_mode==="string"?a.head_mode:"auto";
  const avatar=typeof identity?.avatar_emoji==="string"?identity.avatar_emoji.trim():"";
- const image=typeof identity?.avatar_url==="string"&&/^\\/api\\/avatars\\/[^?#]+\\.jpg(?:\\?v=\\d+)?$/.test(identity.avatar_url)
+ const image=typeof identity?.avatar_url==="string"&&identity.avatar_url.startsWith("/api/avatars/")
    ? identity.avatar_url:null;
  const customized=Boolean(image||(avatar&&avatar!=="🚴"));
  const showAvatar=raw==="avatar"||raw==="emoji"||(!["art","avatar","emoji"].includes(raw)&&customized);
