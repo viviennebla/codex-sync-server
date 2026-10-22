@@ -22,7 +22,7 @@ function assertUnique(values, label) {
 }
 
 test("animation catalog covers every actual CSS keyframe (including dormant ones)", async () => {
-  for (const path of ["public/styles.css", "public/halloween-theme.css"]) {
+  for (const path of ["public/styles.css", "public/halloween-theme.css", "public/scene-fun-actions.css"]) {
     const css = await readRepoFile(path);
     const actual = [...css.matchAll(/@keyframes\s+([a-zA-Z][\w-]*)/g)].map((match) => match[1]);
     const documented = catalog.keyframes[path];
