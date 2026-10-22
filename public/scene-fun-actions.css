@@ -1,0 +1,100 @@
+/* Comic actions on the existing PNG rider presenter.
+ * Decoration never changes the rider's world X, hit target, saved position,
+ * bike frames or the separate bubble overlay. */
+.rider-motion .scene-fun-flames,
+.rider-motion .scene-flop-stars {
+  position: absolute;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  z-index: 2;
+}
+.rider-motion .scene-fun-flames {
+  width: 164px;
+  height: 123px;
+  left: 50%;
+  top: 49%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 5px rgba(255,111,22,.6));
+}
+.scene-fun-flames i {
+  display: block;
+  position: absolute;
+  bottom: 10px;
+  width: 37px;
+  height: 110px;
+  background: linear-gradient(to top,#e84132 0 25%,#ff772c 26% 53%,#ffcd54 54% 77%,#fff1a2 78% 90%,transparent 91%);
+  clip-path: polygon(32% 100%,32% 83%,17% 83%,17% 69%,0 69%,0 44%,17% 44%,17% 30%,34% 30%,34% 15%,52% 15%,52% 0,70% 0,70% 35%,86% 35%,86% 53%,100% 53%,100% 75%,83% 75%,83% 90%,67% 90%,67% 100%);
+}
+.scene-fun-flames i:nth-child(1) {left: 4px; height: 83px; animation-delay: -.19s;}
+.scene-fun-flames i:nth-child(2) {left: 63px; height: 119px; width: 42px; animation-delay: -.37s;}
+.scene-fun-flames i:nth-child(3) {right: 2px; height: 92px; transform: scaleX(-1); animation-delay: -.09s;}
+.rider-motion .scene-flop-stars {
+  left: 51%;
+  top: -12px;
+  color: #ffec77;
+  font: 900 22px/1 system-ui,sans-serif;
+  text-shadow: 2px 2px 0 #4d315e, -1px -1px 0 #4d315e;
+  white-space: nowrap;
+}
+.rider.is-overheating .effect-burst,
+.rider.is-flopping .effect-burst {display:block;}
+.rider.is-overheating .scene-fun-flames {visibility:visible;opacity:1;}
+.rider.is-overheating .scene-fun-flames i {
+  animation: sceneFlameFlicker .42s steps(3,end) infinite alternate;
+}
+.rider.is-overheating .frame-rider-art {
+  animation: sceneHeatHop .38s steps(3,end) infinite alternate;
+  transform-origin: 50% 78%;
+}
+.rider.is-flopping .frame-rider-art {
+  transform-origin: 54% 82%;
+  animation: sceneFlop 3.35s steps(1,end) both;
+}
+/* Right-edge riders flop inward, never off the visible road. */
+.rider.is-near-right.is-flopping .frame-rider-art {
+  animation-name: sceneFlopInward;
+}
+.rider.is-flopping .scene-flop-stars {
+  z-index: 6;
+  visibility:visible;
+  opacity:1;
+  animation: sceneStars 1.2s steps(3,end) infinite;
+}
+@keyframes sceneFlameFlicker {
+  from {opacity:.78;filter:brightness(.88);translate:0 0;}
+  to {opacity:1;filter:brightness(1.2);translate:0 -10px;}
+}
+@keyframes sceneHeatHop {
+  from {transform:translate(-50%,-50%) rotate(-3deg) translateY(0);}
+  to {transform:translate(-50%,-50%) rotate(3deg) translateY(-5px);}
+}
+@keyframes sceneFlop {
+  0%,11% {transform:translate(-50%,-50%) rotate(0);}
+  12%,17% {transform:translate(-50%,-50%) rotate(-16deg);}
+  18%,23% {transform:translate(-50%,-46%) rotate(32deg);}
+  24%,72% {transform:translate(-50%,-38%) rotate(83deg) scale(.96,.92);}
+  73%,80% {transform:translate(-50%,-42%) rotate(53deg);}
+  81%,92% {transform:translate(-50%,-50%) rotate(-9deg);}
+  93%,100% {transform:translate(-50%,-50%) rotate(0);}
+}
+@keyframes sceneFlopInward {
+  0%,11% {transform:translate(-50%,-50%) rotate(0);}
+  12%,17% {transform:translate(-50%,-50%) rotate(16deg);}
+  18%,23% {transform:translate(-50%,-46%) rotate(-32deg);}
+  24%,72% {transform:translate(-50%,-38%) rotate(-83deg) scale(.96,.92);}
+  73%,80% {transform:translate(-50%,-42%) rotate(-53deg);}
+  81%,92% {transform:translate(-50%,-50%) rotate(9deg);}
+  93%,100% {transform:translate(-50%,-50%) rotate(0);}
+}
+@keyframes sceneStars {
+  0%,100% {opacity:.65;transform:translateY(0) rotate(-7deg);}
+  50% {opacity:1;transform:translateY(-8px) rotate(7deg);}
+}
+@media (prefers-reduced-motion:reduce) {
+  .rider.is-overheating .scene-fun-flames i,
+  .rider.is-overheating .frame-rider-art,
+  .rider.is-flopping .frame-rider-art,
+  .rider.is-flopping .scene-flop-stars {animation:none!important;}
+  .rider.is-flopping .frame-rider-art {transform:translate(-50%,-38%) rotate(83deg);}
+}
