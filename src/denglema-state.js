@@ -360,7 +360,7 @@ export function normalizeRiderAppearance(value, options={}) {
   const mode = value.head_mode ?? "auto";
   const variant = value.head_variant ?? "auto";
   const emoji = String(value.head_emoji ?? "🙂").trim();
-  if (!["auto","art","emoji"].includes(mode)) throw new Error("Invalid head mode");
+  if (!["auto","art","avatar","emoji"].includes(mode)) throw new Error("Invalid head mode");
   if (!["auto","neutral","happy","focused","tired"].includes(variant)) throw new Error("Invalid head variant");
   if ([...emoji].length > 4 || !emoji) throw new Error("Head emoji must contain 1-4 characters");
   if (value.backpack !== undefined && typeof value.backpack !== "boolean") throw new Error("Invalid backpack");
