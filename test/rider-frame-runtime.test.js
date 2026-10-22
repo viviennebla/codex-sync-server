@@ -13,7 +13,8 @@ test("PNG character catalog provides real transparent 128x100 frames in all vari
  assert.equal(manifest.schema_version,2);
  const preset=JSON.parse(await readFile(join(root,"riders/frames/helmet-commuter/manifest.json"),"utf8"));
  const paths=[...Object.values(preset.heads),...Object.values(preset.transports).flatMap(t=>Object.values(t.layers).flat())];
- assert.equal(paths.length,28);
+ assert.ok(paths.length>=28);
+ assert.deepEqual(Object.keys(preset.transports).sort(),["bike","scooter","skate","skateboard","surf","walk"].sort());
  for(const url of paths){
    assert.match(url,/^[a-z0-9/_-]+\.png$/);
    const buffer=await readFile(join(root,"riders/frames/helmet-commuter",url));
@@ -25,7 +26,8 @@ test("PNG character catalog provides real transparent 128x100 frames in all vari
 });
 test("frame presenter is PNG-only, supports emoji head and honors reduced-motion frame zero",()=>{
  assert.equal(frameState("bike"),"bike");
- assert.equal(frameState("surf"),"walk");
+ assert.equal(frameState("surf"),"walk"); // Without an authored preset, preserve documented fallback.
+ assert.equal(frameState("surf",{transports:{surf:{}},fallback_transport:"walk"}),"surf");
  const catalog={default_preset:"helmet-commuter",presets:{"helmet-commuter":{},"pixel-cat":{}}};
  assert.equal(resolveAppearance({preset:"pixel-cat"},catalog).preset,"pixel-cat");
  assert.equal(resolveAppearance({preset:"unknown"},catalog).preset,"helmet-commuter");

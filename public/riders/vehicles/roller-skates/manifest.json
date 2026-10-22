@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "roller-skates",
+  "label": "轮滑鞋",
+  "transport": "skate",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "frames": 1,
+  "fps": 9,
+  "layers": {
+    "back": [
+      "back/00.png"
+    ]
+  }
+}

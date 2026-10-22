@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "city-scooter",
+  "label": "滑板车",
+  "transport": "scooter",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "frames": 1,
+  "fps": 9,
+  "layers": {
+    "back": [
+      "back/00.png"
+    ],
+    "front": [
+      "front/00.png"
+    ]
+  }
+}

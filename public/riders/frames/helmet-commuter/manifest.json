@@ -73,6 +73,114 @@
           "walk/plain/05.png"
         ]
       }
+    },
+    "scooter": {
+      "frames": 6,
+      "fps": 9,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png"
+        ],
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png"
+        ]
+      },
+      "vehicle_id": "city-scooter"
+    },
+    "skateboard": {
+      "frames": 6,
+      "fps": 9,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png"
+        ],
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png"
+        ]
+      },
+      "vehicle_id": "street-skateboard"
+    },
+    "surf": {
+      "frames": 6,
+      "fps": 9,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png"
+        ],
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png"
+        ]
+      },
+      "vehicle_id": "office-surfboard"
+    },
+    "skate": {
+      "frames": 6,
+      "fps": 9,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png"
+        ],
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png"
+        ]
+      },
+      "vehicle_id": "roller-skates"
     }
   }
 }
