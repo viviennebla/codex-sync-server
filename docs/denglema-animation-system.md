@@ -223,5 +223,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 - 首页使用 `data-scene-layout-key` 比较 rider 所在 lane、布局 X 与 scale：**usage 刷新但坐标契约没变时保留漂移**；人数改变、用户手动修改位置等导致场景布局确实改变时才复位临时偏移。
 - 人物随机姿势/表情仍由原 `MOTION_ACTIONS` 与当前 PNG Frame Presenter 负责；`scene-motion.js` 不修改 Sprite 帧或美术素材，不能把“能配对招手”误称为每一种车都有专门的招手精灵帧。
 
+![2026-10-22 自动移动与相邻互动截图对照](assets/denglema-motion-social-qa-20261022.webp)
+
 **测试与可视验收**：`node --test test/scene-motion.test.js` 覆盖五人全宽邻居、同路配对、边界漂移与数据刷新接线；`npm test` 全量 **129/129**。隔离 Chromium Preview 中控制随机序列，确认两个上路 Rider 同时进入 `is-waving`，Overlay 同时显示“嗨～ / 还蹬呢?”；另一组检查 6.8s 与约 22s 时的 `data-drift`：前者偏移约 1.94%，后者偏移延续至约 3.14%，没有因周期性预览刷新归零。此为隔离预览，不等于已部署生产环境。
 
