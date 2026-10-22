@@ -239,3 +239,60 @@
   .profile-achievement-card { transition: none; }
   .profile-achievement-card:hover { transform: none; }
 }
+
+
+/* Lightweight, one-tap appearance choices; the social avatar is edited once, in the profile hero. */
+.rider-appearance-settings { width:100%; min-width:0; display:grid; gap:12px; }
+.rider-head-choices {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;width:100%;max-width:660px;
+}
+.rider-head-choice {
+  font:inherit;text-align:left;min-width:0;width:100%;
+  display:flex;align-items:center;gap:12px;position:relative;
+  padding:13px 14px;border:1.5px solid #e2dcd4;border-radius:17px;
+  background:rgba(255,253,248,.84);color:#333c48;
+  box-shadow:0 2px 5px rgba(40,39,60,.025);cursor:pointer;
+  transition:border-color .15s,background .15s,box-shadow .15s;
+}
+.rider-head-choice:hover { border-color:#a1a9bc; }
+.rider-head-choice.is-selected {
+  border-color:#7f98da;background:#f3f6ff;
+  box-shadow:inset 0 0 0 1px rgba(91,129,218,.15);
+}
+.rider-head-choice:focus-visible { outline:2px solid #779de3;outline-offset:3px; }
+.rider-head-choice:disabled { opacity:.65;cursor:wait; }
+.rider-head-choice-visual {
+  flex:0 0 52px;width:52px;height:52px;display:grid;place-items:center;
+  overflow:hidden;border-radius:16px;background:#fff1d8;
+  border:1px solid rgba(75,64,61,.09);font-size:29px;line-height:1;
+}
+.rider-head-choice-visual img { width:100%;height:100%;object-fit:cover; }
+.rider-head-choice-copy { min-width:0;display:grid;gap:5px;line-height:1.3; }
+.rider-head-choice-copy strong { font-size:13px;font-weight:850; }
+.rider-head-choice-copy small { font-size:10px;line-height:1.5;color:#827b78;font-weight:500; }
+.rider-head-choice-check {
+  margin-left:auto;align-self:flex-start;flex:0 0 19px;
+  width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+  color:white;background:#748ecf;font-size:12px;font-weight:800;
+  opacity:0;transform:scale(.8);
+}
+.rider-head-choice.is-selected .rider-head-choice-check { opacity:1;transform:scale(1); }
+.rider-appearance-extras { display:flex;align-items:center;flex-wrap:wrap;gap:12px;color:#726d72; }
+.rider-backpack-option { display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:650;cursor:pointer; }
+.rider-backpack-option input { accent-color:#7c91c7; }
+.rider-appearance-extras small { font-size:10px;color:#98919a; }
+.rider-appearance-preset { display:flex;align-items:center;gap:9px;font-size:12px; }
+.rider-appearance-preset[hidden] { display:none!important; }
+.rider-appearance-preset select {
+  padding:6px 9px;border:1px solid #dfd7cd;border-radius:8px;
+  background:#fffdf7;color:#44404b;font-size:12px;
+}
+@media(max-width:640px) {
+  .rider-head-choices { grid-template-columns:1fr;gap:9px; }
+  .rider-head-choice { padding:11px 12px; }
+  .rider-head-choice-visual { flex-basis:46px;width:46px;height:46px;font-size:26px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .rider-head-choice { transition:none; }
+}
