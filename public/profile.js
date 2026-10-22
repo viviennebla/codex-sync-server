@@ -62,59 +62,96 @@ const TRANSPORT_OPTIONS = Object.freeze([
 
 let currentProfileUser = null;
 let riderCatalog = null;
-const appearanceFields = {
-  preset: $("riderPreset"),head_mode:$("riderHeadMode"),head_variant:$("riderHeadVariant"),
-  head_emoji:$("riderHeadEmoji"),backpack:$("riderBackpack")
-};
+let savingAppearance = false;
+let headChoice = "art";
+const riderPreset = $("riderPreset");
+const riderBackpack = $("riderBackpack");
+const riderAppearanceStatus = $("riderAppearanceStatus");
+const riderHeadButtons = [...document.querySelectorAll("[data-head-choice]")];
+
+function isCustomizedAvatar(user) {
+  return Boolean(user?.avatar_url || (user?.avatar_emoji && user.avatar_emoji !== "🚴"));
+}
+function headChoiceFor(value, user) {
+  if (value?.head_mode === "art") return "art";
+  if (value?.head_mode === "avatar" || value?.head_mode === "emoji") return "avatar";
+  return isCustomizedAvatar(user) ? "avatar" : "art";
+}
+function renderHeadAvatar(user) {
+  const preview = $("riderHeadAvatarPreview");
+  if (!preview) return;
+  preview.replaceChildren();
+  if (user?.avatar_url) {
+    const image = document.createElement("img");
+    image.src = user.avatar_url;
+    image.alt = "";
+    preview.append(image);
+  } else preview.textContent = user?.avatar_emoji || "🚴";
+}
+function selectHeadChoice(value) {
+  headChoice = value;
+  riderHeadButtons.forEach(button => {
+    const selected = button.dataset.headChoice === value;
+    button.setAttribute("aria-pressed", String(selected));
+    button.classList.toggle("is-selected", selected);
+  });
+}
 function renderRiderPresets(catalog) {
- riderCatalog=catalog;
- const select=appearanceFields.preset;
- if(!select)return;
- select.replaceChildren();
- for(const preset of Object.values(catalog.presets)){
-  const option=document.createElement("option");
-  option.value=preset.id;
-  option.textContent=preset.label;
-  select.append(option);
- }
- select.disabled=false;
-}
-function syncRiderHeadEditor() {
-  const mode=appearanceFields.head_mode.value;
-  const input=appearanceFields.head_emoji;
-  input.disabled=mode!=="emoji";
-  const avatar=String(currentProfileUser?.avatar_emoji||"").trim();
-  const customAvatar=!currentProfileUser?.avatar_url&&avatar&&avatar!=="🚴";
-  const hint=$("riderHeadHint");
-  if (!hint) return;
-  hint.textContent=mode==="auto"
-    ? (customAvatar?"正在自动使用头像 "+avatar+"；更换头像后面罩也会更新。":"没有自定义 Emoji 头像，当前显示原装表情。")
-    : mode==="art"?"已选择原装表情；更换头像不会修改面罩。"
-    :"手动贴脸优先于头像 Emoji；以后更换头像也不会覆盖。";
-}
-appearanceFields.head_mode?.addEventListener("change",syncRiderHeadEditor);
-
-function renderAppearance(value={}) {
-  const a={preset:riderCatalog?.default_preset||"helmet-commuter",head_mode:"auto",head_variant:"auto",head_emoji:"🙂",backpack:true,...value};
-  for(const [key,field] of Object.entries(appearanceFields)) {
-    if(!field)continue;
-    if(key==="backpack")field.checked=a.backpack!==false;
-    else if(key==="preset")field.value=riderCatalog?.presets?.[a.preset]?a.preset:(riderCatalog?.default_preset||"helmet-commuter");
-    else field.value=a[key];
+  riderCatalog = catalog;
+  riderPreset.replaceChildren();
+  for (const preset of Object.values(catalog.presets)) {
+    const option = document.createElement("option");
+    option.value = preset.id;
+    option.textContent = preset.label;
+    riderPreset.append(option);
   }
-  syncRiderHeadEditor();
+  riderPreset.disabled = false;
+  $("riderPresetField").hidden = Object.keys(catalog.presets).length <= 1;
 }
-$("riderSaveAppearance")?.addEventListener("click",async()=>{
-  const button=$("riderSaveAppearance");
-  button.disabled=true;
+function renderAppearance(value) {
+  const a = value || {};
+  riderPreset.value = riderCatalog?.presets?.[a.preset] ? a.preset : (riderCatalog?.default_preset || "helmet-commuter");
+  riderBackpack.checked = a.backpack !== false;
+  renderHeadAvatar(currentProfileUser);
+  selectHeadChoice(headChoiceFor(value, currentProfileUser));
+}
+async function saveAppearance(choice = headChoice) {
+  if (savingAppearance || !riderCatalog) return;
+  savingAppearance = true;
+  const previous = currentProfileUser?.rider_appearance || null;
+  const payload = {
+    preset: riderPreset.value || riderCatalog.default_preset,
+    head_mode: choice,
+    backpack: riderBackpack.checked
+  };
+  selectHeadChoice(choice);
+  riderHeadButtons.forEach(button => { button.disabled = true; });
+  riderPreset.disabled = true;
+  riderBackpack.disabled = true;
+  riderAppearanceStatus.textContent = "正在保存…";
   try {
-    const payload=Object.fromEntries(Object.entries(appearanceFields).map(([key,field])=>[key,key==="backpack"?field.checked:field.value]));
-    const result=await jsonFetch("/api/me/rider-appearance",{method:"PUT",body:JSON.stringify(payload)});
-    currentProfileUser={...(currentProfileUser||{}),rider_appearance:result.rider_appearance};
-    showToast("人物形象已保存，回赛道查看");
-  }catch(error){showToast("保存失败："+error.message,3400);}finally{button.disabled=false;}
-});
-
+    const result = await jsonFetch("/api/me/rider-appearance", {
+      method: "PUT", body: JSON.stringify(payload)
+    });
+    currentProfileUser = { ...currentProfileUser, rider_appearance: result.rider_appearance };
+    renderAppearance(result.rider_appearance);
+    riderAppearanceStatus.textContent = "✓ 已保存";
+  } catch (error) {
+    renderAppearance(previous);
+    riderAppearanceStatus.textContent = "保存失败，请重试";
+    showToast("形象更新失败：" + error.message, 3400);
+  } finally {
+    savingAppearance = false;
+    riderHeadButtons.forEach(button => { button.disabled = false; });
+    riderPreset.disabled = false;
+    riderBackpack.disabled = false;
+  }
+}
+riderHeadButtons.forEach(button => button.addEventListener("click", () => {
+  if (button.dataset.headChoice !== headChoice) void saveAppearance(button.dataset.headChoice);
+}));
+riderPreset?.addEventListener("change", () => { void saveAppearance(); });
+riderBackpack?.addEventListener("change", () => { void saveAppearance(); });
 
 function renderTransportOptions(selected) {
   if (!profileTransportList) return;
@@ -186,7 +223,10 @@ function renderProfileAvatar(user) {
   } else {
     profileAvatar.textContent = value.avatar_emoji || "🚴";
   }
-  syncRiderHeadEditor();
+  renderHeadAvatar(currentProfileUser);
+  if (!currentProfileUser.rider_appearance || currentProfileUser.rider_appearance.head_mode === "auto") {
+    selectHeadChoice(headChoiceFor(currentProfileUser.rider_appearance, currentProfileUser));
+  }
 }
 
 function squareJpegDataUrl(file) {
@@ -476,7 +516,9 @@ async function loadProfile() {
     renderRiderPresets(catalog);
     renderAppearance(user.rider_appearance || {});
   } catch(error) {
-    $("riderSaveAppearance").disabled=true;
+    riderHeadButtons.forEach(button => { button.disabled = true; });
+    riderPreset.disabled = true;
+    riderBackpack.disabled = true;
     showToast("人物素材目录加载失败："+error.message,3500);
   }
   profileName.textContent = user.display_name || "骑手";
