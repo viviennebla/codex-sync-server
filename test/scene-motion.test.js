@@ -45,7 +45,7 @@ test("ambient step is visible on desktop but bounded and deterministic", () => {
     assert.ok(offset <= 48 / width * 100 + 1e-8);
     assert.ok(offset >= -48 / width * 100 - 1e-8);
   }
-  assert.ok(Math.abs(nextAmbientOffset(0,375,.95,1)) < right);
+  assert.ok(Math.abs(nextAmbientOffset(0,375,.95,1)) * 375 / 100 < right * width / 100);
   assert.equal(nextAmbientOffset(0,0,.95,1), null);
 });
 
