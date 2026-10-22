@@ -14,12 +14,18 @@ export function frameState(transport,preset) {
  return preset ? (preset.transports?.[transport]?transport:preset.fallback_transport) : (transport==="bike"?"bike":"walk");
 }
 export function frameNumber(ms,fps,count){return Math.floor(Math.max(0,ms)*fps/1000)%count;}
-export function resolveAppearance(value={},catalog) {
+// Explicit outfit choices beat the avatar. An absent or "auto" head mode
+// inherits a customized emoji avatar, but never the system-default bicycle.
+export function resolveAppearance(value={},catalog,identity={}) {
  const a=value&&typeof value==="object"?value:{};
  const preset=typeof a.preset==="string"&&catalog?.presets?.[a.preset]?a.preset:(catalog?.default_preset||"helmet-commuter");
- return {preset,head_mode:a.head_mode==="emoji"?"emoji":"art",
+ const preference=["art","emoji"].includes(a.head_mode)?a.head_mode:"auto";
+ const avatar=typeof identity?.avatar_emoji==="string"?identity.avatar_emoji.trim():"";
+ const inherit=preference==="auto"&&!identity?.avatar_url&&avatar&&avatar!=="🚴";
+ return {preset,head_mode:preference==="auto"?(inherit?"emoji":"art"):preference,
  head_variant:["auto","neutral","happy","focused","tired"].includes(a.head_variant)?a.head_variant:"auto",
- head_emoji:typeof a.head_emoji==="string"&&a.head_emoji.trim()?a.head_emoji:"🙂",backpack:a.backpack!==false};
+ head_emoji:inherit?avatar:(typeof a.head_emoji==="string"&&a.head_emoji.trim()?a.head_emoji:"🙂"),
+ backpack:a.backpack!==false};
 }
 function assetUrl(src,catalog){return src+"?v="+encodeURIComponent(catalog.asset_revision||"dev");}
 function preload(src){
@@ -96,8 +102,8 @@ function tick(now){raf=0;if(document.hidden)return;
 }
 function start(){if(!raf&&!document.hidden&&mounted.size)raf=requestAnimationFrame(tick);}
 if(typeof document!=="undefined")document.addEventListener("visibilitychange",start);
-export function mountFrameRider(node,transport,catalog,settings){
- const appearance=resolveAppearance(settings,catalog);
+export function mountFrameRider(node,transport,catalog,settings,identity={}){
+ const appearance=resolveAppearance(settings,catalog,identity);
  const preset=catalog.presets[appearance.preset];
  if(!preset)return;
  let e=mounted.get(node);
