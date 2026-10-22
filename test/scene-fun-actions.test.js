@@ -52,7 +52,9 @@ test("flop keeps the sprite centered with bounded vertical travel",async()=>{
  assert.match(rule,/transform-origin:\s*50% 50%/);
  assert.doesNotMatch(rule,/54% 82%\s*;/);
  for(const name of ["sceneFlop","sceneFlopInward"]){
-  const body=css.match(new RegExp("@keyframes "+name+" \\\\{([\\\\s\\\\S]*?)^\\\\}","m"))?.[1];
+  const start=css.indexOf("@keyframes "+name+" {");
+  const end=css.indexOf("\n}",start);
+  const body=start<0||end<0?null:css.slice(start,end);
   assert.ok(body,"missing "+name);
   const transforms=[...body.matchAll(/transform:\s*([^;]+);/g)].map(v=>v[1]);
   assert.equal(transforms.length,7,name+" should retain every staging phase");
