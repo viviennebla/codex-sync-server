@@ -22,6 +22,15 @@ function centersForLane(people, width, scale, baseWidth, padding, gap) {
   const result = [];
   const requiredDistance = baseWidth * scale + gap;
   const isManual = (r) => r.office_position != null && Number.isFinite(Number(r.office_position.x));
+  if (!order.some(isManual)) {
+    // Exact full-span distribution also avoids sample-grid rounding at 375px.
+    const step = order.length > 1 ? Math.max(0, hi - lo) / (order.length - 1) : 0;
+    return order.map((rider, index) => ({
+      rider,
+      center: order.length === 1 ? clamp(desiredX(rider, width), lo, Math.max(lo, hi)) : lo + step * index,
+      crowded: order.length > 1 && step + 0.02 < requiredDistance,
+    }));
+  }
 
   for (const rider of order.filter(isManual)) {
     // Display is clamped for this viewport; the persisted anchor stays intact.
