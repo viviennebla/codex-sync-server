@@ -1,4 +1,4 @@
-/* Desktop-only comic actions on the existing PNG rider presenter.
+/* Comic actions on the existing PNG rider presenter.
  * Decoration never changes the rider's world X, hit target, saved position,
  * bike frames or the separate bubble overlay. */
 .rider-motion .scene-fun-flames,
@@ -39,31 +39,27 @@
 }
 .rider.is-overheating .effect-burst,
 .rider.is-flopping .effect-burst {display:block;}
-/* Disable new staging entirely below desktop dimensions, until a dedicated
- * mobile layout/animation design is reviewed. */
-@media (min-width: 761px) {
-  .rider.is-overheating .scene-fun-flames {visibility:visible;opacity:1;}
-  .rider.is-overheating .scene-fun-flames i {
-    animation: sceneFlameFlicker .42s steps(3,end) infinite alternate;
-  }
-  .rider.is-overheating .frame-rider-art {
-    animation: sceneHeatHop .38s steps(3,end) infinite alternate;
-    transform-origin: 50% 78%;
-  }
-  .rider.is-flopping .frame-rider-art {
-    transform-origin: 54% 82%;
-    animation: sceneFlop 3.35s steps(1,end) both;
-  }
-  /* Right-edge riders flop inward, never off the visible road. */
-  .rider.is-near-right.is-flopping .frame-rider-art {
-    animation-name: sceneFlopInward;
-  }
-  .rider.is-flopping .scene-flop-stars {
-    z-index: 6;
-    visibility:visible;
-    opacity:1;
-    animation: sceneStars 1.2s steps(3,end) infinite;
-  }
+.rider.is-overheating .scene-fun-flames {visibility:visible;opacity:1;}
+.rider.is-overheating .scene-fun-flames i {
+  animation: sceneFlameFlicker .42s steps(3,end) infinite alternate;
+}
+.rider.is-overheating .frame-rider-art {
+  animation: sceneHeatHop .38s steps(3,end) infinite alternate;
+  transform-origin: 50% 78%;
+}
+.rider.is-flopping .frame-rider-art {
+  transform-origin: 54% 82%;
+  animation: sceneFlop 3.35s steps(1,end) both;
+}
+/* Right-edge riders flop inward, never off the visible road. */
+.rider.is-near-right.is-flopping .frame-rider-art {
+  animation-name: sceneFlopInward;
+}
+.rider.is-flopping .scene-flop-stars {
+  z-index: 6;
+  visibility:visible;
+  opacity:1;
+  animation: sceneStars 1.2s steps(3,end) infinite;
 }
 @keyframes sceneFlameFlicker {
   from {opacity:.78;filter:brightness(.88);translate:0 0;}
