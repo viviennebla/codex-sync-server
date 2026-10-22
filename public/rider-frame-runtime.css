@@ -6,9 +6,9 @@
 /* Sticker masks the small faceplate only. The entire helmet PNG remains rendered. */
 .frame-head-emoji {
  position:absolute;left:65%;top:40%;display:grid;place-items:center;
- width:21px;height:21px;box-sizing:border-box;border-radius:45%;
+ width:29px;height:32px;box-sizing:border-box;border-radius:45%;
  background:#20163e;color:#fff;white-space:nowrap;
- font:16px/1 "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
+ font:18px/1 "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
  pointer-events:none;user-select:none;
 }
 @media(max-width:760px){.frame-rider-art{width:141px;height:111px}}
