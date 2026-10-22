@@ -44,3 +44,27 @@ test("action bubbles share existing overlay and public CSS route",async()=>{
  assert.match(html,/href="\/scene-fun-actions\.css"/);
  assert.match(server,/url\.pathname === "\/scene-fun-actions\.css"/);
 });
+
+
+test("flop keeps the sprite centered with bounded vertical travel",async()=>{
+ const css=await source("public/scene-fun-actions.css");
+ const rule=css.match(/\.rider\.is-flopping \.frame-rider-art \{([\s\S]*?)\n\}/)?.[1]||"";
+ assert.match(rule,/transform-origin:\s*50% 50%/);
+ assert.doesNotMatch(rule,/54% 82%\s*;/);
+ for(const name of ["sceneFlop","sceneFlopInward"]){
+  const body=css.match(new RegExp("@keyframes "+name+" \\\\{([\\\\s\\\\S]*?)^\\\\}","m"))?.[1];
+  assert.ok(body,"missing "+name);
+  const transforms=[...body.matchAll(/transform:\s*([^;]+);/g)].map(v=>v[1]);
+  assert.equal(transforms.length,7,name+" should retain every staging phase");
+  for(const transform of transforms){
+   assert.ok(transform.startsWith("translate(-50%,-50%)"),name+" must keep the centered anchor");
+   assert.doesNotMatch(transform,/translateX\(/);
+   const y=Number(transform.match(/translateY\((-?[\d.]+)px\)/)?.[1]||0);
+   assert.ok(Math.abs(y)<=12,name+" must not hop outside the lane vertically");
+   const angle=Math.abs(Number(transform.match(/rotate\((-?[\d.]+)deg\)/)?.[1]||0));
+   assert.ok(angle<=68,name+" must not pivot more than 68deg");
+  }
+ }
+ assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.match(css,/\.rider\.is-near-right\.is-flopping \.frame-rider-art \{transform:translate\(-50%,-50%\) translateY\(12px\) rotate\(-68deg\)/);
+});
