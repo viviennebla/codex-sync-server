@@ -1500,6 +1500,13 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, url.pathname.slice(1), "text/javascript; charset=utf-8");
       return;
     }
+    const additionalVehicleMatch = method === "GET" && url.pathname.match(
+      /^\/riders\/presets\/helmet-commuter\/(scooter|skateboard|surf|skate)\.svg$/
+    );
+    if (additionalVehicleMatch) {
+      await sendStatic(res, "riders/presets/helmet-commuter/" + additionalVehicleMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/theme-runtime.js") {
       await sendStatic(res, "theme-runtime.js", "text/javascript; charset=utf-8");
       return;

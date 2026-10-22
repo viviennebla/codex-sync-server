@@ -2,7 +2,7 @@ import { mountThemeLayers } from "./theme-runtime.js";
 import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
 import { syncSceneBubbles } from "./scene-bubble-runtime.js";
 import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, nearestVisibleLane, pointerToLayoutPosition } from "./scene-layout.js";
-import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
+import { PIXEL_TRANSPORTS, loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -1272,7 +1272,7 @@ function updateRiderNode(node, rider) {
   const nextTransport = transportFor(rider);
   // Changing transport updates display size without touching the saved office position.
   const visualJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-  const pixelActive = ["bike", "walk"].includes(nextTransport);
+  const pixelActive = PIXEL_TRANSPORTS.includes(nextTransport);
   node.style.setProperty("--scale", String(pixelActive ? 0.92 + visualJitter * 0.3 : 1.06 + visualJitter));
   if (node.dataset.transport !== nextTransport) {
     const currentTransport = node.querySelector(".transport");
@@ -1592,7 +1592,7 @@ function renderRiders(riders) {
       lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-      const isPixelRider = ["bike", "walk"].includes(transportFor(rider));
+      const isPixelRider = PIXEL_TRANSPORTS.includes(transportFor(rider));
       node.style.setProperty("--scale", String(rider.sceneScale ??
         (isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter))));
       node.dataset.avatarKey = rider.avatar_url
