@@ -12,8 +12,8 @@ test("overheat and flop are single Director actions with owned durations",async(
  assert.match(motions,/flop: \{\s*className: "is-flopping",\s*duration: 3350,/);
  assert.match(app,/window\.setTimeout\(finish, action\.duration\)/);
  assert.match(app,/riderDragState\?\.riderId === rider\.user_id/);
- assert.match(app,/return MOTION_ACTIONS\.overheat/);
- assert.match(app,/return MOTION_ACTIONS\.flop/);
+ assert.match(app,/window\.innerWidth >= 761 \? MOTION_ACTIONS\.overheat/);
+ assert.match(app,/window\.innerWidth >= 761 \? MOTION_ACTIONS\.flop/);
  assert.match(app,/MOTION_ACTIONS\[forcedMotion\]/);
 });
 
