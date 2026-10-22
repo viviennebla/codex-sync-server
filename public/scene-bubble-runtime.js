@@ -9,6 +9,7 @@ let currentPinnedRider = null;
 const actionClasses = [
   "is-waving","is-sipping","is-stretching","is-yawning","is-coasting",
   "is-sprinting","is-quota-rushing","is-wheelie","is-bonking","is-celebrating",
+  "is-overheating","is-flopping",
 ];
 
 function ensureOverlay() {
