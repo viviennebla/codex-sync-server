@@ -3,8 +3,15 @@
 .frame-rider-art {position:absolute;z-index:3;left:50%;top:48%;width:151px;height:119px;transform:translate(-50%,-50%);pointer-events:none;image-rendering:pixelated}
 .frame-rider-art [hidden]{display:none!important}
 .frame-rider-art img {position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-.frame-head-emoji {position:absolute;left:55%;top:16%;font-size:39px;line-height:1;transform:translate(-50%,-2px);filter:drop-shadow(0 2px 0 #291c46)}
-@media(max-width:760px){.frame-rider-art{width:141px;height:111px}.frame-head-emoji{font-size:36px}}
+/* Sticker masks the small faceplate only. The entire helmet PNG remains rendered. */
+.frame-head-emoji {
+ position:absolute;left:65%;top:40%;display:grid;place-items:center;
+ width:21px;height:21px;box-sizing:border-box;border-radius:45%;
+ background:#20163e;color:#fff;white-space:nowrap;
+ font:16px/1 "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
+ pointer-events:none;user-select:none;
+}
+@media(max-width:760px){.frame-rider-art{width:141px;height:111px}}
 .rider-custom-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:end}
 .rider-custom-fields label{display:grid;gap:4px;color:#45424d;font-size:12px;font-weight:700}
 .rider-custom-fields input,.rider-custom-fields select{max-width:100%;min-width:0;background:#fffdf7;border:1px solid #d9d3ca;border-radius:9px;padding:9px;color:#343b45}
