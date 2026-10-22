@@ -1,5 +1,6 @@
 import { mountThemeLayers } from "./theme-runtime.js";
 import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
+import { adjacentSameRoadPairs, nextAmbientOffset } from "./scene-motion.js";
 import { syncSceneBubbles } from "./scene-bubble-runtime.js";
 import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, nearestVisibleLane, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadFrameCatalog, mountFrameRider, disposeFrameRider } from "./rider-frame-runtime.js";
@@ -1699,13 +1700,18 @@ function renderRiders(riders) {
     }
 
     updateRiderNode(node, rider);
-    // The scene planner owns rider size and position; the PNG presenter only animates within the rider.
+    // The scene planner owns position. A 20s data refresh must not cancel
+    // a valid ambient walk; reset only if the actual layout anchor changed.
     if (halloweenEnabled && Number.isFinite(rider.sceneScale)) {
       node.style.setProperty("--scale", String(rider.sceneScale));
-      if (!riderDragState || riderDragState.riderId !== rider.user_id) {
+      const layoutKey = [rider.lane, rider.x, rider.sceneScale].join(":");
+      if (node.dataset.sceneLayoutKey && node.dataset.sceneLayoutKey !== layoutKey
+          && riderDragState?.riderId !== rider.user_id) {
         node.style.left = "";
         node.dataset.drift = "0";
+        delete node.dataset.driftAfter;
       }
+      node.dataset.sceneLayoutKey = layoutKey;
     }
     if (pixelRiderCatalog) mountFrameRider(node, transportFor(rider), pixelRiderCatalog, rider.rider_appearance);
     updateRiderMessageButton(node, rider.user_id);
@@ -1923,20 +1929,8 @@ function triggerMotion(rider, node, action, options = {}) {
 function nearbyRiderPairs() {
   const available = visibleRiders
     .filter((rider) => !activeMotion.has(rider.user_id))
-    .sort((a, b) => a.lane - b.lane || Number(a.x || 0) - Number(b.x || 0));
-  const pairs = [];
-
-  for (let index = 1; index < available.length; index += 1) {
-    const left = available[index - 1];
-    const right = available[index];
-    if (
-      left.lane === right.lane
-      && Math.abs(Number(left.x || 0) - Number(right.x || 0)) <= 22
-    ) {
-      pairs.push([left, right]);
-    }
-  }
-  return pairs;
+    .map((rider) => ({ ...rider, x: currentRiderX(rider) }));
+  return adjacentSameRoadPairs(available);
 }
 
 function triggerNearbyWave() {
@@ -2003,12 +1997,13 @@ function scheduleAmbientDrift() {
             Number(node.dataset.driftAfter || 0) > Date.now()) return;
         if (Math.random() < 0.45) return; // Pauses are part of the scene.
         const current = Number(node.dataset.drift || 0);
-        const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - .5) * 1.4));
-        const candidate = Math.max(0, Math.min(100, rider.x + next));
         const lane = node.parentElement;
         const laneRect = lane?.getBoundingClientRect();
         const actorRect = node.getBoundingClientRect();
         if (!laneRect || !actorRect) return;
+        const next = nextAmbientOffset(current, laneRect.width, Math.random(), Math.random());
+        if (next === null || Math.abs(next - current) < 0.05) return;
+        const candidate = Math.max(0, Math.min(100, rider.x + next));
         const shiftPx = (candidate - currentRiderX(rider)) / 100 * laneRect.width;
         const others = [...lane.querySelectorAll(".rider")]
           .filter(other => other !== node)
