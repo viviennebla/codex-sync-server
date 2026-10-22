@@ -7,7 +7,7 @@
   pointer-events: none;
   visibility: hidden;
   opacity: 0;
-  z-index: 5;
+  z-index: 2;
 }
 .rider-motion .scene-fun-flames {
   width: 164px;
@@ -25,7 +25,6 @@
   height: 110px;
   background: linear-gradient(to top,#e84132 0 25%,#ff772c 26% 53%,#ffcd54 54% 77%,#fff1a2 78% 90%,transparent 91%);
   clip-path: polygon(32% 100%,32% 83%,17% 83%,17% 69%,0 69%,0 44%,17% 44%,17% 30%,34% 30%,34% 15%,52% 15%,52% 0,70% 0,70% 35%,86% 35%,86% 53%,100% 53%,100% 75%,83% 75%,83% 90%,67% 90%,67% 100%);
-  animation: sceneFlameFlicker .42s steps(3,end) infinite alternate;
 }
 .scene-fun-flames i:nth-child(1) {left: 4px; height: 83px; animation-delay: -.19s;}
 .scene-fun-flames i:nth-child(2) {left: 63px; height: 119px; width: 42px; animation-delay: -.37s;}
@@ -44,6 +43,9 @@
  * mobile layout/animation design is reviewed. */
 @media (min-width: 761px) {
   .rider.is-overheating .scene-fun-flames {visibility:visible;opacity:1;}
+  .rider.is-overheating .scene-fun-flames i {
+    animation: sceneFlameFlicker .42s steps(3,end) infinite alternate;
+  }
   .rider.is-overheating .frame-rider-art {
     animation: sceneHeatHop .38s steps(3,end) infinite alternate;
     transform-origin: 50% 78%;
@@ -53,6 +55,7 @@
     animation: sceneFlop 3.35s steps(1,end) both;
   }
   .rider.is-flopping .scene-flop-stars {
+    z-index: 6;
     visibility:visible;
     opacity:1;
     animation: sceneStars 1.2s steps(3,end) infinite;
