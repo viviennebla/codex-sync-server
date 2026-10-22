@@ -371,6 +371,7 @@ function publicEquippedAchievement(user) {
     id: achievement.id,
     emoji: achievement.emoji,
     name: achievement.name,
+    description: achievement.description,
   } : null;
 }
 
