@@ -77,9 +77,9 @@
   display: none;
   position: absolute;
   z-index: 30;
-  top: auto;
-  bottom: calc(100% + 7px);
-  left: 0;
+  top: -4px;
+  bottom: auto;
+  left: calc(100% + 7px);
   right: auto;
   width: max-content;
   min-width: 86px;
@@ -104,7 +104,13 @@
   font-weight: 550;
 }
 .rider.is-near-right .rider-title-tooltip,
-.rider.identity-flipped .rider-title-tooltip { left: auto; right: 0; }
+.rider.identity-flipped .rider-title-tooltip {
+  left: auto;
+  right: calc(100% + 7px);
+}
+@media (hover: none) {
+  .rider .name-chip:hover .rider-title-tooltip:not([hidden]) { display: none; }
+}
 .rider .name-chip:hover .rider-title-tooltip:not([hidden]),
 .rider .name-chip:focus-within .rider-title-tooltip:not([hidden]) { display: block; }
 .rider.is-clickable:focus-visible { outline: 2px solid #7c9bdd; outline-offset: 2px; }
