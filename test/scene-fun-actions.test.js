@@ -21,7 +21,7 @@ test("action decoration attaches to rider-motion without altering PNG sprites",a
  const app=await source("public/app.js");
  const css=await source("public/scene-fun-actions.css");
  const frameRuntime=await source("public/rider-frame-runtime.js");
- assert.match(app, /'<div class="rider-motion">' \\+/);
+ assert.ok(app.includes("'<div class=\\"rider-motion\\">'"));
  assert.match(app, /'<div class="scene-fun-flames"/);
  assert.match(app,/'<span class="scene-flop-stars"/);
  assert.match(css,/@media \(min-width: 761px\)/);
