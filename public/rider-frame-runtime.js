@@ -114,7 +114,7 @@ export function mountFrameRider(node,transport,catalog,settings){
  vehicleBack.hidden=true;vehicleFront.hidden=true;
  art.append(vehicleBack,body,vehicleFront,head,emoji);parent.append(art);
  node.classList.add("has-frame-rider");
- e={node,transport,catalog,preset,appearance,body,head,vehicleBack,vehicleFront,emoji,started:performance.now()};
+ e={node,transport,catalog,preset,appearance,art,body,head,vehicleBack,vehicleFront,emoji,started:performance.now()};
  mounted.set(node,e);preloadPreset(preset,transport,appearance,catalog);draw(e,performance.now());start();
 }
 export function disposeFrameRider(node){
