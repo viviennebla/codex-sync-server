@@ -1,4 +1,7 @@
 import { mountThemeLayers } from "./theme-runtime.js";
+import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
+import { syncSceneBubbles } from "./scene-bubble-runtime.js";
+import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, nearestVisibleLane, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadFrameCatalog, mountFrameRider, disposeFrameRider } from "./rider-frame-runtime.js";
 
 const $ = (id) => document.getElementById(id);
@@ -85,6 +88,8 @@ const shownCommentEventIds = new Set();
 const riderMessageTimers = new Map();
 const latestCommentByRider = new Map();
 let pinnedMessageRiderId = null;
+let achievementEventsInitialized = false;
+const seenAchievementEventIds = new Set();
 const COMMENT_BUBBLE_MS = 7000;
 const COMMENT_BUBBLE_RECENCY_MS = 2 * 60 * 1000;
 
@@ -105,7 +110,8 @@ const productDayPart = (type) => dateParts.find((part) => part.type === type)?.v
 const productDay = [productDayPart("year"), productDayPart("month"), productDayPart("day")].join("-");
 const halloweenEnabled = season === "halloween"
   || (season !== "off" && productDay >= "2026-10-18" && productDay <= "2026-11-01");
-const seasonalTrackLanes = halloweenEnabled ? [1, 3] : [1, 2, 3, 4];
+const layoutMode = halloweenEnabled ? LAYOUT_MODE.HALLOWEEN : LAYOUT_MODE.OFFICE;
+const seasonalTrackLanes = visibleLaneIds(layoutMode);
 document.body.classList.toggle("season-halloween", halloweenEnabled);
 if (halloweenEnabled) void mountThemeLayers("halloween").catch(() => {});
 
@@ -418,6 +424,7 @@ function syncMessageLayer() {
     ".rider.is-coasting",
   ].join(",")));
   stage?.classList.toggle("message-layer-active", hasOpenBubble);
+  if (halloweenEnabled) syncSceneBubbles(hasOpenBubble, pinnedMessageRiderId);
 }
 
 function updateRiderMessageButton(node, riderId) {
@@ -532,9 +539,39 @@ function syncRiderCommentBubbles(events) {
   newestAutoByRider.forEach((event) => showRiderMessage(event));
 }
 
+// Only celebrate achievements seen after this tab has initialized its feed.
+function celebrateNewAchievements(events) {
+  const fresh = [];
+  for (const event of events) {
+    if (event.kind !== "achievement") continue;
+    const id = String(event.id || [event.user?.user_id, event.created_at, event.message].join(":"));
+    if (seenAchievementEventIds.has(id)) continue;
+    seenAchievementEventIds.add(id);
+    const age = Date.now() - Date.parse(event.created_at || "");
+    if (achievementEventsInitialized && event.user?.user_id === me?.user_id
+      && Number.isFinite(age) && age >= 0 && age < 120000) fresh.push(event);
+  }
+  achievementEventsInitialized = true;
+  const event = fresh[0];
+  if (!event) return;
+  const rider = [...document.querySelectorAll(".rider")].find(
+    (node) => node.dataset.riderId === me?.user_id
+  );
+  if (rider) {
+    rider.querySelector(".rider-unlock-pop")?.remove();
+    const pop = document.createElement("div");
+    pop.className = "rider-unlock-pop";
+    pop.textContent = "✨ " + (event.message || "解锁新成就");
+    rider.appendChild(pop);
+    setTimeout(() => pop.remove(), 3800);
+  }
+  showToast("✨ " + (event.message || "解锁新成就"), 3800);
+}
+
 function renderEvents(rows) {
   if (!eventList) return;
   const values = Array.isArray(rows) ? rows : [];
+  celebrateNewAchievements(values);
   eventList.replaceChildren();
 
   if (!values.length) {
@@ -809,7 +846,14 @@ async function openRiderDetail(rider) {
         })),
         installations: [{ name: "Preview", harness: "codex", today_tokens: rider.today_tokens || 0 }],
       };
-      riderDetailSummary.textContent = "今日 " + formatTokens(fake.today_tokens);
+      riderDetailSummary.textContent = "今日 " + formatTokens(fake.today_tokens) +
+        (rider.equipped_achievement
+          ? " · " + (rider.equipped_achievement.emoji || "🏅") + " " +
+            rider.equipped_achievement.name +
+            (rider.equipped_achievement.description
+              ? "：" + rider.equipped_achievement.description
+              : "")
+          : "");
       renderBreakdown(riderModels, fake.models);
       renderBreakdown(riderProjects, fake.projects);
       renderRiderTrend(fake.trend);
@@ -822,7 +866,14 @@ async function openRiderDetail(rider) {
     riderDetailSummary.textContent =
       "今日 " + formatTokens(payload.today_tokens || 0) +
       (quotaLabel(payload) ? " · " + quotaLabel(payload) : "") +
-      " · " + (payload.installations || []).length + " 个 Agent 环境";
+      " · " + (payload.installations || []).length + " 个 Agent 环境" +
+      (payload.user?.equipped_achievement
+        ? " · " + (payload.user.equipped_achievement.emoji || "🏅") +
+          " " + payload.user.equipped_achievement.name +
+          (payload.user.equipped_achievement.description
+            ? "：" + payload.user.equipped_achievement.description
+            : "")
+        : "");
     renderBreakdown(riderModels, payload.models);
     renderBreakdown(riderProjects, payload.projects);
     renderRiderTrend(payload.trend);
@@ -907,7 +958,7 @@ function lanePlan(riders) {
     if (Number.isInteger(manualLane) && manualLane >= 1 && manualLane <= 4) {
       // Project existing four-lane saved positions into two visible tracks.
       // The original saved lane is not changed until the user drags again.
-      const trackLane = halloweenEnabled ? (manualLane <= 2 ? 1 : 3) : manualLane;
+      const trackLane = resolveVisualLane(layoutMode, manualLane);
       laneById.set(rider.user_id, trackLane);
       counts[trackLane - 1] += 1;
     }
@@ -981,7 +1032,8 @@ function positionPlan(riders) {
     laneRiders.forEach((rider) => {
       const manualX = Number(rider.office_position?.x);
       if (Number.isFinite(manualX)) {
-        const x = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, manualX));
+        const x = Math.max(halloweenEnabled ? 0 : OFFICE_X_MIN,
+          Math.min(halloweenEnabled ? 100 : OFFICE_X_MAX, manualX));
         targetById.set(rider.user_id, x);
         occupied.push(x);
       }
@@ -1139,6 +1191,11 @@ function halloweenCostumeEmoji(riderId) {
   return choices[stableHash(String(riderId) + ":halloween-accessory") % choices.length];
 }
 
+// A past first-place achievement is a keepsake, not the live leader crown.
+function riderTitleEmoji(achievement) {
+  return achievement?.id === "took_the_crown" ? "🎖️" : (achievement?.emoji || "🏅");
+}
+
 function riderMarkup(rider) {
   const quotaEmotion = quotaEmotionFor(rider);
   const classes = [...stateFor(rider), "quota-emotion-" + quotaEmotion].join(" ");
@@ -1165,8 +1222,8 @@ function riderMarkup(rider) {
       '<div class="effect-burst">嘿!</div>' +
       '<div class="rider-message-bubble" role="status" aria-live="polite"></div>' +
       '<button class="rider-message-button" type="button" aria-label="查看最近留言" aria-expanded="false" hidden>…</button>' +
-      (rider.is_leader ? '<div class="leader-crown" aria-label="今日第一" title="今日第一">👑</div>' : '') +
       '<div class="rider-motion">' +
+        (rider.is_leader ? '<span class="leader-crown" role="img" aria-label="今日第一">👑</span>' : '') +
         '<div class="rider-inner">' +
           '<div class="avatar-ring">' +
             (rider.avatar_url
@@ -1187,18 +1244,29 @@ function riderMarkup(rider) {
           transportMarkup(transport) +
         '</div>' +
       '</div>' +
-      (rider.equipped_achievement
-        ? '<div class="rider-achievement" title="' +
-            escapeHtml(rider.equipped_achievement.name || "成就") + '">' +
-            escapeHtml(rider.equipped_achievement.emoji || "🏅") +
-          '</div>'
-        : '') +
-      '<div class="name-chip" title="' + escapeHtml(TRANSPORT_LABELS[transport]) + '">' +
+      '<div class="name-chip">' +
         '<span class="rider-name">' + escapeHtml(rider.display_name || "同事") + '</span>' +
-        '<small class="tokens"' +
-          (riderMetaLabel(rider) ? "" : " hidden") + ">" +
-          escapeHtml(riderMetaLabel(rider)) +
-        '</small>' +
+        '<span class="rider-meta">' +
+          (rider.equipped_achievement
+            ? '<span class="rider-title"><span class="rider-title-emoji">' +
+              escapeHtml(riderTitleEmoji(rider.equipped_achievement)) +
+              '</span><span class="rider-title-name">' +
+              escapeHtml(rider.equipped_achievement.name || "成就") + '</span></span>'
+            : '<span class="rider-title" hidden></span>') +
+          '<small class="tokens"' +
+            (riderMetaLabel(rider) ? "" : " hidden") + ">" +
+            escapeHtml(riderMetaLabel(rider)) +
+          '</small>' +
+        '</span>' +
+        '<span class="rider-title-tooltip" role="tooltip"' +
+          (rider.equipped_achievement ? "" : " hidden") + '>' +
+          (rider.equipped_achievement
+            ? escapeHtml(rider.equipped_achievement.name || "成就") +
+              (rider.equipped_achievement.description
+                ? '<small>' + escapeHtml(rider.equipped_achievement.description) + '</small>'
+                : "")
+            : "") +
+        '</span>' +
       '</div>' +
     '</div>'
   );
@@ -1275,23 +1343,36 @@ function updateRiderNode(node, rider) {
     Object.keys(TRANSPORT_LABELS).forEach((key) => node.classList.remove("mode-" + key));
     node.classList.add("mode-" + nextTransport);
     node.dataset.transport = nextTransport;
-    const chip = node.querySelector(".name-chip");
-    if (chip) chip.title = TRANSPORT_LABELS[nextTransport];
+    // Identity labels are independent of transport artwork.
   }
 
   const equipped = rider.equipped_achievement || null;
-  let achievement = node.querySelector(".rider-achievement");
-  if (equipped) {
-    if (!achievement) {
-      achievement = document.createElement("div");
-      achievement.className = "rider-achievement";
-      const chip = node.querySelector(".name-chip");
-      node.insertBefore(achievement, chip);
+  const title = node.querySelector(".rider-title");
+  const tooltip = node.querySelector(".rider-title-tooltip");
+  if (title) {
+    title.replaceChildren();
+    title.hidden = !equipped;
+    if (equipped) {
+      const emoji = document.createElement("span");
+      emoji.className = "rider-title-emoji";
+      emoji.textContent = riderTitleEmoji(equipped);
+      const label = document.createElement("span");
+      label.className = "rider-title-name";
+      label.textContent = equipped.name || "成就";
+      title.append(emoji, label);
     }
-    achievement.textContent = equipped.emoji || "🏅";
-    achievement.title = equipped.name || "成就";
-  } else if (achievement) {
-    achievement.remove();
+  }
+  if (tooltip) {
+    tooltip.hidden = !equipped;
+    tooltip.replaceChildren();
+    if (equipped) {
+      tooltip.append(document.createTextNode(equipped.name || "成就"));
+      if (equipped.description) {
+        const detail = document.createElement("small");
+        detail.textContent = equipped.description;
+        tooltip.append(detail);
+      }
+    }
   }
 
   const ring = node.querySelector(".avatar-ring");
@@ -1317,19 +1398,24 @@ function updateRiderNode(node, rider) {
   const crown = node.querySelector(".leader-crown");
   if (rider.is_leader && !crown) {
     const next = node.querySelector(".rider-motion");
-    const leaderCrown = document.createElement("div");
-    leaderCrown.className = "leader-crown";
-    leaderCrown.setAttribute("aria-label", "第一名");
-    leaderCrown.textContent = "👑";
-    node.insertBefore(leaderCrown, next);
+    if (next) {
+      const leaderCrown = document.createElement("span");
+      leaderCrown.className = "leader-crown";
+      leaderCrown.setAttribute("role", "img");
+      leaderCrown.setAttribute("aria-label", "今日第一");
+      leaderCrown.textContent = "👑";
+      next.prepend(leaderCrown);
+    }
   } else if (!rider.is_leader && crown) {
     crown.remove();
   }
 
   if (rider.demo) {
     node.classList.remove("is-clickable", "is-own-rider");
+    node.removeAttribute("tabindex");
   } else {
     node.classList.add("is-clickable");
+    node.tabIndex = 0;
     node.classList.toggle(
       "is-own-rider",
       !previewMode && rider.user_id === me?.user_id,
@@ -1349,6 +1435,19 @@ function currentRiderX(rider) {
 }
 
 function hasHardOfficeCollision(lane, x, riderId) {
+  if (halloweenEnabled) {
+    const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
+    const road = document.querySelector("#lane" + lane);
+    if (!node || !road) return true;
+    const actor = node.getBoundingClientRect();
+    const roadRect = road.getBoundingClientRect();
+    const nextCenter = roadRect.left + x / 100 * roadRect.width;
+    const dx = nextCenter - (actor.left + actor.width / 2);
+    const others = [...road.querySelectorAll(".rider")]
+      .filter(other => other !== node)
+      .map(other => other.getBoundingClientRect());
+    return !canShiftRider(actor, roadRect, dx, others);
+  }
   return visibleRiders.some((other) => (
     other.user_id !== riderId
     && Number(other.lane) === Number(lane)
@@ -1358,17 +1457,21 @@ function hasHardOfficeCollision(lane, x, riderId) {
 
 function pointerOfficePosition(event) {
   const stage = document.querySelector(".race-stage");
-  const rect = stage?.getBoundingClientRect();
-  if (!rect || rect.width <= 0 || rect.height <= 0) return null;
-  const x = Math.max(
-    OFFICE_X_MIN,
-    Math.min(OFFICE_X_MAX, ((event.clientX - rect.left) / rect.width) * 100),
-  );
-  const relativeY = (event.clientY - rect.top) / rect.height;
-  const lane = halloweenEnabled
-    ? (relativeY < 0.70 ? 1 : 3)
-    : Math.max(1, Math.min(4, Math.floor(relativeY * 4) + 1));
-  return { lane, x: Math.round(x * 10) / 10 };
+  const layout = readLaneLayout(stage, layoutMode);
+  // In the pixel scene, the legal horizontal band is determined by the
+  // rider's real screen footprint, not the legacy office's 22%-78% band.
+  let minX = OFFICE_X_MIN;
+  let maxX = OFFICE_X_MAX;
+  if (halloweenEnabled && riderDragState?.node && layout) {
+    const road = nearestVisibleLane(layout, event.clientY);
+    const actorWidth = riderDragState.node.getBoundingClientRect().width;
+    if (!road || !Number.isFinite(actorWidth) || actorWidth <= 0) return null;
+    const side = (actorWidth / 2 + 10) / road.rect.width * 100;
+    if (side >= 50) return null;
+    minX = side;
+    maxX = 100 - side;
+  }
+  return pointerToLayoutPosition(layout, event, { minX, maxX });
 }
 
 function rollbackRiderDrag(state) {
@@ -1534,8 +1637,13 @@ function renderRiders(riders) {
     .sort((a, b) => Number(b.today_tokens || 0) - Number(a.today_tokens || 0))[0];
   const leaderId = realLeader?.user_id || null;
 
-  visibleRiders = positionPlan(lanePlan(riders)).map((rider) => ({
+  const planned = positionPlan(lanePlan(riders));
+  const domLayout = readLaneLayout(document.querySelector(".race-stage"), layoutMode);
+  const positions = halloweenEnabled ? planRiderPlacement(planned, domLayout) : null;
+  visibleRiders = planned.map((rider) => ({
     ...rider,
+    x: positions?.get(rider.user_id)?.x ?? rider.x,
+    sceneScale: positions?.get(rider.user_id)?.scale ?? null,
     is_leader: rider.user_id === leaderId,
   }));
 
@@ -1565,7 +1673,8 @@ function renderRiders(riders) {
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
       const isPixelRider = true;
-      node.style.setProperty("--scale", String(isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter)));
+      node.style.setProperty("--scale", String(rider.sceneScale ??
+        (0.92 + sizeJitter * 0.3)));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
@@ -1574,6 +1683,11 @@ function renderRiders(riders) {
         if (node._riderData && !node._riderData.demo) {
           void openRiderDetail(node._riderData);
         }
+      });
+      node.addEventListener("keydown", (event) => {
+        if (event.target !== node || !["Enter", " "].includes(event.key)) return;
+        event.preventDefault();
+        if (node._riderData && !node._riderData.demo) void openRiderDetail(node._riderData);
       });
       attachOwnRiderDrag(node);
       node.querySelector(".rider-message-button")?.addEventListener("click", (event) => {
@@ -1585,14 +1699,59 @@ function renderRiders(riders) {
     }
 
     updateRiderNode(node, rider);
+    // The scene planner owns rider size and position; the PNG presenter only animates within the rider.
+    if (halloweenEnabled && Number.isFinite(rider.sceneScale)) {
+      node.style.setProperty("--scale", String(rider.sceneScale));
+      if (!riderDragState || riderDragState.riderId !== rider.user_id) {
+        node.style.left = "";
+        node.dataset.drift = "0";
+      }
+    }
     if (pixelRiderCatalog) mountFrameRider(node, transportFor(rider), pixelRiderCatalog, rider.rider_appearance);
     updateRiderMessageButton(node, rider.user_id);
   });
+  if (halloweenEnabled) {
+    // New roster/positions may change message head anchors while an action is
+    // playing. Global overlay owns all bubble placement, not each rider.
+    syncMessageLayer();
+  }
 
   const total = visibleRiders
     .filter((rider) => !rider.demo)
     .reduce((sum, rider) => sum + Number(rider.today_tokens || 0), 0);
   todayTotalEl.textContent = formatTokens(total);
+  requestAnimationFrame(layoutRiderIdentities);
+}
+
+function layoutRiderIdentities() {
+  const nodes = [...document.querySelectorAll(".rider")].filter(
+    (node) => node.getClientRects().length && node.querySelector(".name-chip")
+  );
+  nodes.forEach((node) => node.classList.remove("identity-tight", "identity-icon-only", "identity-flipped"));
+  const stage = document.querySelector(".race-stage")?.getBoundingClientRect();
+  if (!stage) return;
+  nodes.forEach((node) => {
+    const chip = node.querySelector(".name-chip");
+    if (chip.getBoundingClientRect().right > stage.right - 6) node.classList.add("identity-flipped");
+  });
+  // Two bounded layout passes: first drop numbers, then abbreviate achievements.
+  const intersect = (a, b) => (
+    a.left < b.right && a.right > b.left &&
+    a.top < b.bottom && a.bottom > b.top
+  );
+  for (const mode of ["identity-tight", "identity-icon-only"]) {
+    const rects = nodes.map((node) => node.querySelector(".name-chip").getBoundingClientRect());
+    const conflicted = new Set();
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        if (!intersect(rects[i], rects[j])) continue;
+        conflicted.add(nodes[i]);
+        conflicted.add(nodes[j]);
+      }
+    }
+    if (!conflicted.size) break;
+    conflicted.forEach((node) => node.classList.add(mode));
+  }
 }
 
 async function loadRaceData() {
@@ -1754,17 +1913,10 @@ function triggerMotion(rider, node, action, options = {}) {
     syncMessageLayer();
   };
 
-  const onEnd = (event) => {
-    if (event.target !== motion) return;
-    motion.removeEventListener("animationend", onEnd);
-    finish();
-  };
-
-  motion?.addEventListener("animationend", onEnd);
-  window.setTimeout(() => {
-    motion?.removeEventListener("animationend", onEnd);
-    finish();
-  }, action.duration + 180);
+  // The Director owns action lifetime. CSS keyframes (e.g. 1.5s sway)
+  // are visual sub-animations and must not cancel a 3.2s social action.
+  // Keep one idempotent timeout as the completion signal for CSS and Sprite.
+  window.setTimeout(finish, action.duration);
   return true;
 }
 
@@ -1835,6 +1987,7 @@ function scheduleDirector() {
 function scheduleAmbientDrift() {
   clearInterval(ambientTimer);
   ambientTimer = setInterval(() => {
+    if (document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     visibleRiders.forEach((rider) => {
       const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
       if (
@@ -1842,12 +1995,34 @@ function scheduleAmbientDrift() {
         || activeMotion.has(rider.user_id)
         || riderDragState?.riderId === rider.user_id
       ) return;
+
+      // Pixel scene uses real road/actor rectangles and a movement cooldown.
+      // Keep ordinary four-lane office drift unchanged until its own visual QA.
+      if (halloweenEnabled) {
+        if (node.matches(":hover") || node.classList.contains("has-message") ||
+            Number(node.dataset.driftAfter || 0) > Date.now()) return;
+        if (Math.random() < 0.45) return; // Pauses are part of the scene.
+        const current = Number(node.dataset.drift || 0);
+        const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - .5) * 1.4));
+        const candidate = Math.max(0, Math.min(100, rider.x + next));
+        const lane = node.parentElement;
+        const laneRect = lane?.getBoundingClientRect();
+        const actorRect = node.getBoundingClientRect();
+        if (!laneRect || !actorRect) return;
+        const shiftPx = (candidate - currentRiderX(rider)) / 100 * laneRect.width;
+        const others = [...lane.querySelectorAll(".rider")]
+          .filter(other => other !== node)
+          .map(other => other.getBoundingClientRect());
+        if (!canShiftRider(actorRect, laneRect, shiftPx, others)) return;
+        node.dataset.drift = String(next);
+        node.dataset.driftAfter = String(Date.now() + 9000);
+        node.style.left = candidate + "%";
+        return;
+      }
+
       const current = Number(node.dataset.drift || 0);
       const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
-      const candidate = Math.max(
-        OFFICE_X_MIN,
-        Math.min(OFFICE_X_MAX, Number(rider.x || 50) + next),
-      );
+      const candidate = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, rider.x + next));
       if (hasHardOfficeCollision(rider.lane, candidate, rider.user_id)) return;
       node.dataset.drift = String(next);
       node.style.left = candidate + "%";

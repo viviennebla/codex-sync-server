@@ -49,7 +49,13 @@ body.season-halloween .app-shell::before {
   /* The base is an unlit master; glowing pumpkins are in their own aligned mask. */
   filter: none;
 }
+/* Actor visual size is controlled by the road placement planner. Do not
+ * stack the old inner 1.13 zoom on top of that road-relative scale. */
+body.season-halloween .rider-inner { transform: scale(1); }
 body.season-halloween .race-stage {
+  /* The two painted roads span the full scene width; the event rail is a
+   * separate overlay, not a permanent left column in the road geometry. */
+  margin-left: 0;
   position: relative;
   z-index: 1;
   background: transparent;
@@ -232,4 +238,43 @@ body.season-halloween .rider.is-near-right .season-costume { left: 57px; }
   }
   body.season-halloween .season-glow-pumpkins { opacity: .55; }
   body.season-halloween .season-bat-flyover { display: none; }
+}
+
+
+/* One viewport-level bubble surface: rider transforms no longer control text.
+ * Source message/action nodes remain in the rider for legacy state handling. */
+body.season-halloween .rider-message-bubble,
+body.season-halloween .effect-burst { display: none !important; }
+.scene-bubble-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+}
+.scene-bubble {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 58px;
+  max-width: min(220px, calc(100vw - 16px));
+  padding: 7px 10px;
+  border: 2px solid #2b213e;
+  border-radius: 11px;
+  background: #fff9e9;
+  color: #292535;
+  box-shadow: 3px 3px 0 rgba(34,19,52,.26);
+  font: 700 12px/1.25 ui-sans-serif, system-ui, sans-serif;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+}
+.scene-bubble-action {
+  background: #f9e8ff;
+  color: #50335b;
+  border-color: #5d3b71;
+}
+@media (max-width: 760px) {
+  .scene-bubble { max-width: min(180px, calc(100vw - 16px)); font-size: 11px; padding: 6px 8px; }
 }

@@ -378,6 +378,7 @@ function publicEquippedAchievement(user) {
     id: achievement.id,
     emoji: achievement.emoji,
     name: achievement.name,
+    description: achievement.description,
   } : null;
 }
 
@@ -1466,6 +1467,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "styles.css", "text/css; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/rider-identity.css") {
+      await sendStatic(res, "rider-identity.css", "text/css; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/office-stage.svg") {
       await sendStatic(res, "office-stage.svg", "image/svg+xml; charset=utf-8");
       return;
@@ -1530,6 +1535,18 @@ const server = createServer(async (req, res) => {
     );
     if (bikePartMatch) {
       await sendStatic(res, "riders/presets/helmet-commuter/" + bikePartMatch[1] + ".svg", "image/svg+xml; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/scene-layout.js") {
+      await sendStatic(res, "scene-layout.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/scene-placement.js") {
+      await sendStatic(res, "scene-placement.js", "text/javascript; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && (url.pathname === "/scene-bubble-runtime.js" || url.pathname === "/bubble-layout.js")) {
+      await sendStatic(res, url.pathname.slice(1), "text/javascript; charset=utf-8");
       return;
     }
     const additionalVehicleMatch = method === "GET" && url.pathname.match(

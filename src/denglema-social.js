@@ -51,6 +51,12 @@ export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
     href: "/me",
   },
   {
+    id: "svg-art-audit-82-2026-10",
+    emoji: "🧹",
+    message: "#82 SVG 素材清单核对完成 · 旧图纸早退休了，在岗的别误删",
+    href: "/updates",
+  },
+  {
     id: "six-unified-pixel-transports-2026-10",
     emoji: "🛹",
     message: "像素人物支持六种通勤方式 · 头像终于不用兼职当车身了",

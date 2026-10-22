@@ -266,6 +266,17 @@ function formatAchievementTime(value) {
   return Math.floor(hours / 24) + " 天前";
 }
 
+const ACHIEVEMENT_CATEGORIES = {
+  first_ride: "出发纪念", million_day: "趣味燃料", ten_million_day: "趣味燃料",
+  model_explorer: "探索足迹", project_hopper: "探索足迹",
+  multi_harness: "探索足迹", took_the_crown: "赛道回忆",
+  precise_rider: "探索足迹", light_multitasker: "探索足迹",
+  all_round_route: "探索足迹", three_day_streak: "持续记录",
+  steady_cruise: "工作节奏", heartbeat_rider: "工作节奏",
+  early_bird: "趣味时刻", night_ride: "趣味时刻",
+  deep_night_rider: "趣味时刻", weekend_rider: "趣味时刻",
+};
+
 function renderProfileAchievements(rows, equippedId) {
   const values = Array.isArray(rows) ? rows : [];
   profileAchievementList.replaceChildren();
@@ -278,6 +289,7 @@ function renderProfileAchievements(rows, equippedId) {
   const none = document.createElement("button");
   none.type = "button";
   none.className = "profile-achievement-card achievement-none " + (!equippedId ? "is-equipped" : "");
+  none.setAttribute("aria-pressed", String(!equippedId));
   none.innerHTML = '<div class="profile-achievement-emoji">◌</div><div class="profile-achievement-copy"><strong>不佩戴</strong><span>保持神秘</span></div>';
   none.addEventListener("click", () => { void equipAchievement(null); });
   profileAchievementList.appendChild(none);
@@ -288,6 +300,7 @@ function renderProfileAchievements(rows, equippedId) {
     item.className = "profile-achievement-card is-unlocked " +
       (equippedId === achievement.id ? "is-equipped" : "");
     item.dataset.achievementId = achievement.id;
+    item.setAttribute("aria-pressed", String(equippedId === achievement.id));
 
     const emoji = document.createElement("div");
     emoji.className = "profile-achievement-emoji";
@@ -295,13 +308,23 @@ function renderProfileAchievements(rows, equippedId) {
 
     const copy = document.createElement("div");
     copy.className = "profile-achievement-copy";
+    const category = document.createElement("small");
+    category.className = "achievement-category";
+    category.textContent = ACHIEVEMENT_CATEGORIES[achievement.id] || "小小纪念";
     const name = document.createElement("strong");
     name.textContent = achievement.name || "成就";
     const description = document.createElement("span");
     description.textContent = achievement.description || "";
     const status = document.createElement("small");
-    status.textContent = equippedId === achievement.id ? "佩戴中" : "点一下佩戴";
-    copy.append(name, description, status);
+    status.textContent = equippedId === achievement.id ? "✓ 已选为称号" : "选为我的称号";
+    copy.append(category, name, description);
+    if (achievement.unlocked_at) {
+      const date = document.createElement("small");
+      date.className = "achievement-date";
+      date.textContent = "解锁于 " + formatAchievementTime(achievement.unlocked_at);
+      copy.append(date);
+    }
+    copy.append(status);
     item.append(emoji, copy);
     item.addEventListener("click", () => { void equipAchievement(achievement.id); });
     profileAchievementList.appendChild(item);

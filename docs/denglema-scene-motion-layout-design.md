@@ -127,14 +127,49 @@ const stageRect = document.querySelector(".race-stage").getBoundingClientRect();
 **本设计的停止线**：不新增道路或可站立区，不迁移 `office_position`，不改 Usage/身份/API，不改背景/Glow/猫蝙蝠素材；没有实际视觉截图前不声称像素级道路贴合已完成。
 
 
-## 7. Phase A 交付状态（2026-10-20）
+## 7. Phase A 交付状态与首页接入（2026-10-21）
 
-**已实现（隔离模块，尚未接入主页面）**：`public/scene-layout.js` + `test/scene-layout.test.js`。该模块读取既有 `#lane1..#lane4` 的 `getBoundingClientRect()`，提供 `readLaneLayout()`、`visibleLaneIds()`、`resolveVisualLane()`、`nearestVisibleLane()`、`pointerToLayoutPosition()`、`projectSavedPosition()`、`getFootBaseline()`。普通四车道 / 万圣节两道路沿用现有 DOM，**没有创造第三条道路或新的可站立点**。
+前置模块已在 PR #76 合并：`public/scene-layout.js` / `test/scene-layout.test.js`。随后像素骑手 PR #75 已合并，本阶段从最新 `main` 完成集成：
 
-- 读几何：`readLaneLayout(stage, mode)` 必须完整读取该模式的四个或两个有效 lane；缺失/隐藏时返回 `null`，而不是在页面中猜道路位置。
-- 指针坐标：当前默认 `22–78%` X 边界仅为兼容旧拖动策略；Y 基于真实 lane 矩形，处于两条路间的指针归属最近道路。接入后应在桌面/手机截图下对照旧行为检查道路切换体验。
-- 保存兼容：`projectSavedPosition()` 将原有逻辑 lane 1/2 显示在视觉 1、3/4 显示在视觉 3，不修改输入。`pointerToLayoutPosition()` 默认返回旧 API 可接受的可见 lane（1 或 3）；选项 `preserveLogicalLane` 仅为未来显式语义保留，**本阶段不启用**。
-- 脚底参照：`getFootBaseline()` 的默认 `0.8` 是 DOM lane 内位置采样，而不是最终美术脚底落点。Phase B 接入具体骑手时须视觉校准。
-- 限制：模块当前**未引入到 `public/app.js`，没有新的静态路由，也未改变线上任何动画/布局**。之所以暂不连接，是因为素材开发的 PR #75 正在修改 `app.js` 和 `src/server.js`。等 #75 合并后，从最新 `main` 引入该模块并接管 `pointerOfficePosition()` 等位置路径；同时在 server 静态白名单加入 `/scene-layout.js`。该集成必须另做独立验证，不可把专项测试通过当成视觉验收完成。
+- `public/app.js` 使用 `LAYOUT_MODE`、`visibleLaneIds` 选择普通四车道/万圣节双道路，并复用 `resolveVisualLane` 投影原有 `office_position.lane`；没有新增第三条道路。
+- 拖动函数 `pointerOfficePosition()` 调用 `readLaneLayout(.race-stage, layoutMode)` 与 `pointerToLayoutPosition`；根据真实可见 `#lane1..4` 的 `getBoundingClientRect()` 判断最近道路。DOM 缺失时返回 `null`，不会凭空保存错误道路。
+- `src/server.js` 明确允许 `GET /scene-layout.js`，不放开其它静态路径。
+- **保留像素骑手版本的点击/拖动阈值**（移动超过 5px 才抓取 stage pointer），旧的 `PUT /api/me/office-position`、冲突回滚、动画 Director、4.2s Ambient Drift 与 20s 数据刷新全部不改变。
+- `pointerToLayoutPosition` 仍默认保存当前可见 lane（万圣节 1/3），并使用原有 22–78% X 安全区；`getFootBaseline` 的 0.8 是相对 DOM lane 的预留接口，**本阶段没有擅自改变 Sprite 的脚底高度**。
+- 新增 `test/scene-layout-integration.test.js`：检查模块接线/手势保存/动画入口与服务器静态路由，另保留原 7 项几何单测。
 
-验证：`node --test test/scene-layout.test.js` **7/7 通过**；隔离 checkout `npm test` **73/73 通过**；`node --check public/scene-layout.js` 通过。
+**待下一阶段**：Phase B 才处理人物尺寸与脚底锚点、像素级人物占位碰撞、自动漂移冷却；Phase C 处理气泡 Overlay。这次只让布局适配器成为首页坐标计算的真实入口，避免与 Sprite Runtime 的职责交叉。合并前应在 Desktop/375px 浏览器预览、真实跨道路拖动和普通 `?season=off` 中验收视觉布局及落点。
+
+## 8. 单分支分阶段截图验收（2026-10-21）
+
+依用户要求，Phase A/B/C/D 全部在 `feat/denglema-scene-layout-wiring` 上完成，最终只交付同一个 PR #79。每阶段单独做 Chromium Desktop/375px 截图验收，不再拆分小 PR。
+
+![Phase A/B/C/D desktop and mobile screenshot QA](assets/denglema-scene-motion-phase-qa-20261021.webp)
+
+| 阶段 | 已实现 | 截图/行为验收 |
+| --- | --- | --- |
+| A · 双布局接线 | `scene-layout.js` 接入真实 `#lane` DOM、静态路由与拖动；保留 4→2 | 1440/375 下只有两条万圣节道路；普通 `?season=off` 恢复四车道；六名预览 Rider 可见 |
+| B · 人物占位与自动移动 | `scene-placement.js` 按道路实际宽度适配人物尺度、稳定位置/优先手动锚点；去掉万圣节内层 1.13 重复放大；道路铺满背景，事件栏独立悬浮；`canShiftRider` + 随机停顿与 9s 冷却 | 375px 每道路的三名人物恢复可辨识与相互间距；1440 图像比例自然；自动漂移不跨路、不穿过邻人 |
+| C · Bubble Overlay | `bubble-layout.js` 与 `scene-bubble-runtime.js` 独立渲染留言/动作气泡，先排 pinned，再排普通留言与动作；全局避开页面边界、顶部导航与动态栏 | 桌面/375 注入多条长中文测试消息，不见气泡互盖；狭窄情况下低优先级气泡可不显示 |
+| D · 动作生命周期 | `MOTION_ACTIONS[].duration` 作为唯一动作结束源，CSS 的 `animationend` 不再提前结束动作 | 强制 `?motion=wave`，约 2s 仍在动作中、3.5s 已结束，无 JS 页面异常；正常四车道截图作为回退对照 |
+
+隔离工作区完成的 `npm test` 是 **104/104**（截图后的中间基线），后续提交还要再次全量回归。截图使用 `?preview=1` 的六名虚拟骑手，非线上真实用户，C 阶段通过控制台向三人注入多条专用长留言。截图采用预览数据；另外已在 dev1 隔离实例中新注册测试用户，先关闭首次接入引导，再从上路拖到下路，实际 `PUT /api/me/office-position` 返回 **200**，页面显示 `lane3`，`/api/me` 持久化结果为 `{lane:3,x:55.5}`。该测试仅作用于临时测试状态目录，不是线上用户。
+
+**保留边界**：不修改用户位置存储/上传/身份；六种交通方式的美术由 Sprite Session 维护。人数远超道路可容纳容量时仍可出现 `crowded` 软降级，目前没有启用 `+N` 聚合 UI；留到单独 UX 验收，不能隐形删除人物。普通四车道的动画与缩放保持原状。
+
+
+## 9. 左右道路空间利用修复（2026-10-22）
+
+用户提供的线上截屏显示每条路五名骑手，但两端仍有大片空白。根因是双层旧逻辑：`positionPlan()` 的 auto/manual X 都限制在 22–78%，同时 `normalizeDenglemaOfficePosition` 的后端保存也限制在 22–78%。Phase B 占位模块以这些受限位置作为偏好，未主动铺满合法道路。
+
+本次在 **同一 PR #79** 中修复，而非新增阶段性 MR：
+
+- 普通四车道仍保留原有 22–78% 前端安全区与外观；万圣节双道路改为**实际 DOM 道路宽度 + 人物半宽 + 10px 余量**决定两端边界，无第三条道路或路外站位。
+- 无手动位置时，按自动位置稳定排序，将人物均匀放到整个道路可用宽度内；手动位置优先，其他人使用剩余空间。保留历史 `office_position`，仅变更临时呈现位置。
+- 万圣节拖动使用正在移动的骑手实际屏幕宽度动态计算安全的 min/max X，并用真实 rider rect 检查重叠；普通四车道仍使用原有拖动限制。
+- 服务端接收正常化 X 范围扩至 0–100；这表示**持久化坐标合同的合法范围扩展**，未修改字段或布局版本语义。普通模式显示旧安全区内的投影，不覆盖用户在万圣节保存的靠边坐标。
+- 强调实际边界是人物视觉足迹而非称号/对话气泡边界；气泡仍由全局 Overlay 避让。多人物极端超容量仍保留拥挤标志，不假装能无限安排。
+
+![2026-10-22 全幅道路验收（两路各五人）与 375px 移动端](assets/denglema-fullwidth-qa-20261022.webp)
+
+**验收**：1528px 模拟每路 5 人，展示 X 约 5.5、27.8、50.0、72.2、94.5%，全部 `crowded=false`；375px 每路 3 人，合法中心约 17.7、50.0、82.3%，无越界；真实隔离用户将骑手拖到 92%，`PUT /api/me/office-position` 返回 200，再次读取 `/api/me` 是 `{lane:3,x:92}`，无 JS 异常。全量回归 `npm test` **108/108**。截图使用 Preview/模拟 Rider，不包含线上用户私有信息；未部署线上。
