@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate reviewed PNG rider asset packs
+        run: npm run riders:validate
+
       - name: Run tests
         run: npm test
 

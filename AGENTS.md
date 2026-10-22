@@ -119,3 +119,11 @@ Never upload or expose:
 - installation tokens.
 
 Keep user-upload permission explicit. Do not silently enable background upload.
+
+## Rider Pack 角色/载具素材开发（Agent 必读）
+当需求是“添加/替换我的蹬了吗角色或载具”时：
+1. 阅读 `docs/denglema-character-frames-v1.md`，不要直接修改 UI、server 路由来硬编码新角色。
+2. 帮用户准备具有发布权限的 128×100 透明 PNG 素材包（包含 manifest.json）。人物 `npm run riders:import -- /path/to/rider`，载具 `npm run vehicles:import -- /path/to/vehicle`。已经注册过的 ID 就直接修改其资源文件和 Manifest。
+3. 运行 `npm run riders:validate && npm test`，然后在 `/rider-preview` 查看真实帧效果，注意不是 Agent 推算关节动画；保留截图进行视觉 review。
+4. 提交独立 PR 让 CI 与 reviewer 校验，通过后 merge → runner 自动部署。切勿绕过 PR 审核、私自把未批准的资源放入服务器公开目录。
+5. 只允许像素 PNG 人物/载具资源。Emoji 可以作为用户可选的文本头部，不要引回 CSS/SVG 人物兼容视觉。

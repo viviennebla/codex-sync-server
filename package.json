@@ -10,10 +10,14 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node --test",
-    "preview": "node scripts/preview.mjs"
+    "preview": "node scripts/preview.mjs",
+    "riders:validate": "node scripts/rider-packs.mjs validate",
+    "riders:import": "node scripts/rider-packs.mjs import",
+    "vehicles:import": "node scripts/rider-packs.mjs import-vehicle"
   },
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "12.11.1"
+    "better-sqlite3": "12.11.1",
+    "pngjs": "^7.0.0"
   }
 }

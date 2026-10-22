@@ -350,9 +350,11 @@ export async function updateWebUserEmoji(userId, avatarEmoji, stateDir = "state"
   return user;
 }
 
-export function normalizeRiderAppearance(value) {
+export function normalizeRiderAppearance(value, options={}) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid appearance");
-  if (value.preset !== undefined && value.preset !== "helmet-commuter") throw new Error("Unknown rider preset");
+  const allowed=options.allowedPresets || ["helmet-commuter"];
+  const preset=value.preset ?? "helmet-commuter";
+  if (!allowed.includes(preset)) throw new Error("Unknown rider preset");
   const mode = value.head_mode ?? "art";
   const variant = value.head_variant ?? "auto";
   const emoji = String(value.head_emoji ?? "🙂").trim();
@@ -360,7 +362,7 @@ export function normalizeRiderAppearance(value) {
   if (!["auto","neutral","happy","focused","tired"].includes(variant)) throw new Error("Invalid head variant");
   if ([...emoji].length > 4 || !emoji) throw new Error("Head emoji must contain 1-4 characters");
   if (value.backpack !== undefined && typeof value.backpack !== "boolean") throw new Error("Invalid backpack");
-  return {preset:"helmet-commuter",head_mode:mode,head_variant:variant,head_emoji:emoji,backpack:value.backpack !== false};
+  return {preset,head_mode:mode,head_variant:variant,head_emoji:emoji,backpack:value.backpack !== false};
 }
 
 export async function updateWebUserRiderAppearance(userId, appearance, stateDir="state", options={}) {
@@ -368,7 +370,7 @@ export async function updateWebUserRiderAppearance(userId, appearance, stateDir=
   const store=await readJson(file,{version:1,by_id:{}});
   const user=store.by_id?.[String(userId||"").trim()];
   if(!user)return null;
-  user.rider_appearance=normalizeRiderAppearance(appearance);
+  user.rider_appearance=normalizeRiderAppearance(appearance,options);
   user.updated_at=(options.now?.()||new Date()).toISOString();
   store.by_id[user.id]=user;
   await writeJson(file,store);

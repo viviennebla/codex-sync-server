@@ -1,6 +1,7 @@
 /* PNG-only presenter. CSS/SVG legacy rider internals never render for frame riders. */
 .rider .rider-inner {display:none!important} /* Legacy figures never flash while PNG assets load. */
 .frame-rider-art {position:absolute;z-index:3;left:50%;top:48%;width:151px;height:119px;transform:translate(-50%,-50%);pointer-events:none;image-rendering:pixelated}
+.frame-rider-art [hidden]{display:none!important}
 .frame-rider-art img {position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 .frame-head-emoji {position:absolute;left:55%;top:16%;font-size:39px;line-height:1;transform:translate(-50%,-2px);filter:drop-shadow(0 2px 0 #291c46)}
 @media(max-width:760px){.frame-rider-art{width:141px;height:111px}.frame-head-emoji{font-size:36px}}

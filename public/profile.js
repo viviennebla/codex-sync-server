@@ -61,15 +61,31 @@ const TRANSPORT_OPTIONS = Object.freeze([
 ]);
 
 let currentProfileUser = null;
+let riderCatalog = null;
 const appearanceFields = {
   preset: $("riderPreset"),head_mode:$("riderHeadMode"),head_variant:$("riderHeadVariant"),
   head_emoji:$("riderHeadEmoji"),backpack:$("riderBackpack")
 };
+function renderRiderPresets(catalog) {
+ riderCatalog=catalog;
+ const select=appearanceFields.preset;
+ if(!select)return;
+ select.replaceChildren();
+ for(const preset of Object.values(catalog.presets)){
+  const option=document.createElement("option");
+  option.value=preset.id;
+  option.textContent=preset.label;
+  select.append(option);
+ }
+ select.disabled=false;
+}
 function renderAppearance(value={}) {
-  const a={preset:"helmet-commuter",head_mode:"art",head_variant:"auto",head_emoji:"🙂",backpack:true,...value};
+  const a={preset:riderCatalog?.default_preset||"helmet-commuter",head_mode:"art",head_variant:"auto",head_emoji:"🙂",backpack:true,...value};
   for(const [key,field] of Object.entries(appearanceFields)) {
     if(!field)continue;
-    if(key==="backpack")field.checked=a.backpack!==false;else field.value=a[key];
+    if(key==="backpack")field.checked=a.backpack!==false;
+    else if(key==="preset")field.value=riderCatalog?.presets?.[a.preset]?a.preset:(riderCatalog?.default_preset||"helmet-commuter");
+    else field.value=a[key];
   }
 }
 $("riderSaveAppearance")?.addEventListener("click",async()=>{
@@ -415,7 +431,14 @@ async function loadProfile() {
   const user = me.user;
   renderProfileAvatar(user);
   renderTransportOptions(user.transport || "bike");
-  renderAppearance(user.rider_appearance || {});
+  try {
+    const catalog=await jsonFetch("/api/rider-catalog");
+    renderRiderPresets(catalog);
+    renderAppearance(user.rider_appearance || {});
+  } catch(error) {
+    $("riderSaveAppearance").disabled=true;
+    showToast("人物素材目录加载失败："+error.message,3500);
+  }
   profileName.textContent = user.display_name || "骑手";
 
   const [detail, achievementPayload] = await Promise.all([

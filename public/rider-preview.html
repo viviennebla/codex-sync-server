@@ -48,7 +48,12 @@
     <button data-state="focused" aria-pressed="false">专注</button>
     <button data-state="tired" aria-pressed="false">疲惫 / 刹车</button>
     <button data-state="coasting" aria-pressed="false">滑行</button>
+    <button data-state="scooter" aria-pressed="false">滑板车（待 PNG）</button>
+    <button data-state="skateboard" aria-pressed="false">滑板（待 PNG）</button>
+    <button data-state="surf" aria-pressed="false">冲浪（待 PNG）</button>
+    <button data-state="skate" aria-pressed="false">轮滑（待 PNG）</button>
   </div>
+  <label>角色：<select id="previewPreset"></select></label>
   <div class="grid">
     <section class="panel"><h2>实际拼装 · 原始大小</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
     <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
@@ -62,8 +67,8 @@
 </main>
 <script type="module">
 import {loadFrameCatalog,mountFrameRider,disposeFrameRider} from "/rider-frame-runtime.js";
-const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动"};
-let catalog=null;
+const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 暂无专属 PNG",skateboard:"滑板 · 暂无专属 PNG",surf:"冲浪 · 暂无专属 PNG",skate:"轮滑 · 暂无专属 PNG"};
+let catalog=null;let selectedState="bike";
 function stateClass(node,state) {
  node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");
  if(state==="idle")node.classList.add("is-chill");
@@ -74,11 +79,13 @@ function stateClass(node,state) {
 }
 function select(state) {
  if(!catalog)return;
+ selectedState=state;
  document.querySelectorAll("[data-state]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.state===state)));
- for(const node of [main,tiny]) {stateClass(node,state);mountFrameRider(node,["walk","idle","happy","focused"].includes(state)?"walk":"bike",catalog,{head_mode:"art",head_variant:"auto",backpack:true});}
+ for(const node of [main,tiny]) {stateClass(node,state);mountFrameRider(node,["walk","idle","happy","focused"].includes(state)?"walk":(["scooter","skateboard","surf","skate"].includes(state)?state:"bike"),catalog,{preset:document.getElementById("previewPreset").value,head_mode:"art",head_variant:"auto",backpack:true});}
  document.getElementById("stateLabel").textContent=labels[state];
 }
 document.getElementById("modes").addEventListener("click",e=>{const b=e.target.closest("[data-state]");if(b)select(b.dataset.state);});
-try{catalog=await loadFrameCatalog();select("bike");}catch(error){document.getElementById("stateLabel").textContent="素材加载失败："+error.message;}
+document.getElementById("previewPreset").addEventListener("change",()=>select(selectedState));
+try{catalog=await loadFrameCatalog();const selectPreset=document.getElementById("previewPreset");for(const p of Object.values(catalog.presets)){const option=document.createElement("option");option.value=p.id;option.textContent=p.label;selectPreset.append(option);}select("bike");}catch(error){document.getElementById("stateLabel").textContent="素材加载失败："+error.message;}
 </script>
 </body></html>

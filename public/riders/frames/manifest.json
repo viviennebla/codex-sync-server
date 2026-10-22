@@ -1,60 +1,8 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "default_preset": "helmet-commuter",
-  "canvas": {
-    "width": 128,
-    "height": 100
+  "presets": {
+    "helmet-commuter": "/riders/frames/helmet-commuter/manifest.json"
   },
-  "heads": {
-    "neutral": "/riders/frames/helmet-commuter/heads/neutral.png",
-    "happy": "/riders/frames/helmet-commuter/heads/happy.png",
-    "focused": "/riders/frames/helmet-commuter/heads/focused.png",
-    "tired": "/riders/frames/helmet-commuter/heads/tired.png"
-  },
-  "transports": {
-    "bike": {
-      "frames": 6,
-      "fps": 10,
-      "layers": {
-        "pack": [
-          "/riders/frames/helmet-commuter/bike/pack/00.png",
-          "/riders/frames/helmet-commuter/bike/pack/01.png",
-          "/riders/frames/helmet-commuter/bike/pack/02.png",
-          "/riders/frames/helmet-commuter/bike/pack/03.png",
-          "/riders/frames/helmet-commuter/bike/pack/04.png",
-          "/riders/frames/helmet-commuter/bike/pack/05.png"
-        ],
-        "plain": [
-          "/riders/frames/helmet-commuter/bike/plain/00.png",
-          "/riders/frames/helmet-commuter/bike/plain/01.png",
-          "/riders/frames/helmet-commuter/bike/plain/02.png",
-          "/riders/frames/helmet-commuter/bike/plain/03.png",
-          "/riders/frames/helmet-commuter/bike/plain/04.png",
-          "/riders/frames/helmet-commuter/bike/plain/05.png"
-        ]
-      }
-    },
-    "walk": {
-      "frames": 6,
-      "fps": 9,
-      "layers": {
-        "pack": [
-          "/riders/frames/helmet-commuter/walk/pack/00.png",
-          "/riders/frames/helmet-commuter/walk/pack/01.png",
-          "/riders/frames/helmet-commuter/walk/pack/02.png",
-          "/riders/frames/helmet-commuter/walk/pack/03.png",
-          "/riders/frames/helmet-commuter/walk/pack/04.png",
-          "/riders/frames/helmet-commuter/walk/pack/05.png"
-        ],
-        "plain": [
-          "/riders/frames/helmet-commuter/walk/plain/00.png",
-          "/riders/frames/helmet-commuter/walk/plain/01.png",
-          "/riders/frames/helmet-commuter/walk/plain/02.png",
-          "/riders/frames/helmet-commuter/walk/plain/03.png",
-          "/riders/frames/helmet-commuter/walk/plain/04.png",
-          "/riders/frames/helmet-commuter/walk/plain/05.png"
-        ]
-      }
-    }
-  }
+  "vehicles": {}
 }

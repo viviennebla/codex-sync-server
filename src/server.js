@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import {loadRiderAssetRegistry} from "./rider-assets.js";
 import { createHash } from "node:crypto";
 import { readFile, readdir, mkdir, writeFile, rm } from "node:fs/promises";
 import { join, dirname } from "node:path";
@@ -68,6 +69,11 @@ const DENGLEMA_SESSION_SECRET = process.env.DENGLEMA_SESSION_SECRET || TOKEN || 
 const DENGLEMA_OPERATOR_TOKEN = process.env.DENGLEMA_OPERATOR_TOKEN || "";
 const WEB_SESSION_TTL_SECONDS = Number(process.env.DENGLEMA_SESSION_TTL_SECONDS) || 90 * 24 * 60 * 60;
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
+let riderAssetPromise;
+function getRiderAssets(){
+  if(!riderAssetPromise) riderAssetPromise=loadRiderAssetRegistry(PUBLIC_DIR).catch(error=>{riderAssetPromise=null;throw error;});
+  return riderAssetPromise;
+}
 const STARTED_AT = Date.now();
 const RESET_BEG_FILE = join(STATE_DIR, "denglema", "reset-beg.json");
 const AVATAR_DIR = join(STATE_DIR, "denglema", "avatars");
@@ -533,7 +539,8 @@ const server = createServer(async (req, res) => {
       if (!user) { sendJson(res,401,{error:"Not logged in"});return; }
       const body=await readBody(req);
       try {
-        const updated=await updateWebUserRiderAppearance(user.id,body,STATE_DIR);
+        const registry=await getRiderAssets();
+        const updated=await updateWebUserRiderAppearance(user.id,body,STATE_DIR,{allowedPresets:Object.keys(registry.catalog.presets)});
         sendJson(res,200,{ok:true,rider_appearance:updated.rider_appearance});
       } catch(error){sendJson(res,400,{error:error?.message||"Invalid appearance"});}
       return;
@@ -710,6 +717,11 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // Public, reviewed character catalog. All URLs are checked-in and allowlisted.
+    if(method==="GET" && url.pathname==="/api/rider-catalog"){
+      const {catalog}=await getRiderAssets();
+      sendJson(res,200,catalog);return;
+    }
     // ── GET /api/me ── current Denglema user
     if (method === "GET" && url.pathname === "/api/me") {
       const user = await webUserFromRequest(req);
@@ -1472,12 +1484,17 @@ const server = createServer(async (req, res) => {
     if (method === "GET" && url.pathname === "/rider-frame-runtime.js") {
       await sendStatic(res,"rider-frame-runtime.js","text/javascript; charset=utf-8"); return;
     }
-    if (method === "GET" && url.pathname === "/riders/frames/manifest.json") {
-      await sendStatic(res,"riders/frames/manifest.json","application/json; charset=utf-8"); return;
-    }
-    const pngFrame=url.pathname.match(/^\/riders\/frames\/helmet-commuter\/(?:bike|walk)\/(?:pack|plain)\/0[0-5]\.png$|^\/riders\/frames\/helmet-commuter\/heads\/(?:neutral|happy|focused|tired)\.png$/);
-    if(method==="GET" && pngFrame){
-      await sendStatic(res,url.pathname.slice(1),"image/png");return;
+    // Only paths referenced by a validated, checked-in rider package can be served.
+    if(method==="GET" && (url.pathname.startsWith("/riders/frames/")||url.pathname.startsWith("/riders/vehicles/"))){
+      const {allowedFiles}=await getRiderAssets();
+      if(allowedFiles.has(url.pathname)){
+        const type=url.pathname.endsWith(".png")?"image/png":"application/json; charset=utf-8";
+        const file=await readFile(join(PUBLIC_DIR,url.pathname.slice(1)));
+        res.writeHead(200,{"content-type":type,
+          "cache-control":type==="image/png"?"public, max-age=86400":"no-store",
+          "x-content-type-options":"nosniff"});
+        res.end(file);return;
+      }
     }
     if (method === "GET" && url.pathname === "/rider-runtime.js") {
       await sendStatic(res, "rider-runtime.js", "text/javascript; charset=utf-8");

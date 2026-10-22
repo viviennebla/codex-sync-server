@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "id": "helmet-commuter",
+  "label": "头盔通勤客",
+  "description": "头盔像素通勤客（逐帧 PNG）",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "heads": {
+    "neutral": "heads/neutral.png",
+    "happy": "heads/happy.png",
+    "focused": "heads/focused.png",
+    "tired": "heads/tired.png"
+  },
+  "emoji_head": {
+    "left_percent": 55,
+    "top_percent": 16,
+    "font_size_px": 39
+  },
+  "fallback_transport": "walk",
+  "transports": {
+    "bike": {
+      "fps": 10,
+      "frames": 6,
+      "head_offset": {
+        "x": 0,
+        "y": -14
+      },
+      "layers": {
+        "pack": [
+          "bike/pack/00.png",
+          "bike/pack/01.png",
+          "bike/pack/02.png",
+          "bike/pack/03.png",
+          "bike/pack/04.png",
+          "bike/pack/05.png"
+        ],
+        "plain": [
+          "bike/plain/00.png",
+          "bike/plain/01.png",
+          "bike/plain/02.png",
+          "bike/plain/03.png",
+          "bike/plain/04.png",
+          "bike/plain/05.png"
+        ]
+      }
+    },
+    "walk": {
+      "fps": 9,
+      "frames": 6,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png"
+        ],
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png"
+        ]
+      }
+    }
+  }
+}
