@@ -1,7 +1,7 @@
 import { mountThemeLayers } from "./theme-runtime.js";
 import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
 import { syncSceneBubbles } from "./scene-bubble-runtime.js";
-import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, pointerToLayoutPosition } from "./scene-layout.js";
+import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, nearestVisibleLane, pointerToLayoutPosition } from "./scene-layout.js";
 import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
 const $ = (id) => document.getElementById(id);
@@ -986,7 +986,8 @@ function positionPlan(riders) {
     laneRiders.forEach((rider) => {
       const manualX = Number(rider.office_position?.x);
       if (Number.isFinite(manualX)) {
-        const x = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, manualX));
+        const x = Math.max(halloweenEnabled ? 0 : OFFICE_X_MIN,
+          Math.min(halloweenEnabled ? 100 : OFFICE_X_MAX, manualX));
         targetById.set(rider.user_id, x);
         occupied.push(x);
       }
@@ -1354,6 +1355,19 @@ function currentRiderX(rider) {
 }
 
 function hasHardOfficeCollision(lane, x, riderId) {
+  if (halloweenEnabled) {
+    const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
+    const road = document.querySelector("#lane" + lane);
+    if (!node || !road) return true;
+    const actor = node.getBoundingClientRect();
+    const roadRect = road.getBoundingClientRect();
+    const nextCenter = roadRect.left + x / 100 * roadRect.width;
+    const dx = nextCenter - (actor.left + actor.width / 2);
+    const others = [...road.querySelectorAll(".rider")]
+      .filter(other => other !== node)
+      .map(other => other.getBoundingClientRect());
+    return !canShiftRider(actor, roadRect, dx, others);
+  }
   return visibleRiders.some((other) => (
     other.user_id !== riderId
     && Number(other.lane) === Number(lane)
@@ -1364,12 +1378,20 @@ function hasHardOfficeCollision(lane, x, riderId) {
 function pointerOfficePosition(event) {
   const stage = document.querySelector(".race-stage");
   const layout = readLaneLayout(stage, layoutMode);
-  // The existing DOM is the spatial contract. If a road has not rendered,
-  // do not guess a third road or persist an unverified drop position.
-  return pointerToLayoutPosition(layout, event, {
-    minX: OFFICE_X_MIN,
-    maxX: OFFICE_X_MAX,
-  });
+  // In the pixel scene, the legal horizontal band is determined by the
+  // rider's real screen footprint, not the legacy office's 22%-78% band.
+  let minX = OFFICE_X_MIN;
+  let maxX = OFFICE_X_MAX;
+  if (halloweenEnabled && riderDragState?.node && layout) {
+    const road = nearestVisibleLane(layout, event.clientY);
+    const actorWidth = riderDragState.node.getBoundingClientRect().width;
+    if (!road || !Number.isFinite(actorWidth) || actorWidth <= 0) return null;
+    const side = (actorWidth / 2 + 10) / road.rect.width * 100;
+    if (side >= 50) return null;
+    minX = side;
+    maxX = 100 - side;
+  }
+  return pointerToLayoutPosition(layout, event, { minX, maxX });
 }
 
 function rollbackRiderDrag(state) {
