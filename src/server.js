@@ -371,6 +371,7 @@ function publicEquippedAchievement(user) {
     id: achievement.id,
     emoji: achievement.emoji,
     name: achievement.name,
+    description: achievement.description,
   } : null;
 }
 
@@ -1438,6 +1439,10 @@ const server = createServer(async (req, res) => {
     }
     if (method === "GET" && url.pathname === "/styles.css") {
       await sendStatic(res, "styles.css", "text/css; charset=utf-8");
+      return;
+    }
+    if (method === "GET" && url.pathname === "/rider-identity.css") {
+      await sendStatic(res, "rider-identity.css", "text/css; charset=utf-8");
       return;
     }
     if (method === "GET" && url.pathname === "/office-stage.svg") {
