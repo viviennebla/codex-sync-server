@@ -14,9 +14,11 @@
     "tired": "heads/tired.png"
   },
   "emoji_head": {
-    "left_percent": 55,
-    "top_percent": 16,
-    "font_size_px": 39
+    "left_percent": 65,
+    "top_percent": 46,
+    "font_size_px": 18,
+    "visor_width_px": 29,
+    "visor_height_px": 32
   },
   "fallback_transport": "walk",
   "transports": {
