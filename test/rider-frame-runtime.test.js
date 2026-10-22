@@ -31,8 +31,8 @@ test("frame presenter is PNG-only, supports emoji head and honors reduced-motion
  assert.equal(resolveAppearance({preset:"unknown"},catalog).preset,"helmet-commuter");
  assert.equal(frameNumber(0,10,6),0);
  assert.equal(frameNumber(700,10,6),1);
- assert.deepEqual(resolveAppearance({head_mode:"emoji",head_emoji:"🐱",backpack:false}),
-  {preset:"helmet-commuter",head_mode:"emoji",head_variant:"auto",head_emoji:"🐱",backpack:false});
+ assert.deepEqual(resolveAppearance({head_mode:"avatar",backpack:false},undefined,{avatar_emoji:"🐱"}),
+  {preset:"helmet-commuter",head_mode:"avatar",head_variant:"auto",head_emoji:"🐱",head_image_url:null,backpack:false});
 });
 test("appearance input is bounded and saved independently of transport",async()=>{
  for(const value of [{head_mode:"svg"},{head_variant:"unknown"},{head_emoji:"abcde"},{backpack:"yes"},{preset:"unknown"}]){
@@ -41,9 +41,9 @@ test("appearance input is bounded and saved independently of transport",async()=
  const tmp=await mkdtemp(join(tmpdir(),"denglema-appearance-"));
  try{
  const {user}=await createWebUser({display_name:"测试骑手",avatar_emoji:"🚴"},tmp);
- const updated=await updateWebUserRiderAppearance(user.id,{head_mode:"emoji",head_emoji:"🐱",backpack:false},tmp);
+ const updated=await updateWebUserRiderAppearance(user.id,{head_mode:"avatar",backpack:false},tmp);
  assert.equal(updated.transport,"bike");
- assert.equal(updated.rider_appearance.head_mode,"emoji");
+ assert.equal(updated.rider_appearance.head_mode,"avatar");
  assert.equal((await readDenglemaUser(user.id,tmp)).rider_appearance.backpack,false);
  }finally{await rm(tmp,{recursive:true,force:true})}
 });
