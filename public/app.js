@@ -1,4 +1,7 @@
 import { mountThemeLayers } from "./theme-runtime.js";
+import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
+import { syncSceneBubbles } from "./scene-bubble-runtime.js";
+import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, nearestVisibleLane, pointerToLayoutPosition } from "./scene-layout.js";
 import { PIXEL_TRANSPORTS, loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
 
 const $ = (id) => document.getElementById(id);
@@ -105,7 +108,8 @@ const productDayPart = (type) => dateParts.find((part) => part.type === type)?.v
 const productDay = [productDayPart("year"), productDayPart("month"), productDayPart("day")].join("-");
 const halloweenEnabled = season === "halloween"
   || (season !== "off" && productDay >= "2026-10-18" && productDay <= "2026-11-01");
-const seasonalTrackLanes = halloweenEnabled ? [1, 3] : [1, 2, 3, 4];
+const layoutMode = halloweenEnabled ? LAYOUT_MODE.HALLOWEEN : LAYOUT_MODE.OFFICE;
+const seasonalTrackLanes = visibleLaneIds(layoutMode);
 document.body.classList.toggle("season-halloween", halloweenEnabled);
 if (halloweenEnabled) void mountThemeLayers("halloween").catch(() => {});
 
@@ -418,6 +422,7 @@ function syncMessageLayer() {
     ".rider.is-coasting",
   ].join(",")));
   stage?.classList.toggle("message-layer-active", hasOpenBubble);
+  if (halloweenEnabled) syncSceneBubbles(hasOpenBubble, pinnedMessageRiderId);
 }
 
 function updateRiderMessageButton(node, riderId) {
@@ -907,7 +912,7 @@ function lanePlan(riders) {
     if (Number.isInteger(manualLane) && manualLane >= 1 && manualLane <= 4) {
       // Project existing four-lane saved positions into two visible tracks.
       // The original saved lane is not changed until the user drags again.
-      const trackLane = halloweenEnabled ? (manualLane <= 2 ? 1 : 3) : manualLane;
+      const trackLane = resolveVisualLane(layoutMode, manualLane);
       laneById.set(rider.user_id, trackLane);
       counts[trackLane - 1] += 1;
     }
@@ -981,7 +986,8 @@ function positionPlan(riders) {
     laneRiders.forEach((rider) => {
       const manualX = Number(rider.office_position?.x);
       if (Number.isFinite(manualX)) {
-        const x = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, manualX));
+        const x = Math.max(halloweenEnabled ? 0 : OFFICE_X_MIN,
+          Math.min(halloweenEnabled ? 100 : OFFICE_X_MAX, manualX));
         targetById.set(rider.user_id, x);
         occupied.push(x);
       }
@@ -1349,6 +1355,19 @@ function currentRiderX(rider) {
 }
 
 function hasHardOfficeCollision(lane, x, riderId) {
+  if (halloweenEnabled) {
+    const node = document.querySelector('[data-rider-id="' + CSS.escape(riderId) + '"]');
+    const road = document.querySelector("#lane" + lane);
+    if (!node || !road) return true;
+    const actor = node.getBoundingClientRect();
+    const roadRect = road.getBoundingClientRect();
+    const nextCenter = roadRect.left + x / 100 * roadRect.width;
+    const dx = nextCenter - (actor.left + actor.width / 2);
+    const others = [...road.querySelectorAll(".rider")]
+      .filter(other => other !== node)
+      .map(other => other.getBoundingClientRect());
+    return !canShiftRider(actor, roadRect, dx, others);
+  }
   return visibleRiders.some((other) => (
     other.user_id !== riderId
     && Number(other.lane) === Number(lane)
@@ -1358,17 +1377,21 @@ function hasHardOfficeCollision(lane, x, riderId) {
 
 function pointerOfficePosition(event) {
   const stage = document.querySelector(".race-stage");
-  const rect = stage?.getBoundingClientRect();
-  if (!rect || rect.width <= 0 || rect.height <= 0) return null;
-  const x = Math.max(
-    OFFICE_X_MIN,
-    Math.min(OFFICE_X_MAX, ((event.clientX - rect.left) / rect.width) * 100),
-  );
-  const relativeY = (event.clientY - rect.top) / rect.height;
-  const lane = halloweenEnabled
-    ? (relativeY < 0.70 ? 1 : 3)
-    : Math.max(1, Math.min(4, Math.floor(relativeY * 4) + 1));
-  return { lane, x: Math.round(x * 10) / 10 };
+  const layout = readLaneLayout(stage, layoutMode);
+  // In the pixel scene, the legal horizontal band is determined by the
+  // rider's real screen footprint, not the legacy office's 22%-78% band.
+  let minX = OFFICE_X_MIN;
+  let maxX = OFFICE_X_MAX;
+  if (halloweenEnabled && riderDragState?.node && layout) {
+    const road = nearestVisibleLane(layout, event.clientY);
+    const actorWidth = riderDragState.node.getBoundingClientRect().width;
+    if (!road || !Number.isFinite(actorWidth) || actorWidth <= 0) return null;
+    const side = (actorWidth / 2 + 10) / road.rect.width * 100;
+    if (side >= 50) return null;
+    minX = side;
+    maxX = 100 - side;
+  }
+  return pointerToLayoutPosition(layout, event, { minX, maxX });
 }
 
 function rollbackRiderDrag(state) {
@@ -1534,8 +1557,13 @@ function renderRiders(riders) {
     .sort((a, b) => Number(b.today_tokens || 0) - Number(a.today_tokens || 0))[0];
   const leaderId = realLeader?.user_id || null;
 
-  visibleRiders = positionPlan(lanePlan(riders)).map((rider) => ({
+  const planned = positionPlan(lanePlan(riders));
+  const domLayout = readLaneLayout(document.querySelector(".race-stage"), layoutMode);
+  const positions = halloweenEnabled ? planRiderPlacement(planned, domLayout) : null;
+  visibleRiders = planned.map((rider) => ({
     ...rider,
+    x: positions?.get(rider.user_id)?.x ?? rider.x,
+    sceneScale: positions?.get(rider.user_id)?.scale ?? null,
     is_leader: rider.user_id === leaderId,
   }));
 
@@ -1565,7 +1593,8 @@ function renderRiders(riders) {
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
       const isPixelRider = PIXEL_TRANSPORTS.includes(transportFor(rider));
-      node.style.setProperty("--scale", String(isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter)));
+      node.style.setProperty("--scale", String(rider.sceneScale ??
+        (isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter))));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
         : "emoji:" + raceAvatarEmoji(rider);
@@ -1585,9 +1614,23 @@ function renderRiders(riders) {
     }
 
     updateRiderNode(node, rider);
+    // updateRiderNode applies the legacy avatar scale; the scene planner
+    // is the single size authority in the Halloween two-road layout.
+    if (halloweenEnabled && Number.isFinite(rider.sceneScale)) {
+      node.style.setProperty("--scale", String(rider.sceneScale));
+      if (!riderDragState || riderDragState.riderId !== rider.user_id) {
+        node.style.left = "";
+        node.dataset.drift = "0";
+      }
+    }
     if (pixelRiderCatalog) mountRiderSprite(node, transportFor(rider), pixelRiderCatalog);
     updateRiderMessageButton(node, rider.user_id);
   });
+  if (halloweenEnabled) {
+    // New roster/positions may change message head anchors while an action is
+    // playing. Global overlay owns all bubble placement, not each rider.
+    syncMessageLayer();
+  }
 
   const total = visibleRiders
     .filter((rider) => !rider.demo)
@@ -1754,17 +1797,10 @@ function triggerMotion(rider, node, action, options = {}) {
     syncMessageLayer();
   };
 
-  const onEnd = (event) => {
-    if (event.target !== motion) return;
-    motion.removeEventListener("animationend", onEnd);
-    finish();
-  };
-
-  motion?.addEventListener("animationend", onEnd);
-  window.setTimeout(() => {
-    motion?.removeEventListener("animationend", onEnd);
-    finish();
-  }, action.duration + 180);
+  // The Director owns action lifetime. CSS keyframes (e.g. 1.5s sway)
+  // are visual sub-animations and must not cancel a 3.2s social action.
+  // Keep one idempotent timeout as the completion signal for CSS and Sprite.
+  window.setTimeout(finish, action.duration);
   return true;
 }
 
@@ -1835,6 +1871,7 @@ function scheduleDirector() {
 function scheduleAmbientDrift() {
   clearInterval(ambientTimer);
   ambientTimer = setInterval(() => {
+    if (document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     visibleRiders.forEach((rider) => {
       const node = document.querySelector('[data-rider-id="' + rider.user_id + '"]');
       if (
@@ -1842,12 +1879,34 @@ function scheduleAmbientDrift() {
         || activeMotion.has(rider.user_id)
         || riderDragState?.riderId === rider.user_id
       ) return;
+
+      // Pixel scene uses real road/actor rectangles and a movement cooldown.
+      // Keep ordinary four-lane office drift unchanged until its own visual QA.
+      if (halloweenEnabled) {
+        if (node.matches(":hover") || node.classList.contains("has-message") ||
+            Number(node.dataset.driftAfter || 0) > Date.now()) return;
+        if (Math.random() < 0.45) return; // Pauses are part of the scene.
+        const current = Number(node.dataset.drift || 0);
+        const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - .5) * 1.4));
+        const candidate = Math.max(0, Math.min(100, rider.x + next));
+        const lane = node.parentElement;
+        const laneRect = lane?.getBoundingClientRect();
+        const actorRect = node.getBoundingClientRect();
+        if (!laneRect || !actorRect) return;
+        const shiftPx = (candidate - currentRiderX(rider)) / 100 * laneRect.width;
+        const others = [...lane.querySelectorAll(".rider")]
+          .filter(other => other !== node)
+          .map(other => other.getBoundingClientRect());
+        if (!canShiftRider(actorRect, laneRect, shiftPx, others)) return;
+        node.dataset.drift = String(next);
+        node.dataset.driftAfter = String(Date.now() + 9000);
+        node.style.left = candidate + "%";
+        return;
+      }
+
       const current = Number(node.dataset.drift || 0);
       const next = Math.max(-2.2, Math.min(2.2, current + (Math.random() - 0.5) * 1.4));
-      const candidate = Math.max(
-        OFFICE_X_MIN,
-        Math.min(OFFICE_X_MAX, Number(rider.x || 50) + next),
-      );
+      const candidate = Math.max(OFFICE_X_MIN, Math.min(OFFICE_X_MAX, rider.x + next));
       if (hasHardOfficeCollision(rider.lane, candidate, rider.user_id)) return;
       node.dataset.drift = String(next);
       node.style.left = candidate + "%";

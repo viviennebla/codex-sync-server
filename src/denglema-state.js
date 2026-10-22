@@ -195,8 +195,10 @@ export async function updateWebUserProjectPrivacy(
 
 export const MAX_DENGLEMA_SLOGANS = 8;
 export const MAX_DENGLEMA_SLOGAN_LENGTH = 28;
-export const DENGLEMA_OFFICE_X_MIN = 22;
-export const DENGLEMA_OFFICE_X_MAX = 78;
+// Positions are stored as scene-wide percentages. Each layout is responsible
+// for clamping visible actors to a footprint-safe region of its own road.
+export const DENGLEMA_OFFICE_X_MIN = 0;
+export const DENGLEMA_OFFICE_X_MAX = 100;
 
 export function normalizeDenglemaSlogans(value) {
   if (value == null) return [];
