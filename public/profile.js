@@ -61,6 +61,28 @@ const TRANSPORT_OPTIONS = Object.freeze([
 ]);
 
 let currentProfileUser = null;
+const appearanceFields = {
+  preset: $("riderPreset"),head_mode:$("riderHeadMode"),head_variant:$("riderHeadVariant"),
+  head_emoji:$("riderHeadEmoji"),backpack:$("riderBackpack")
+};
+function renderAppearance(value={}) {
+  const a={preset:"helmet-commuter",head_mode:"art",head_variant:"auto",head_emoji:"🙂",backpack:true,...value};
+  for(const [key,field] of Object.entries(appearanceFields)) {
+    if(!field)continue;
+    if(key==="backpack")field.checked=a.backpack!==false;else field.value=a[key];
+  }
+}
+$("riderSaveAppearance")?.addEventListener("click",async()=>{
+  const button=$("riderSaveAppearance");
+  button.disabled=true;
+  try {
+    const payload=Object.fromEntries(Object.entries(appearanceFields).map(([key,field])=>[key,key==="backpack"?field.checked:field.value]));
+    const result=await jsonFetch("/api/me/rider-appearance",{method:"PUT",body:JSON.stringify(payload)});
+    currentProfileUser={...(currentProfileUser||{}),rider_appearance:result.rider_appearance};
+    showToast("人物形象已保存，回赛道查看");
+  }catch(error){showToast("保存失败："+error.message,3400);}finally{button.disabled=false;}
+});
+
 
 function renderTransportOptions(selected) {
   if (!profileTransportList) return;
@@ -393,6 +415,7 @@ async function loadProfile() {
   const user = me.user;
   renderProfileAvatar(user);
   renderTransportOptions(user.transport || "bike");
+  renderAppearance(user.rider_appearance || {});
   profileName.textContent = user.display_name || "骑手";
 
   const [detail, achievementPayload] = await Promise.all([

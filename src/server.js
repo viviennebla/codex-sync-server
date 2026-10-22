@@ -29,6 +29,7 @@ import {
   updateWebUserQuotaEmotion,
   updateWebUserSlogans,
   updateWebUserTransport,
+  updateWebUserRiderAppearance,
 } from "./denglema-state.js";
 import { createCodexRunwayReader } from "./codex-runway.js";
 import { publicDenglemaUpdates } from "./denglema-updates.js";
@@ -527,6 +528,16 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (method === "PUT" && url.pathname === "/api/me/rider-appearance") {
+      const user = await webUserFromRequest(req);
+      if (!user) { sendJson(res,401,{error:"Not logged in"});return; }
+      const body=await readBody(req);
+      try {
+        const updated=await updateWebUserRiderAppearance(user.id,body,STATE_DIR);
+        sendJson(res,200,{ok:true,rider_appearance:updated.rider_appearance});
+      } catch(error){sendJson(res,400,{error:error?.message||"Invalid appearance"});}
+      return;
+    }
     // ── PUT /api/me/transport ── choose a free cosmetic transport
     if (method === "PUT" && url.pathname === "/api/me/transport") {
       const user = await webUserFromRequest(req);
@@ -719,6 +730,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: user.avatar_emoji || "🚴",
           avatar_url: user.avatar_url || null,
           transport: user.transport || "bike",
+          rider_appearance: user.rider_appearance || null,
           quota_emotion: user.quota_emotion || "sweat",
           office_position: user.office_position || null,
           slogans: Array.isArray(user.slogans) ? user.slogans : [],
@@ -819,6 +831,7 @@ const server = createServer(async (req, res) => {
           avatar_emoji: rider.avatar_emoji || "🚴",
           avatar_url: rider.avatar_url || null,
           transport: rider.transport || "bike",
+          rider_appearance: rider.rider_appearance || null,
           quota_emotion: rider.quota_emotion || "sweat",
           office_position: rider.office_position || null,
           slogans: Array.isArray(rider.slogans) ? rider.slogans : [],
@@ -1033,6 +1046,7 @@ const server = createServer(async (req, res) => {
             avatar_emoji: user.avatar_emoji || "🚴",
             avatar_url: user.avatar_url || null,
             transport: user.transport || "bike",
+          rider_appearance: user.rider_appearance || null,
             quota_emotion: user.quota_emotion || "sweat",
             office_position: user.office_position || null,
             slogans: Array.isArray(user.slogans) ? user.slogans : [],
@@ -1451,6 +1465,19 @@ const server = createServer(async (req, res) => {
     if (method === "GET" && (url.pathname === "/rider-preview" || url.pathname === "/rider-preview.html")) {
       await sendStatic(res, "rider-preview.html", "text/html; charset=utf-8");
       return;
+    }
+    if (method === "GET" && url.pathname === "/rider-frame-runtime.css") {
+      await sendStatic(res,"rider-frame-runtime.css","text/css; charset=utf-8");return;
+    }
+    if (method === "GET" && url.pathname === "/rider-frame-runtime.js") {
+      await sendStatic(res,"rider-frame-runtime.js","text/javascript; charset=utf-8"); return;
+    }
+    if (method === "GET" && url.pathname === "/riders/frames/manifest.json") {
+      await sendStatic(res,"riders/frames/manifest.json","application/json; charset=utf-8"); return;
+    }
+    const pngFrame=url.pathname.match(/^\/riders\/frames\/helmet-commuter\/(?:bike|walk)\/(?:pack|plain)\/0[0-5]\.png$|^\/riders\/frames\/helmet-commuter\/heads\/(?:neutral|happy|focused|tired)\.png$/);
+    if(method==="GET" && pngFrame){
+      await sendStatic(res,url.pathname.slice(1),"image/png");return;
     }
     if (method === "GET" && url.pathname === "/rider-runtime.js") {
       await sendStatic(res, "rider-runtime.js", "text/javascript; charset=utf-8");

@@ -243,5 +243,5 @@ test("acceptance preview exposes a real interactive state picker", async () => {
   for (const state of ["bike","walk","idle","happy","bike-happy","tired","coasting"]) {
     assert.match(page, new RegExp('data-state="' + state + '"'));
   }
-  assert.match(page, /mountRiderSprite/);
+  assert.match(page, /mountFrameRider/);
 });

@@ -1,5 +1,5 @@
 import { mountThemeLayers } from "./theme-runtime.js";
-import { loadRiderCatalog, mountRiderSprite, disposeRiderSprite } from "./rider-runtime.js";
+import { loadFrameCatalog, mountFrameRider, disposeFrameRider } from "./rider-frame-runtime.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -71,10 +71,10 @@ let officeLayoutVersion = 0;
 let riderDragState = null;
 let pixelRiderCatalog = null;
 // Load art independently from usage/race data; keep existing art if asset loading fails.
-void loadRiderCatalog().then((catalog) => {
+void loadFrameCatalog().then((catalog) => {
   pixelRiderCatalog = catalog;
   document.querySelectorAll(".rider").forEach((node) => {
-    if (node._riderData) mountRiderSprite(node, transportFor(node._riderData), catalog);
+    if (node._riderData) mountFrameRider(node, transportFor(node._riderData), catalog, node._riderData.rider_appearance);
   });
 }).catch(() => {});
 const OFFICE_X_MIN = 22;
@@ -1551,7 +1551,7 @@ function renderRiders(riders) {
       clearTimeout(riderMessageTimers.get(riderId));
       riderMessageTimers.delete(riderId);
       if (pinnedMessageRiderId === riderId) pinnedMessageRiderId = null;
-      disposeRiderSprite(node);
+      disposeFrameRider(node);
       node.remove();
     }
   });
@@ -1564,7 +1564,7 @@ function renderRiders(riders) {
       lane.insertAdjacentHTML("beforeend", riderMarkup(rider));
       node = lane.lastElementChild;
       const sizeJitter = (stableHash(rider.user_id + ":size") % 5) * 0.035;
-      const isPixelRider = ["bike", "walk"].includes(transportFor(rider));
+      const isPixelRider = true;
       node.style.setProperty("--scale", String(isPixelRider ? (0.92 + sizeJitter * 0.3) : (1.06 + sizeJitter)));
       node.dataset.avatarKey = rider.avatar_url
         ? "url:" + rider.avatar_url
@@ -1585,7 +1585,7 @@ function renderRiders(riders) {
     }
 
     updateRiderNode(node, rider);
-    if (pixelRiderCatalog) mountRiderSprite(node, transportFor(rider), pixelRiderCatalog);
+    if (pixelRiderCatalog) mountFrameRider(node, transportFor(rider), pixelRiderCatalog, rider.rider_appearance);
     updateRiderMessageButton(node, rider.user_id);
   });
 
