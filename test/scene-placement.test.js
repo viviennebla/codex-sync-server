@@ -59,3 +59,41 @@ test("ambient drift stays inside existing road and cannot pass through a neighbo
   assert.equal(canShiftRider(actor,lane,0,[{left:230,right:300}]),true);
   assert.equal(canShiftRider(actor,lane,NaN,[]),false);
 });
+
+
+test("five auto riders use both ends of the entire painted road", () => {
+ const width = 1528; // actual screenshot width
+ const rs = [
+  {user_id:"a",lane:1,x:22},{user_id:"b",lane:1,x:36},
+  {user_id:"c",lane:1,x:50},{user_id:"d",lane:1,x:64},
+  {user_id:"e",lane:1,x:78},
+ ];
+ const spots = planRiderPlacement(rs, layout(width));
+ const xs=[...spots.values()].sort((a,b)=>a.x-b.x);
+ // 22%-78% confinement was the regression: both ends must now be usable.
+ assert.ok(xs[0].x<10, "first rider should fit near the left road edge");
+ assert.ok(xs.at(-1).x>90, "last rider should fit near the right road edge");
+ assert.equal(xs.some(x=>x.crowded),false);
+ for(let i=1;i<xs.length;i++){
+   const between=(xs[i].x-xs[i-1].x)*width/100;
+   assert.ok(between>=(xs[i].widthPx+xs[i-1].widthPx)/2+7);
+ }
+});
+
+test("saved edge anchor keeps priority without writing back a new office position", () => {
+ const manual={user_id:"manual",lane:1,x:94,office_position:{lane:1,x:94}};
+ const auto={user_id:"auto",lane:1,x:70};
+ const result=planRiderPlacement([auto,manual],layout(1528));
+ assert.equal(result.get("manual").x,94);
+ assert.ok(result.get("auto").x<90);
+ assert.equal(manual.office_position.x,94);
+});
+
+test("too-narrow road does not fabricate a wider usable range", () => {
+ const out=planRiderPlacement(riders(3),layout(375));
+ for(const slot of out.values()){
+  const center=slot.x*375/100;
+  assert.ok(center-slot.widthPx/2>=9);
+  assert.ok(center+slot.widthPx/2<=366);
+ }
+});
