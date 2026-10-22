@@ -78,7 +78,7 @@ let pixelRiderCatalog = null;
 void loadFrameCatalog().then((catalog) => {
   pixelRiderCatalog = catalog;
   document.querySelectorAll(".rider").forEach((node) => {
-    if (node._riderData) mountFrameRider(node, transportFor(node._riderData), catalog, node._riderData.rider_appearance);
+    if (node._riderData) mountFrameRider(node, transportFor(node._riderData), catalog, node._riderData.rider_appearance, node._riderData);
   });
 }).catch(() => {});
 const OFFICE_X_MIN = 22;
@@ -1717,7 +1717,7 @@ function renderRiders(riders) {
       }
       node.dataset.sceneLayoutKey = layoutKey;
     }
-    if (pixelRiderCatalog) mountFrameRider(node, transportFor(rider), pixelRiderCatalog, rider.rider_appearance);
+    if (pixelRiderCatalog) mountFrameRider(node, transportFor(rider), pixelRiderCatalog, rider.rider_appearance, rider);
     updateRiderMessageButton(node, rider.user_id);
   });
   if (halloweenEnabled) {

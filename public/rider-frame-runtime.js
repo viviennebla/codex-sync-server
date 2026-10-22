@@ -14,12 +14,23 @@ export function frameState(transport,preset) {
  return preset ? (preset.transports?.[transport]?transport:preset.fallback_transport) : (transport==="bike"?"bike":"walk");
 }
 export function frameNumber(ms,fps,count){return Math.floor(Math.max(0,ms)*fps/1000)%count;}
-export function resolveAppearance(value={},catalog) {
+// The only user-facing head choices are current avatar or original helmet.
+// Legacy "emoji" and unset "auto" preferences stay readable; separate
+// head_emoji is no longer used when displaying the rider.
+export function resolveAppearance(value={},catalog,identity={}) {
  const a=value&&typeof value==="object"?value:{};
  const preset=typeof a.preset==="string"&&catalog?.presets?.[a.preset]?a.preset:(catalog?.default_preset||"helmet-commuter");
- return {preset,head_mode:a.head_mode==="emoji"?"emoji":"art",
- head_variant:["auto","neutral","happy","focused","tired"].includes(a.head_variant)?a.head_variant:"auto",
- head_emoji:typeof a.head_emoji==="string"&&a.head_emoji.trim()?a.head_emoji:"🙂",backpack:a.backpack!==false};
+ const raw=typeof a.head_mode==="string"?a.head_mode:"auto";
+ const avatar=typeof identity?.avatar_emoji==="string"?identity.avatar_emoji.trim():"";
+ const image=typeof identity?.avatar_url==="string"&&identity.avatar_url.startsWith("/api/avatars/")
+   ? identity.avatar_url:null;
+ const customized=Boolean(image||(avatar&&avatar!=="🚴"));
+ const showAvatar=raw==="avatar"||raw==="emoji"||(!["art","avatar","emoji"].includes(raw)&&customized);
+ return {
+   preset,head_mode:showAvatar?"avatar":"art",
+   head_variant:"auto",head_emoji:avatar||"🚴",head_image_url:showAvatar?image:null,
+   backpack:a.backpack!==false
+ };
 }
 function assetUrl(src,catalog){return src+"?v="+encodeURIComponent(catalog.asset_revision||"dev");}
 function preload(src){
@@ -76,15 +87,19 @@ function draw(e,now){
  }
  // PNG head always remains visible: emoji only covers the visor expression.
  e.head.hidden=false;
- e.emoji.hidden=appearance.head_mode!=="emoji";
+ e.emoji.hidden=appearance.head_mode!=="avatar"||Boolean(appearance.head_image_url);
+ e.faceAvatar.hidden=appearance.head_mode!=="avatar"||!appearance.head_image_url;
+ if(!e.faceAvatar.hidden&&e.faceAvatar.getAttribute("src")!==appearance.head_image_url) e.faceAvatar.src=appearance.head_image_url;
  if(e.head.getAttribute("src")!==head)e.head.src=head;
  const layout=preset.emoji_head||{left_percent:65,top_percent:46,font_size_px:22,visor_width_px:23,visor_height_px:24};
- e.emoji.style.left=layout.left_percent+"%";
- e.emoji.style.top=layout.top_percent+"%";
+ for(const face of [e.emoji,e.faceAvatar]){
+   face.style.left=layout.left_percent+"%";
+   face.style.top=layout.top_percent+"%";
+   face.style.width=(layout.visor_width_px||layout.diameter_px||23)+"px";
+   face.style.height=(layout.visor_height_px||layout.diameter_px||24)+"px";
+   face.style.transform=`translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`;
+ }
  e.emoji.style.fontSize=layout.font_size_px+"px";
- e.emoji.style.width=(layout.visor_width_px||layout.diameter_px||29)+"px";
- e.emoji.style.height=(layout.visor_height_px||layout.diameter_px||32)+"px";
- e.emoji.style.transform=`translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`;
  if(!e.emoji.hidden&&e.emoji.textContent!==appearance.head_emoji)e.emoji.textContent=appearance.head_emoji;
 }
 function tick(now){raf=0;if(document.hidden)return;
@@ -96,8 +111,8 @@ function tick(now){raf=0;if(document.hidden)return;
 }
 function start(){if(!raf&&!document.hidden&&mounted.size)raf=requestAnimationFrame(tick);}
 if(typeof document!=="undefined")document.addEventListener("visibilitychange",start);
-export function mountFrameRider(node,transport,catalog,settings){
- const appearance=resolveAppearance(settings,catalog);
+export function mountFrameRider(node,transport,catalog,settings,identity={}){
+ const appearance=resolveAppearance(settings,catalog,identity);
  const preset=catalog.presets[appearance.preset];
  if(!preset)return;
  let e=mounted.get(node);
@@ -111,10 +126,11 @@ export function mountFrameRider(node,transport,catalog,settings){
  const parent=node.querySelector(".rider-motion");if(!parent)return;
  const art=document.createElement("div");art.className="frame-rider-art";art.setAttribute("aria-hidden","true");
  const body=img("body"),head=img("head"),vehicleBack=img("vehicle-back"),vehicleFront=img("vehicle-front"),emoji=document.createElement("span");emoji.className="frame-head-emoji";
- vehicleBack.hidden=true;vehicleFront.hidden=true;
- art.append(vehicleBack,body,vehicleFront,head,emoji);parent.append(art);
+ const faceAvatar=img("face-avatar");
+ vehicleBack.hidden=true;vehicleFront.hidden=true;faceAvatar.hidden=true;
+ art.append(vehicleBack,body,vehicleFront,head,emoji,faceAvatar);parent.append(art);
  node.classList.add("has-frame-rider");
- e={node,transport,catalog,preset,appearance,art,body,head,vehicleBack,vehicleFront,emoji,started:performance.now()};
+ e={node,transport,catalog,preset,appearance,art,body,head,vehicleBack,vehicleFront,emoji,faceAvatar,started:performance.now()};
  mounted.set(node,e);preloadPreset(preset,transport,appearance,catalog);draw(e,performance.now());start();
 }
 export function disposeFrameRider(node){
