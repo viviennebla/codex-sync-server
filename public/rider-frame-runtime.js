@@ -67,6 +67,13 @@ function draw(e,now){
  const head=assetUrl(preset.heads[emotion]||preset.heads.neutral,e.catalog);
  const offset=animation.head_offset||{x:0,y:0};
  e.head.style.transform=`translate(${offset.x}px, ${offset.y}px)`;
+ // A leader crown belongs to the animated PNG helmet, not the rider shell.
+ // Reparent dynamically as ranks can change after the initial mount.
+ const crown=e.node.querySelector(".leader-crown");
+ if(crown){
+   if(crown.parentElement!==e.art)e.art.append(crown);
+   crown.style.transform=`translate(-50%,-78%) translate(${offset.x}px,${offset.y}px) rotate(-12deg)`;
+ }
  // PNG head always remains visible: emoji only covers the visor expression.
  e.head.hidden=false;
  e.emoji.hidden=appearance.head_mode!=="emoji";
