@@ -418,6 +418,8 @@ function syncMessageLayer() {
     ".rider.is-wheelie",
     ".rider.is-bonking",
     ".rider.is-celebrating",
+    ".rider.is-overheating",
+    ".rider.is-flopping",
     ".rider.is-waving",
     ".rider.is-sipping",
     ".rider.is-stretching",
@@ -1216,6 +1218,8 @@ function riderMarkup(rider) {
       workstationMarkup(rider) +
       '<div class="effect-speed"></div>' +
       '<div class="effect-fire"></div>' +
+      '<div class="scene-fun-flames" aria-hidden="true"><i></i><i></i><i></i></div>' +
+      '<span class="scene-flop-stars" aria-hidden="true">✦ zZ ✦</span>' +
       '<div class="effect-dust"></div>' +
       '<div class="effect-sweat"></div>' +
       '<div class="quota-emotion-mark" aria-hidden="true"></div>' +
@@ -1831,6 +1835,16 @@ const MOTION_ACTIONS = {
     className: "is-celebrating",
     duration: 1900,
     bursts: ["嘿!", "今天也行", "准备下班"]
+  },
+  overheat: {
+    className: "is-overheating",
+    duration: 2900,
+    bursts: ["CPU 冒火了！", "今天燃尽了🔥", "火力全开！"]
+  },
+  flop: {
+    className: "is-flopping",
+    duration: 3350,
+    bursts: ["我先趴会儿…", "CPU 躺平", "电量耗尽 zZ"]
   }
 };
 
@@ -1863,11 +1877,13 @@ function chooseMotion(rider) {
   if (roll < 0.36) return MOTION_ACTIONS.sip;
   if (roll < 0.50) return MOTION_ACTIONS.stretch;
   if (roll < 0.64) return MOTION_ACTIONS.yawn;
-  if (roll < 0.88) return MOTION_ACTIONS.coast;
-  if (roll < 0.91) return MOTION_ACTIONS.sprint;
-  if (roll < 0.94) return MOTION_ACTIONS.wheelie;
-  if (roll < 0.97) return MOTION_ACTIONS.bonk;
-  return MOTION_ACTIONS.celebrate;
+  if (roll < 0.82) return MOTION_ACTIONS.coast;
+  if (roll < 0.85) return MOTION_ACTIONS.sprint;
+  if (roll < 0.88) return MOTION_ACTIONS.wheelie;
+  if (roll < 0.91) return MOTION_ACTIONS.bonk;
+  if (roll < 0.94) return MOTION_ACTIONS.celebrate;
+  if (roll < 0.97) return MOTION_ACTIONS.overheat;
+  return MOTION_ACTIONS.flop;
 }
 
 function randomFrom(values) {
