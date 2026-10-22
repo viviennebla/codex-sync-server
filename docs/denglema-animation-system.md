@@ -39,7 +39,7 @@
 
 ## 3. Actor 状态与动作字典
 
-`MOTION_ACTIONS` 的代码真相在 `public/app.js`；下表覆盖**全部 10 个动作**。动作选择可能由 `quotaPressure`、personality 及随机抽签影响，不等同于单纯均匀概率。
+`MOTION_ACTIONS` 的代码真相在 `public/app.js`；下表覆盖**全部 12 个动作**。动作选择可能由 `quotaPressure`、personality 及随机抽签影响，不等同于单纯均匀概率。
 
 | 动作 ID | DOM 类 | 标称持续 | 说明/作用 |
 | --- | --- | --- | --- |
@@ -53,6 +53,8 @@
 | `wheelie` | `is-wheelie` | 1800ms | 不同 transport 表现不同：翘车、踉跄、跳板等 |
 | `bonk` | `is-bonking` | 2200ms | 撞墙式疲惫、掉速的趣味表现 |
 | `celebrate` | `is-celebrating` | 1900ms | 小幅庆祝动作 |
+| `overheat` | `is-overheating` | 2900ms | 像素火焰爆发、原地发热乱蹦；不改变世界 X |
+| `flop` | `is-flopping` | 3350ms | 夸张倒地趴平、头顶 zZ，自动站起；不改用户位置 |
 
 **动作时间合同（2026-10-21 合并前分支）**：`wave` JS 生命期 3200ms，而 `socialSway` CSS 仍只有 1.5s；现已改为仅 JS `action.duration` 控制动作结束，CSS `animationend` 不会提前终结。修改 CSS 动画长度不等于修改 Director 生命周期。
 
@@ -65,6 +67,7 @@
 | 普通背景 | `trackFlow` | 在 `.track-motion` 定义；当前视觉整理 CSS 隐藏相关 DOM（保留兼容代码） |
 | 骑手基本状态 | `riderBob`, `tiredWobble`, `quotaGloomPulse`, `quotaSleepFloat` | 持续蹬动/疲惫/配额情绪 |
 | Action 主动姿态 | `sprintSurge`, `wheeliePop`, `bonkSag`, `victoryHop`, `socialSway`, `sipPause`, `stretchPause`, `yawnPause`, `coastGlide` | `triggerMotion` 加类；后续 CSS Presenter 可以由 Pixel Sprite 替代 |
+| 桌面趣味动作 | `sceneFlameFlicker`, `sceneHeatHop`, `sceneFlop`, `sceneStars` | `scene-fun-actions.css` 中独立特效，桌面（min-width:761px）下仅随 Director 动作触发；PNG 人物本体与交通工具图片不变 |
 | Action 身体细节 | `friendlyWave`, `sleepyNod`, `socialPropPop` | 摆手、低头、道具弹出 |
 | 交通工具与腿 | `wheelSpin`, `pedalLeg`, `bikeWheelie`, `bikeClunk`, `bikeBounce`, `scooterWobble`, `tinyOllie`, `walkHop`, `surfSplash`, `skateTwirl`, `scooterKick`, `skateboardPush`, `walkStride`, `skateGlide` | 各 transport 使用不同 CSS；自行车踩踏、滑板脚推、徒步迈步等不应全部被统一骑行覆盖 |
 | 附加粒子/状态 | `speedFlicker`, `flameFlicker`, `dustPop`, `sweatPop`, `musicFloat`, `comicBubblePop` | 冲刺、尘土、配额汗滴、音乐、趣味/留言气泡 |
@@ -118,7 +121,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 
 ## 7. 可核对的关键帧 / Action 目录
 
-以下清单是对目前两个 CSS 文件全部 `@keyframes`（分别 **45** 与 **2**）及目前 `MOTION_ACTIONS`（**10** 个）的**机械索引**。包含已定义但未运行的项；测试会比对两边集合，不允许新增/删除却忘记更新本页。Runtime Hooks 用于守护设计的已知入口（不能据此声称未来新增的 JS 动画也会被自动发现）。
+以下清单是对目前两个 CSS 文件全部 `@keyframes`（`styles.css` **45**、`halloween-theme.css` **2**、`scene-fun-actions.css` **4**）及目前 `MOTION_ACTIONS`（**12** 个）的**机械索引**。包含已定义但未运行的项；测试会比对两边集合，不允许新增/删除却忘记更新本页。Runtime Hooks 用于守护设计的已知入口（不能据此声称未来新增的 JS 动画也会被自动发现）。
 
 <!-- animation-catalog:start -->
 ```json
@@ -133,7 +136,9 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
     "quotaRush",
     "wheelie",
     "bonk",
-    "celebrate"
+    "celebrate",
+    "overheat",
+    "flop"
   ],
   "runtimeHooks": [
     "lanePlan",
@@ -206,6 +211,12 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
     "public/halloween-theme.css": [
       "halloweenPumpkinBreath",
       "halloweenBatFly"
+    ],
+    "public/scene-fun-actions.css": [
+      "sceneFlameFlicker",
+      "sceneHeatHop",
+      "sceneFlop",
+      "sceneStars"
     ]
   }
 }
@@ -226,4 +237,14 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 ![2026-10-22 自动移动与相邻互动截图对照](assets/denglema-motion-social-qa-20261022.webp)
 
 **测试与可视验收**：`node --test test/scene-motion.test.js` 覆盖五人全宽邻居、同路配对、边界漂移与数据刷新接线；`npm test` 全量 **129/129**。隔离 Chromium Preview 中控制随机序列，确认两个上路 Rider 同时进入 `is-waving`，Overlay 同时显示“嗨～ / 还蹬呢?”；另一组检查 6.8s 与约 22s 时的 `data-drift`：前者偏移约 1.94%，后者偏移延续至约 3.14%，没有因周期性预览刷新归零。此为隔离预览，不等于已部署生产环境。
+
+
+## 9. 2026-10-22 · Desktop Fun Actions
+
+新增 `overheat`（短暂冒火）和 `flop`（夸张趴下休息）两个动作，仍由原 `MOTION_ACTIONS` / `triggerMotion` / Director 调度。保留其生命周期互斥、拖动优先、气泡 Overlay、自动移动与双人招手。
+
+- `overheat`：约 2.9s，像素火苗从人物后方蹿出，PNG 人物整体轻微发热跳动，文字气泡如“CPU 冒火了！”。
+- `flop`：约 3.35s，PNG 人物连同交通工具作为一个整体**夸张侧倒**、停顿片刻再起身，头顶 zZ 星星。**这不是新绘制的趴地 PNG 帧**；无素材时采用可回退的 CSS 姿势表演。
+- 两种效果均只做桌面端（宽度 761px 以上），不新增手机布局与视觉适配。没有更换 `public/riders/frames/**` 素材，也不把动作位置当成永久 `office_position`。
+- 统一图层 `rider-motion` 里挂只读装饰，CSS 放在独立 `scene-fun-actions.css`；浏览器 `?preview=1&motion=overheat` 或 `?preview=1&motion=flop` 可强制演示并截图。低动态效果偏好停掉关键帧，保留静态视觉。
 
