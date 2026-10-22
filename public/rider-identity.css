@@ -1,0 +1,211 @@
+/* Rider identity UI owns labels/crowns; transport runtimes own character artwork.
+   Loaded after styles.css to avoid transport and seasonal visual overrides. */
+.rider .name-chip {
+  position: absolute;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr);
+  column-gap: 6px;
+  row-gap: 1px;
+  width: max-content;
+  min-width: 66px;
+  max-width: 188px !important;
+  padding: 6px 9px 6px 7px;
+  box-sizing: border-box;
+  overflow: visible;
+  border-radius: 12px;
+  background: rgba(255, 253, 248, .96);
+  box-shadow: 0 2px 6px rgba(39, 49, 60, .08);
+}
+.rider .name-chip::before {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+}
+.rider .name-chip > .rider-name {
+  grid-column: 2;
+  grid-row: 1;
+  max-width: 164px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rider .rider-meta {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.rider .rider-title {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #5d6470;
+  font-size: 9px;
+  line-height: 1.25;
+  font-weight: 850;
+}
+.rider .rider-title[hidden],
+.rider .rider-title-tooltip[hidden],
+.rider .rider-meta .tokens[hidden] { display: none !important; }
+.rider .rider-title-emoji { flex: 0 0 auto; font-size: 11px; line-height: 1; }
+.rider .rider-title-name {
+  min-width: 0;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rider .rider-meta .tokens {
+  min-width: 0;
+  flex: 0 0 auto;
+  font-size: 8px;
+  color: #9d948d;
+}
+.rider.identity-tight .rider-meta .tokens { display: none !important; }
+.rider.identity-icon-only .rider-title-name { display: none; }
+.rider:not(.is-near-right) .name-chip { left: 116px; right: auto; }
+.rider.is-near-right .name-chip,
+.rider.identity-flipped .name-chip { left: auto; right: 109px; }
+.rider.identity-flipped:not(.is-near-right) .name-chip { left: auto; right: 109px; }
+
+.rider .rider-title-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 7px);
+  left: 0;
+  right: auto;
+  width: max-content;
+  min-width: 86px;
+  max-width: 190px;
+  padding: 8px 11px;
+  border: 1px solid rgba(39, 49, 60, .15);
+  border-radius: 11px;
+  background: #fffdf8;
+  box-shadow: 0 5px 18px rgba(39, 49, 60, .14);
+  color: #343b45;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+  white-space: normal;
+  pointer-events: none;
+}
+.rider .rider-title-tooltip small {
+  display: block;
+  margin-top: 3px;
+  color: #7d766f;
+  font-size: 10px;
+  font-weight: 550;
+}
+.rider.is-near-right .rider-title-tooltip,
+.rider.identity-flipped .rider-title-tooltip { left: auto; right: 0; }
+.rider.is-clickable:hover .rider-title-tooltip:not([hidden]),
+.rider.is-clickable:focus-visible .rider-title-tooltip:not([hidden]) { display: block; }
+.rider.is-clickable:focus-visible { outline: 2px solid #7c9bdd; outline-offset: 2px; }
+
+/* Crown stays inside rider-motion (the shared transport animation anchor),
+   rather than floating independently in the lane's coordinate system. */
+.rider .rider-motion > .leader-crown,
+.rider.is-near-right .rider-motion > .leader-crown {
+  position: absolute;
+  z-index: 19;
+  display: block;
+  left: 50%;
+  right: auto;
+  top: -16px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 17px;
+  line-height: 1;
+  text-align: center;
+  transform: translateX(-50%) rotate(-9deg);
+  filter: drop-shadow(0 2px 1px rgba(39, 49, 60, .18));
+  pointer-events: none;
+}
+.rider.has-pixel-rider .rider-motion > .leader-crown { left: 50%; top: -12px; }
+/* Do not let the historical '戴过皇冠' achievement render another crown. */
+.rider .rider-title-emoji { filter: none; }
+
+/* Transient award sticker, not another permanent rider ornament. */
+.rider .rider-unlock-pop {
+  position: absolute;
+  z-index: 31;
+  top: -48px;
+  left: 50%;
+  width: max-content;
+  max-width: 195px;
+  padding: 7px 11px;
+  border: 2px solid #dfae53;
+  border-radius: 13px;
+  background: #fff5ce;
+  color: #735323;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: 0 3px 0 rgba(112, 78, 32, .13);
+  transform: translateX(-50%);
+  animation: riderAwardPop 3.8s both;
+  pointer-events: none;
+}
+@keyframes riderAwardPop {
+  0% { opacity: 0; transform: translate(-50%, 8px) scale(.82); }
+  11%, 80% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -9px) scale(.94); }
+}
+
+.profile-achievement-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.profile-achievement-card {
+  grid-template-columns: 46px minmax(0, 1fr);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.profile-achievement-card.is-unlocked {
+  background: #fff9e7;
+  border-color: rgba(181, 138, 68, .25);
+}
+.profile-achievement-card.is-equipped {
+  background: #f3f6ff;
+  border-color: #8fa9de;
+  box-shadow: inset 0 0 0 1px rgba(116, 148, 207, .16);
+}
+.profile-achievement-card:focus-visible { outline: 2px solid #779de3; outline-offset: 2px; }
+.profile-achievement-card:hover { transform: translateY(-1px); }
+.profile-achievement-card .profile-achievement-emoji {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 1px solid rgba(133, 105, 58, .1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .65);
+  font-size: 26px;
+}
+.profile-achievement-card .profile-achievement-copy .achievement-category {
+  font-size: 9px;
+  color: #998b7c;
+  letter-spacing: .02em;
+}
+.profile-achievement-card .profile-achievement-copy .achievement-date {
+  font-size: 9px;
+  color: #9b8b70;
+}
+
+@media (max-width: 760px) {
+  .rider .name-chip { max-width: 150px !important; padding: 5px 7px; }
+  .rider .rider-title-name { max-width: 76px; }
+  .rider .rider-meta .tokens { font-size: 7.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rider .rider-unlock-pop { animation: none; }
+  .profile-achievement-card { transition: none; }
+  .profile-achievement-card:hover { transform: none; }
+}
