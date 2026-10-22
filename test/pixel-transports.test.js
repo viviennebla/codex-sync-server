@@ -16,8 +16,8 @@ test("every supported transport renders the same pixel rider irrespective of pro
   assert.deepEqual(PIXEL_TRANSPORTS, modes);
   assert.deepEqual(manifest.active_transports, modes);
   const app = await read("public/app.js");
-  assert.match(app, /PIXEL_TRANSPORTS\.includes\(nextTransport\)/);
-  assert.match(app, /mountRiderSprite\(node, transportFor\(rider\), pixelRiderCatalog\)/);
+  assert.match(app, /mountFrameRider/);
+  assert.doesNotMatch(app, /mountRiderSprite/);
   assert.match(app, /openRiderDetail\(node\._riderData\)/);
   // The uploaded avatar stays in profile/social identity; it doesn't select
   // the stage rider's artwork.

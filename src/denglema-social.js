@@ -45,6 +45,12 @@ export function formatDenglemaUploadMessage(harness, totalTokens) {
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "rider-pack-registry-customization-2026-10",
+    emoji: "🎨",
+    message: "#81 自定义角色支持 PNG 素材包注册 · 再也不用手修每根胳膊了",
+    href: "/me",
+  },
+  {
     id: "svg-art-audit-82-2026-10",
     emoji: "🧹",
     message: "#82 SVG 素材清单核对完成 · 旧图纸早退休了，在岗的别误删",
