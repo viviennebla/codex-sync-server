@@ -9,31 +9,51 @@ function desiredX(rider, width) {
   return Number.isFinite(n) ? clamp(n, 0, 100) / 100 * width : width / 2;
 }
 
-// Distribute a whole lane as one unit. Greedy nearest-slot placement can
-// strand the last rider even if all riders fit, so use constrained forward
-// packing followed by one common translation.
+// Positions are full-road coordinates, not the old 22%-78% office band.
+// Give manual anchors first claim on space. Fill remaining legal gaps with
+// automatic riders, including both road edges.
 function centersForLane(people, width, scale, baseWidth, padding, gap) {
   const half = baseWidth * scale / 2;
-  const lo = Math.max(half, padding + half);
-  const hi = Math.max(lo, Math.min(width - half, width - padding - half));
-  const requiredStep = baseWidth * scale + gap;
-  const availableStep = people.length > 1 ? (hi - lo) / (people.length - 1) : requiredStep;
-  const step = Math.min(requiredStep, availableStep);
-  const crowded = step + 0.001 < requiredStep;
-  const order = [...people].sort((a,b) =>
-    desiredX(a,width) - desiredX(b,width) || String(a.user_id).localeCompare(String(b.user_id)));
-  const centers = order.map(p=>clamp(desiredX(p,width),lo,hi));
-  for(let i=1;i<centers.length;i++) centers[i]=Math.max(centers[i],centers[i-1]+step);
-  // A single shift preserves order and spacing. Prefer the user's saved
-  // anchor where possible; do not persist our temporary adjustment.
-  const shiftLow = lo-centers[0];
-  const shiftHigh = hi-centers[centers.length-1];
-  const manualIndex = order.findIndex(p=>p.office_position && Number.isFinite(Number(p.office_position.x)));
-  const requestedShift = manualIndex >= 0
-    ? desiredX(order[manualIndex],width)-centers[manualIndex]
-    : order.reduce((sum,p,i)=>sum+desiredX(p,width)-centers[i],0)/order.length;
-  const shift = clamp(requestedShift,shiftLow,shiftHigh);
-  return order.map((p,i)=>({rider:p,center:centers[i]+shift,crowded}));
+  const lo = padding + half;
+  const hi = width - padding - half;
+  const order = [...people].sort((a, b) =>
+    desiredX(a, width) - desiredX(b, width) || String(a.user_id).localeCompare(String(b.user_id)));
+  const occupied = [];
+  const result = [];
+  const requiredDistance = baseWidth * scale + gap;
+  const isManual = (r) => r.office_position != null && Number.isFinite(Number(r.office_position.x));
+
+  for (const rider of order.filter(isManual)) {
+    // Display is clamped for this viewport; the persisted anchor stays intact.
+    const center = clamp(Number(rider.office_position.x) / 100 * width, lo, Math.max(lo, hi));
+    const crowded = occupied.some(other => Math.abs(other.center - center) < requiredDistance);
+    occupied.push({center});
+    result.push({rider, center, crowded});
+  }
+
+  const automatic = order.filter(rider => !isManual(rider));
+  for (const rider of automatic) {
+    // Spread the cohort across the actual road. For a lone auto rider keep
+    // the original preference instead of making them jump to the left edge.
+    const rank = order.indexOf(rider);
+    const target = order.length === 1
+      ? clamp(desiredX(rider, width), lo, Math.max(lo, hi))
+      : lo + (Math.max(0, hi - lo) * rank) / (order.length - 1);
+    let chosen = null;
+    let best = Infinity;
+    // Scan full range in pixel space: gap-aware, deterministic, few riders.
+    const steps = Math.max(1, Math.ceil(Math.max(0, hi - lo) / 2));
+    for (let i = 0; i <= steps; i++) {
+      const x = lo + (Math.max(0, hi - lo) * i) / steps;
+      if (occupied.some(other => Math.abs(other.center - x) + 1e-6 < requiredDistance)) continue;
+      const cost = Math.abs(x - target);
+      if (cost < best) { best = cost; chosen = x; }
+    }
+    const center = chosen ?? clamp(target, lo, Math.max(lo, hi));
+    occupied.push({center});
+    result.push({rider, center, crowded: chosen === null});
+  }
+  return result;
 }
 
 export function planRiderPlacement(riders, layout, opts = {}) {
