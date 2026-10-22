@@ -45,6 +45,12 @@ export function formatDenglemaUploadMessage(harness, totalTokens) {
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "approved-six-mascots-design-88-2026-10",
+    emoji: "🎨",
+    message: "#88 六角色原稿归档 · 临时截图终于让出了设计席位",
+    href: "/updates",
+  },
+  {
     id: "rider-pack-registry-customization-2026-10",
     emoji: "🎨",
     message: "#81 自定义角色支持 PNG 素材包注册 · 再也不用手修每根胳膊了",
