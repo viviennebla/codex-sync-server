@@ -12,6 +12,7 @@ import {
   readPairingCodeStatus,
   readDenglemaUser,
   readDenglemaOfficeLayoutVersion,
+  normalizeDenglemaOfficePosition,
   readDimensionLeaderboard,
   projectPrivacyForUser,
   projectRowsForPublic,
@@ -865,4 +866,13 @@ test("project privacy validation rejects invalid aliases and modes", async (t) =
     updateWebUserProjectPrivacy("u-privacy", "", "hidden", null, root),
     /project must be/,
   );
+});
+
+test("manual position storage accepts full-road edges while rejecting off-scene coordinates", () => {
+  assert.deepEqual(normalizeDenglemaOfficePosition({lane:1,x:7.55}),{lane:1,x:7.6});
+  assert.deepEqual(normalizeDenglemaOfficePosition({lane:3,x:93.8}),{lane:3,x:93.8});
+  assert.deepEqual(normalizeDenglemaOfficePosition({lane:4,x:0}),{lane:4,x:0});
+  assert.deepEqual(normalizeDenglemaOfficePosition({lane:2,x:100}),{lane:2,x:100});
+  assert.throws(()=>normalizeDenglemaOfficePosition({lane:1,x:-0.1}),/office_position x/);
+  assert.throws(()=>normalizeDenglemaOfficePosition({lane:1,x:100.1}),/office_position x/);
 });
