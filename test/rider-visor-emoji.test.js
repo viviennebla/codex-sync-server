@@ -14,7 +14,8 @@ test("emoji mode preserves complete PNG helmet and only overlays the visor", asy
   assert.match(runtime, /if\(e\.head\.getAttribute\("src"\)!==head\)e\.head\.src=head/);
   assert.match(runtime, /calc\(-50% \+ \$\{offset\.y\}px\)/);
   assert.ok(manifest.emoji_head.font_size_px <= 20);
-  assert.ok(manifest.emoji_head.diameter_px <= 24);
+  assert.ok(manifest.emoji_head.visor_width_px <= 31);
+  assert.ok(manifest.emoji_head.visor_height_px <= 35);
   assert.ok(manifest.emoji_head.left_percent >= 60);
   assert.ok(manifest.emoji_head.top_percent >= 30);
   assert.match(css, /\.frame-head-emoji\s*\{[^}]*background:#20163e/s);
