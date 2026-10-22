@@ -1483,6 +1483,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "rider-preview.html", "text/html; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/scene-fun-actions.css") {
+      await sendStatic(res, "scene-fun-actions.css", "text/css; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/rider-frame-runtime.css") {
       await sendStatic(res,"rider-frame-runtime.css","text/css; charset=utf-8");return;
     }
