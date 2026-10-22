@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 100" shape-rendering="crispEdges">
+<defs><linearGradient id="deck" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fbe9cb"/><stop offset=".4" stop-color="#aab8f0"/><stop offset="1" stop-color="#7d6ac3"/></linearGradient></defs>
+<path d="M25 80Q32 88 43 86L101 86Q108 86 112 78" fill="none" stroke="#30234f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27 80Q33 84 44 83L100 83Q106 84 111 78" fill="none" stroke="url(#deck)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41 85V90M97 85V90" stroke="#5e487b" stroke-width="4"/>
+<path d="M48 80H95" stroke="#fff1cd" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M29 81L35 82M103 81L110 79" stroke="#ffaf67" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

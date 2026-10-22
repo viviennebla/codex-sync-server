@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 100" shape-rendering="crispEdges">
+<defs><linearGradient id="boot" x1="0" y1="0" x2=".6" y2="1"><stop stop-color="#f1e8ff"/><stop offset=".5" stop-color="#b3a6ef"/><stop offset="1" stop-color="#6a5baf"/></linearGradient></defs>
+<path d="M44 80V86Q48 90 57 89L64 87L64 84" fill="url(#boot)" stroke="#302350" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M67 79L67 86Q74 89 84 88L89 85L89 82" fill="url(#boot)" stroke="#302350" stroke-width="2.8" stroke-linejoin="round"/>
+<path d="M46 82L55 84M69 81L81 83" stroke="#fff8e6" stroke-width="2" stroke-linecap="round"/>
+<path d="M46 89H63M69 89H88" stroke="#f2ab73" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M54 85H61M73 85H83" stroke="#5e4698" stroke-width="2"/>
+</svg>
