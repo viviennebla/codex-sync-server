@@ -77,7 +77,8 @@
   display: none;
   position: absolute;
   z-index: 30;
-  top: calc(100% + 7px);
+  top: auto;
+  bottom: calc(100% + 7px);
   left: 0;
   right: auto;
   width: max-content;
@@ -104,8 +105,8 @@
 }
 .rider.is-near-right .rider-title-tooltip,
 .rider.identity-flipped .rider-title-tooltip { left: auto; right: 0; }
-.rider.is-clickable:hover .rider-title-tooltip:not([hidden]),
-.rider.is-clickable:focus-visible .rider-title-tooltip:not([hidden]) { display: block; }
+.rider .name-chip:hover .rider-title-tooltip:not([hidden]),
+.rider .name-chip:focus-within .rider-title-tooltip:not([hidden]) { display: block; }
 .rider.is-clickable:focus-visible { outline: 2px solid #7c9bdd; outline-offset: 2px; }
 
 /* Crown stays inside rider-motion (the shared transport animation anchor),
@@ -131,6 +132,29 @@
   pointer-events: none;
 }
 .rider.has-pixel-rider .rider-motion > .leader-crown { left: 50%; top: -12px; }
+/* PNG runtime owns the crown's position, using the same head_offset as its helmet.
+   It must not sit at the center/top of the lane or respond to label flipping. */
+.rider.has-frame-rider .frame-rider-art > .leader-crown {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  z-index: 8;
+  left: 58%;
+  right: auto;
+  top: 15%;
+  width: 21px;
+  height: 21px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+  filter: drop-shadow(0 2px 0 rgba(43, 25, 75, .3));
+  pointer-events: none;
+}
+
 /* Do not let the historical '戴过皇冠' achievement render another crown. */
 .rider .rider-title-emoji { filter: none; }
 
