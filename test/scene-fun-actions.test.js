@@ -12,8 +12,8 @@ test("overheat and flop are single Director actions with owned durations",async(
  assert.match(motions,/flop: \{\s*className: "is-flopping",\s*duration: 3350,/);
  assert.match(app,/window\.setTimeout\(finish, action\.duration\)/);
  assert.match(app,/riderDragState\?\.riderId === rider\.user_id/);
- assert.match(app,/window\.innerWidth >= 761 \? MOTION_ACTIONS\.overheat/);
- assert.match(app,/window\.innerWidth >= 761 \? MOTION_ACTIONS\.flop/);
+ assert.match(app,/return MOTION_ACTIONS\.overheat/);
+ assert.match(app,/return MOTION_ACTIONS\.flop/);
  assert.match(app,/MOTION_ACTIONS\[forcedMotion\]/);
 });
 
@@ -24,7 +24,7 @@ test("action decoration attaches to rider-motion without altering PNG sprites",a
  assert.ok(app.includes('rider-motion'));
  assert.match(app, /'<div class="scene-fun-flames"/);
  assert.match(app,/'<span class="scene-flop-stars"/);
- assert.match(css,/@media \(min-width: 761px\)/);
+ assert.doesNotMatch(css,/@media \(min-width: 761px\)/);
  assert.match(css,/\.rider\.is-overheating \.frame-rider-art/);
  assert.match(css,/\.rider\.is-flopping \.frame-rider-art/);
  assert.match(css,/\.rider\.is-near-right\.is-flopping \.frame-rider-art/);
