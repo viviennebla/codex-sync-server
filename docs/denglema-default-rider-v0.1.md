@@ -88,7 +88,7 @@ public/riders/
 
 浏览器真实渲染（**不是 AI 概念图**）：
 
-![PR #75 实际拼装：骑车、步行、开心、骑车开心、疲惫、滑行](assets/denglema/helmet-pr75-browser-qa.webp)
+![PR #75 实际拼装：骑车、步行、开心、骑车开心、疲惫、滑行](qa/riders/helmet-pr75-browser-qa.webp)
 
 验收记录：Chromium headless 在独立 `/rider-preview` 上逐个切换状态，没有 JS 错误或失败的静态资源请求；实测前后轮角度从 54° 旋转到 222°（连续运行），`bike-happy` 加载 `head-happy.webp`，走路时车架隐藏。隔离环境单测 **71/71**。
 
@@ -110,7 +110,7 @@ public/riders/
 - 双手通过肩关节至握点的短袖连接段与目标绑定，而不是复用步行手臂的随意旋转。头部与背包跟随整个身体位移。
 - 车辆和轮轴静止在同一个场景坐标系，前后车轮独立转动，不再随人物上下弹跳。
 
-![坐姿锚点纠偏后，Chromium 真实人物与自行车拼装截图](assets/denglema/helmet-pr75-seated-browser.png)
+![坐姿锚点纠偏后，Chromium 真实人物与自行车拼装截图](qa/riders/helmet-pr75-seated-browser.png)
 
 **动态验收**：打开当前分支部署的 `/rider-preview`，使用页面上的骑行/滑行/刹车/步行/骑行+开心按钮实时对比。还提供单文件、可离线打开的互动 HTML 验收副本，包含可选锚点与骨架、慢速播放；该离线副本独立驱动动画，与 `rider-runtime.js` 的坐姿锚点规则一致，并非部署环境。
 
@@ -121,7 +121,7 @@ public/riders/
 
 问题：最早的前后腿源图原点有约 19 个逻辑像素的水平错位；仅旋转 ±18° 或平移几像素，永远无法让后脚跑到前方。修复时**仅在步行模式**把前后腿的源图上端 pivot 归一到同一个走路腿根，再保留反相的前后摆动、抬腿与接地修正；不改已通过用户验收的骑行模式。
 
-![Chrome 实际渲染的六个关键步态，前腿领先 → 后腿领先 → 再换回](assets/denglema/helmet-walk-six-keyframes.png)
+![Chrome 实际渲染的六个关键步态，前腿领先 → 后腿领先 → 再换回](qa/riders/helmet-walk-six-keyframes.png)
 
 自动化约束：第 1 帧前腿脚掌 X 大于后腿，第 4 帧必须相反；遍历一整轮的 120 个子帧，验证两脚 X/Y 连续、至少有一只脚着地、支撑脚地面高度不因旋转漂移。以上是对浏览器实际素材位置的检查，并非只检查动画类名。动态离线 HTML 已按同一运行时重新打包。
 
@@ -129,4 +129,4 @@ public/riders/
 
 六帧逐帧检查后确认前后脚虽然交换 X 位置，但 **`leg_front.webp` 的鞋尖固定向右，`leg_back.webp` 的鞋尖固定向左**，因此换到后方的脚不自然。现在步行时按当前两脚的实际屏幕 X 顺序确定哪只脚领先，必要时只水平镜像腿图片内容，使**领先脚朝前、后摆脚朝后**；并校正镜像导致的脚掌位移，保持接地点不变。骑行仍用原始腿图片，不引入新的载具绑定逻辑。
 
-[查看更新后的六个关键姿态（真实浏览器截图）](assets/denglema/helmet-walk-six-keyframes.png)。逐帧数据、镜像前后脚坐标与骑行恢复都已纳入验收；动态离线 HTML 继续使用 [原入口](previews/helmet-commuter-motion-qa.html)。
+[查看更新后的六个关键姿态（真实浏览器截图）](qa/riders/helmet-walk-six-keyframes.png)。逐帧数据、镜像前后脚坐标与骑行恢复都已纳入验收；动态离线 HTML 继续使用 [原入口](previews/helmet-commuter-motion-qa.html)。
