@@ -67,14 +67,18 @@ function draw(e,now){
  const head=assetUrl(preset.heads[emotion]||preset.heads.neutral,e.catalog);
  const offset=animation.head_offset||{x:0,y:0};
  e.head.style.transform=`translate(${offset.x}px, ${offset.y}px)`;
- e.head.hidden=appearance.head_mode==="emoji";
+ // PNG head always remains visible: emoji only covers the visor expression.
+ e.head.hidden=false;
  e.emoji.hidden=appearance.head_mode!=="emoji";
- if(!e.head.hidden&&e.head.getAttribute("src")!==head)e.head.src=head;
- const layout=preset.emoji_head||{left_percent:55,top_percent:16,font_size_px:39};
+ if(e.head.getAttribute("src")!==head)e.head.src=head;
+ const layout=preset.emoji_head||{left_percent:65,top_percent:40,font_size_px:16,diameter_px:21};
  e.emoji.style.left=layout.left_percent+"%";
  e.emoji.style.top=layout.top_percent+"%";
  e.emoji.style.fontSize=layout.font_size_px+"px";
- e.emoji.style.transform=`translate(calc(-50% + ${offset.x}px), ${offset.y}px)`;
+ const diameter=layout.diameter_px||21;
+ e.emoji.style.width=diameter+"px";
+ e.emoji.style.height=diameter+"px";
+ e.emoji.style.transform=`translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`;
  if(!e.emoji.hidden&&e.emoji.textContent!==appearance.head_emoji)e.emoji.textContent=appearance.head_emoji;
 }
 function tick(now){raf=0;if(document.hidden)return;
