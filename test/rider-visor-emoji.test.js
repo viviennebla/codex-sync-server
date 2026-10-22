@@ -13,12 +13,12 @@ test("emoji mode preserves complete PNG helmet and only overlays the visor", asy
   assert.match(runtime, /e\.emoji\.hidden=appearance\.head_mode!=="emoji"/);
   assert.match(runtime, /if\(e\.head\.getAttribute\("src"\)!==head\)e\.head\.src=head/);
   assert.match(runtime, /calc\(-50% \+ \$\{offset\.y\}px\)/);
-  assert.ok(manifest.emoji_head.font_size_px <= 20);
-  assert.ok(manifest.emoji_head.visor_width_px <= 31);
-  assert.ok(manifest.emoji_head.visor_height_px <= 35);
+  assert.equal(manifest.emoji_head.font_size_px, 22);
+  assert.equal(manifest.emoji_head.visor_width_px, 23);
+  assert.equal(manifest.emoji_head.visor_height_px, 24);
   assert.ok(manifest.emoji_head.left_percent >= 60);
   assert.ok(manifest.emoji_head.top_percent >= 30);
-  assert.match(css, /\.frame-head-emoji\s*\{[^}]*background:#20163e/s);
+  assert.match(css, /\.frame-head-emoji\s*\{[^}]*background:#1a1138/s);
   assert.match(css, /\.frame-rider-art\s+img/);
 });
 
@@ -30,4 +30,15 @@ test("existing saved emoji preference and backpack selector are retained", async
   assert.match(profile, /id="riderBackpack"/);
   assert.match(js, /\/api\/me\/rider-appearance/);
   assert.match(js, /head_emoji/);
+});
+
+test("leader crown follows PNG helmet and tooltip opens only from the identity label", async () => {
+  const runtime = await read("public/rider-frame-runtime.js");
+  const style = await read("public/rider-identity.css");
+  assert.match(runtime, /e\.node\.querySelector\("\.leader-crown"\)/);
+  assert.match(runtime, /e\.art\.append\(crown\)/);
+  assert.match(runtime, /crown\.style\.transform=.*offset\.x.*offset\.y/s);
+  assert.match(style, /\.frame-rider-art > \.leader-crown/);
+  assert.match(style, /\.name-chip:hover \.rider-title-tooltip/);
+  assert.doesNotMatch(style, /\.rider\.is-clickable:hover \.rider-title-tooltip/);
 });

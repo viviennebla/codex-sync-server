@@ -67,11 +67,18 @@ function draw(e,now){
  const head=assetUrl(preset.heads[emotion]||preset.heads.neutral,e.catalog);
  const offset=animation.head_offset||{x:0,y:0};
  e.head.style.transform=`translate(${offset.x}px, ${offset.y}px)`;
+ // A leader crown belongs to the animated PNG helmet, not the rider shell.
+ // Reparent dynamically as ranks can change after the initial mount.
+ const crown=e.node.querySelector(".leader-crown");
+ if(crown){
+   if(crown.parentElement!==e.art)e.art.append(crown);
+   crown.style.transform=`translate(-50%,-78%) translate(${offset.x}px,${offset.y}px) rotate(-12deg)`;
+ }
  // PNG head always remains visible: emoji only covers the visor expression.
  e.head.hidden=false;
  e.emoji.hidden=appearance.head_mode!=="emoji";
  if(e.head.getAttribute("src")!==head)e.head.src=head;
- const layout=preset.emoji_head||{left_percent:65,top_percent:46,font_size_px:18,visor_width_px:29,visor_height_px:32};
+ const layout=preset.emoji_head||{left_percent:65,top_percent:46,font_size_px:22,visor_width_px:23,visor_height_px:24};
  e.emoji.style.left=layout.left_percent+"%";
  e.emoji.style.top=layout.top_percent+"%";
  e.emoji.style.fontSize=layout.font_size_px+"px";
@@ -107,7 +114,7 @@ export function mountFrameRider(node,transport,catalog,settings){
  vehicleBack.hidden=true;vehicleFront.hidden=true;
  art.append(vehicleBack,body,vehicleFront,head,emoji);parent.append(art);
  node.classList.add("has-frame-rider");
- e={node,transport,catalog,preset,appearance,body,head,vehicleBack,vehicleFront,emoji,started:performance.now()};
+ e={node,transport,catalog,preset,appearance,art,body,head,vehicleBack,vehicleFront,emoji,started:performance.now()};
  mounted.set(node,e);preloadPreset(preset,transport,appearance,catalog);draw(e,performance.now());start();
 }
 export function disposeFrameRider(node){
