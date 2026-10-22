@@ -1882,8 +1882,9 @@ function chooseMotion(rider) {
   if (roll < 0.88) return MOTION_ACTIONS.wheelie;
   if (roll < 0.91) return MOTION_ACTIONS.bonk;
   if (roll < 0.94) return MOTION_ACTIONS.celebrate;
-  if (roll < 0.97) return MOTION_ACTIONS.overheat;
-  return MOTION_ACTIONS.flop;
+  // Desktop-only experiment: smaller screens continue using old actions.
+  if (roll < 0.97) return window.innerWidth >= 761 ? MOTION_ACTIONS.overheat : MOTION_ACTIONS.coast;
+  return window.innerWidth >= 761 ? MOTION_ACTIONS.flop : MOTION_ACTIONS.bonk;
 }
 
 function randomFrom(values) {
