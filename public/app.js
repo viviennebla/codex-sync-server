@@ -841,7 +841,14 @@ async function openRiderDetail(rider) {
         })),
         installations: [{ name: "Preview", harness: "codex", today_tokens: rider.today_tokens || 0 }],
       };
-      riderDetailSummary.textContent = "今日 " + formatTokens(fake.today_tokens);
+      riderDetailSummary.textContent = "今日 " + formatTokens(fake.today_tokens) +
+        (rider.equipped_achievement
+          ? " · " + (rider.equipped_achievement.emoji || "🏅") + " " +
+            rider.equipped_achievement.name +
+            (rider.equipped_achievement.description
+              ? "：" + rider.equipped_achievement.description
+              : "")
+          : "");
       renderBreakdown(riderModels, fake.models);
       renderBreakdown(riderProjects, fake.projects);
       renderRiderTrend(fake.trend);
@@ -854,7 +861,14 @@ async function openRiderDetail(rider) {
     riderDetailSummary.textContent =
       "今日 " + formatTokens(payload.today_tokens || 0) +
       (quotaLabel(payload) ? " · " + quotaLabel(payload) : "") +
-      " · " + (payload.installations || []).length + " 个 Agent 环境";
+      " · " + (payload.installations || []).length + " 个 Agent 环境" +
+      (payload.user?.equipped_achievement
+        ? " · " + (payload.user.equipped_achievement.emoji || "🏅") +
+          " " + payload.user.equipped_achievement.name +
+          (payload.user.equipped_achievement.description
+            ? "：" + payload.user.equipped_achievement.description
+            : "")
+        : "");
     renderBreakdown(riderModels, payload.models);
     renderBreakdown(riderProjects, payload.projects);
     renderRiderTrend(payload.trend);
