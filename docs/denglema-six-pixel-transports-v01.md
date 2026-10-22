@@ -2,7 +2,7 @@
 
 > 开发范围：统一 **赛道人物外观** 和补足滑板车/滑板/冲浪/轮滑基础动画；不改变个人头像、用户配置、使用量或路面布局。基于 #75 头盔通勤客的现有可替换部件。
 
-![Chrome 真实运行时六种通勤方式对照](assets/denglema/six-transports-browser-qa.png)
+![Chrome 真实运行时六种通勤方式对照](qa/riders/six-transports-browser-qa.png)
 
 ## 核心约定
 
