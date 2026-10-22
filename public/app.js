@@ -1226,9 +1226,9 @@ function riderMarkup(rider) {
       '<div class="rider-message-bubble" role="status" aria-live="polite"></div>' +
       '<button class="rider-message-button" type="button" aria-label="查看最近留言" aria-expanded="false" hidden>…</button>' +
       '<div class="rider-motion">' +
+        (rider.is_leader ? '<span class="leader-crown" role="img" aria-label="今日第一">👑</span>' : '') +
         '<div class="scene-fun-flames" aria-hidden="true"><i></i><i></i><i></i></div>' +
         '<span class="scene-flop-stars" aria-hidden="true">✦ zZ ✦</span>' +
-        (rider.is_leader ? '<span class="leader-crown" role="img" aria-label="今日第一">👑</span>' : '') +
         '<div class="rider-inner">' +
           '<div class="avatar-ring">' +
             (rider.avatar_url
