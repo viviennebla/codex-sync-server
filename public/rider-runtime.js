@@ -2,6 +2,7 @@
 // Art manifests list files; rig coordinates determine placement and motion. No hand-authored atlas crops.
 const SVG_NS = "http://www.w3.org/2000/svg";
 const CATALOG_URL = "/riders/manifest.json";
+export const PIXEL_TRANSPORTS = Object.freeze(["bike", "walk", "scooter", "skateboard", "surf", "skate"]);
 const mounted = new Map();
 let catalogPromise = null;
 let framePending = false;
@@ -36,8 +37,8 @@ export function loadRiderCatalog() {
         ...Object.values(preset.slots),
         ...Object.values(preset.limbs),
         ...Object.values(preset.expressions || {}),
-        ...Object.values(preset.vehicles?.bike || {})
-      ].filter(Boolean));
+        ...Object.values(preset.vehicles || {}).flatMap((vehicle) => Object.values(vehicle))
+      ].filter((src) => typeof src === "string"));
       return {
         id: root.default_preset,
         preset,
@@ -66,6 +67,9 @@ export function resolveSpriteState(transport, flags = {}) {
     if (flags.bonking || flags.tired) return "bike_brake";
     if (flags.coasting) return "bike_glide";
     return "bike_ride";
+  }
+  if (["scooter", "skateboard", "surf", "skate"].includes(transport)) {
+    return transport + (flags.coasting ? "_glide" : "_ride");
   }
   if (flags.tired) return "tired";
   if (flags.celebrating || flags.waving) return "happy";
@@ -129,6 +133,29 @@ function buildSprite(preset, rig) {
     preserveAspectRatio: "none"
   }));
   assembly.append(vehicle);
+  // Each optional vehicle is independent artwork. Shared rider parts sit above
+  // its lightweight visual; no per-vehicle skeleton or extra character art.
+  const otherVehicles = svg("g", {class: "pixel-other-vehicles"});
+  for (const name of ["scooter", "skateboard", "surf", "skate"]) {
+    const geometry = rig.vehicles[name];
+    const layer = svg("g", {class: "pixel-vehicle-" + name});
+    for (const [cx, cy, diameter] of geometry.wheels || []) {
+      const wheel = svg("g", {class: "pixel-extra-wheel"});
+      wheel.append(svg("image", {
+        href: preset.vehicles.bike.wheel,
+        x: cx - diameter / 2, y: cy - diameter / 2,
+        width: diameter, height: diameter, preserveAspectRatio: "none"
+      }));
+      layer.append(wheel);
+    }
+    layer.append(svg("image", {
+      href: preset.vehicles[name].src,
+      x: geometry.x, y: geometry.y, width: geometry.width, height: geometry.height,
+      preserveAspectRatio: "none"
+    }));
+    otherVehicles.append(layer);
+  }
+  assembly.append(otherVehicles);
   const core = svg("g", {class: "pixel-rider-core"});
   const art = { ...preset.slots, ...preset.limbs };
   const geometry = { ...rig.slots, ...rig.limbs };
@@ -273,6 +300,7 @@ function poseLeg(part, geometry, target, angle = 0, lift = 0) {
 function drawFrame(entry, now) {
   const { node, art, preset, rig } = entry;
   const bike = entry.transport === "bike";
+  const otherVehicle = entry.transport !== "walk" && !bike;
   const flags = flagsFor(node);
   const state = resolveSpriteState(entry.transport, {
     ...flags, mounting: bike && now < entry.mountUntil
@@ -294,12 +322,15 @@ function drawFrame(entry, now) {
   // A single lift seats the character visually above any vehicle; its moving
   // assembly then carries rider + vehicle together (wheels still spin inside it).
   // No transport-specific seat/handle/foot coordinates are introduced.
-  const riderLift = bike ? -12 : 0;
+  const riderLift = bike ? -12 : otherVehicle ? rig.vehicles[entry.transport].lift : 0;
   const bob = bike && !reduced ? -0.65 * Math.abs(Math.sin(phase)) : 0;
   transform(art.querySelector(".pixel-rider-assembly"), 0, bob);
   transform(core, mounting ? -4 : 0, riderLift + (state === "tired" ? 1 : 0));
-  const vehicle = art.querySelector(".pixel-vehicle");
-  vehicle.style.display = bike ? "" : "none";
+  art.querySelector(".pixel-vehicle").style.display = bike ? "" : "none";
+  for (const mode of ["scooter", "skateboard", "surf", "skate"]) {
+    art.querySelector(".pixel-vehicle-" + mode).style.display =
+      entry.transport === mode ? "" : "none";
+  }
   art.querySelector(".pixel-bike-brake").setAttribute("opacity",
     state === "bike_brake" && !reduced ? "1" : "0");
 
@@ -337,6 +368,54 @@ function drawFrame(entry, now) {
     // chest. A future grip-specific arm asset may improve the silhouette.
     transform(get("arm_front"), 13, 0, -10, ...pivot("arm_front"));
     transform(get("arm_back"), 16, 0, -8, ...pivot("arm_back"));
+  } else if (otherVehicle) {
+    // Restore sprite image orientation after walking, and keep the same head,
+    // body and backpack independent of the transport or profile avatar.
+    get("leg_front")?.querySelector("image")?.removeAttribute("transform");
+    get("leg_back")?.querySelector("image")?.removeAttribute("transform");
+    const coasting = flags.coasting || reduced;
+    const motion = coasting ? 0 : Math.sin(phase);
+    const rocking = coasting ? 0 : Math.cos(phase);
+    const layer = art.querySelector(".pixel-vehicle-" + entry.transport);
+    const wobble = entry.transport === "surf" ? 1.3 : entry.transport === "skateboard" ? .5 : .3;
+    transform(layer, 0, reduced ? 0 : rocking * wobble,
+      reduced ? 0 : motion * (entry.transport === "surf" ? 1.1 : .4), 68, 83);
+    const dt = Math.min(120, Math.max(0, now - (entry.lastWheelAt ?? now)));
+    entry.lastWheelAt = now;
+    entry.wheelAngle = advanceWheel(entry.wheelAngle, coasting ? 160 : 430, dt);
+    for (const wheel of layer.querySelectorAll(".pixel-extra-wheel")) {
+      const image = wheel.querySelector("image");
+      const centerX = Number(image.getAttribute("x")) + Number(image.getAttribute("width")) / 2;
+      const centerY = Number(image.getAttribute("y")) + Number(image.getAttribute("height")) / 2;
+      wheel.setAttribute("transform",
+        `rotate(${entry.wheelAngle.toFixed(1)} ${centerX} ${centerY})`);
+    }
+    for (const name of ["head", "body", "backpack"]) {
+      transform(get(name), 0, reduced ? 0 : -.6 * Math.abs(motion));
+    }
+    const front = get("leg_front"), back = get("leg_back");
+    const frontArm = get("arm_front"), backArm = get("arm_back");
+    if (entry.transport === "scooter") {
+      transform(frontArm, 13, -1, -7, ...pivot("arm_front"));
+      transform(backArm, 15, -2, -6, ...pivot("arm_back"));
+      transform(front, 1, -4, -2, ...pivot("leg_front"));
+      transform(back, -7 - 3 * motion, -4 + 2 * rocking, 7, ...pivot("leg_back"));
+    } else if (entry.transport === "skateboard") {
+      transform(frontArm, 13, -2 - motion, 9, ...pivot("arm_front"));
+      transform(backArm, -8, -8 + motion, 20, ...pivot("arm_back"));
+      transform(front, 0, -3, -5 + 2 * motion, ...pivot("leg_front"));
+      transform(back, 2, -4, 5 - 2 * motion, ...pivot("leg_back"));
+    } else if (entry.transport === "surf") {
+      transform(frontArm, 17, 7 + motion, 7, ...pivot("arm_front"));
+      transform(backArm, -9, -7 - motion, 24, ...pivot("arm_back"));
+      transform(front, 0, -3 - rocking, -7, ...pivot("leg_front"));
+      transform(back, 3, -4 + rocking, 9, ...pivot("leg_back"));
+    } else {
+      transform(frontArm, 2 * motion, -2, -8 * motion, ...pivot("arm_front"));
+      transform(backArm, -2 * motion, -2, 8 * motion, ...pivot("arm_back"));
+      transform(front, 2 + 4 * motion, -1 - 2 * Math.max(0, rocking), -5 * motion, ...pivot("leg_front"));
+      transform(back, -2 - 4 * motion, -1 - 2 * Math.max(0, -rocking), 5 * motion, ...pivot("leg_back"));
+    }
   } else {
     entry.lastWheelAt = now; // avoid jumping wheel phase on switching back
     entry.wheelSpeed = 0;

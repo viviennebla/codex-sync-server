@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 100" shape-rendering="crispEdges">
+<defs>
+<linearGradient id="board" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e5f6ff"/><stop offset=".45" stop-color="#83cde5"/><stop offset="1" stop-color="#6673c4"/></linearGradient>
+</defs>
+<path d="M23 88Q38 79 68 81Q100 82 117 88Q99 94 69 93Q40 93 23 88Z" fill="#322557"/>
+<path d="M25 86Q46 82 70 82Q96 82 115 86Q96 90 70 90Q44 90 25 86Z" fill="url(#board)"/>
+<path d="M45 85Q70 82 97 85" stroke="#fff1d4" stroke-width="2" fill="none" stroke-linecap="round"/>
+<path d="M21 93Q30 98 40 93T60 94T80 94T101 95T123 93" stroke="#80c3ed" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+<path d="M32 95Q42 100 53 96M70 96Q81 101 92 95" stroke="#efffff" stroke-width="2" fill="none" stroke-linecap="round"/>
+<circle cx="27" cy="93" r="2" fill="#fff1ce"/><circle cx="114" cy="96" r="1.5" fill="#fff1ce"/>
+</svg>
