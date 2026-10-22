@@ -10,7 +10,7 @@ test("emoji mode preserves complete PNG helmet and only overlays the visor", asy
   const manifest = JSON.parse(await read("public/riders/frames/helmet-commuter/manifest.json"));
   assert.match(runtime, /e\.head\.hidden=false/);
   assert.doesNotMatch(runtime, /e\.head\.hidden=appearance\.head_mode===["']emoji["']/);
-  assert.match(runtime, /e\.emoji\.hidden=appearance\.head_mode!=="emoji"/);
+  assert.match(runtime, /e\.emoji\.hidden=appearance\.head_mode!=="avatar"/);
   assert.match(runtime, /if\(e\.head\.getAttribute\("src"\)!==head\)e\.head\.src=head/);
   assert.match(runtime, /calc\(-50% \+ \$\{offset\.y\}px\)/);
   assert.equal(manifest.emoji_head.font_size_px, 22);
@@ -25,11 +25,12 @@ test("emoji mode preserves complete PNG helmet and only overlays the visor", asy
 test("existing saved emoji preference and backpack selector are retained", async () => {
   const profile = await read("public/profile.html");
   const js = await read("public/profile.js");
-  assert.match(profile, /Emoji 贴脸/);
-  assert.doesNotMatch(profile, /Emoji 换头/);
+  assert.match(profile, /我的头像/);
+  assert.match(profile, /原装头部/);
+  assert.doesNotMatch(profile, /id="riderHeadEmoji"|id="riderHeadVariant"|id="riderSaveAppearance"/);
   assert.match(profile, /id="riderBackpack"/);
   assert.match(js, /\/api\/me\/rider-appearance/);
-  assert.match(js, /head_emoji/);
+  assert.match(js, /data-head-choice/);
 });
 
 test("leader crown follows PNG helmet and tooltip opens only from the identity label", async () => {
