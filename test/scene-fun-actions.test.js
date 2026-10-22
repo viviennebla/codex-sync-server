@@ -27,6 +27,8 @@ test("action decoration attaches to rider-motion without altering PNG sprites",a
  assert.match(css,/@media \(min-width: 761px\)/);
  assert.match(css,/\.rider\.is-overheating \.frame-rider-art/);
  assert.match(css,/\.rider\.is-flopping \.frame-rider-art/);
+ assert.match(css,/\.rider\.is-near-right\.is-flopping \.frame-rider-art/);
+ assert.match(css,/@keyframes sceneFlopInward/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(frameRuntime,/mountFrameRider/);
 });
