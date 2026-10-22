@@ -1185,6 +1185,11 @@ function halloweenCostumeEmoji(riderId) {
   return choices[stableHash(String(riderId) + ":halloween-accessory") % choices.length];
 }
 
+// A past first-place achievement is a keepsake, not the live leader crown.
+function riderTitleEmoji(achievement) {
+  return achievement?.id === "took_the_crown" ? "🎖️" : (achievement?.emoji || "🏅");
+}
+
 function riderMarkup(rider) {
   const quotaEmotion = quotaEmotionFor(rider);
   const classes = [...stateFor(rider), "quota-emotion-" + quotaEmotion].join(" ");
@@ -1238,7 +1243,7 @@ function riderMarkup(rider) {
         '<span class="rider-meta">' +
           (rider.equipped_achievement
             ? '<span class="rider-title"><span class="rider-title-emoji">' +
-              escapeHtml(rider.equipped_achievement.emoji || "🏅") +
+              escapeHtml(riderTitleEmoji(rider.equipped_achievement)) +
               '</span><span class="rider-title-name">' +
               escapeHtml(rider.equipped_achievement.name || "成就") + '</span></span>'
             : '<span class="rider-title" hidden></span>') +
@@ -1344,7 +1349,7 @@ function updateRiderNode(node, rider) {
     if (equipped) {
       const emoji = document.createElement("span");
       emoji.className = "rider-title-emoji";
-      emoji.textContent = equipped.emoji || "🏅";
+      emoji.textContent = riderTitleEmoji(equipped);
       const label = document.createElement("span");
       label.className = "rider-title-name";
       label.textContent = equipped.name || "成就";
