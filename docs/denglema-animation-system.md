@@ -255,6 +255,8 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 
 ## 10. 2026-10-22 · 躺平动作锚点校准
 
+![躺平动作修复前后桌面截图](assets/denglema-flop-anchor-qa-20261022.webp)
+
 `flop` 原来使用 `.frame-rider-art { transform-origin: 54% 82% }`，在 `rotate(±83deg)` 同时改变 `translateY`；整体 PNG 旋转时视觉中心偏离道路上的原站位，尤其靠近道路边缘时显得像突然横向跳走。
 
 本轮只调整 `scene-fun-actions.css`：将旋转轴归到 **50%/50%**，每个阶段统一基准 `translate(-50%,-50%)`；最大旋转角收敛到 ±68°，最大垂直平移不超过 12px，收缩到 78% 以维持路面内的视觉占位。右侧骑手仍向画面内侧倒；低动态效果偏好使用相同的中心锚点与左右朝向。
