@@ -71,13 +71,12 @@ function draw(e,now){
  e.head.hidden=false;
  e.emoji.hidden=appearance.head_mode!=="emoji";
  if(e.head.getAttribute("src")!==head)e.head.src=head;
- const layout=preset.emoji_head||{left_percent:65,top_percent:40,font_size_px:16,diameter_px:21};
+ const layout=preset.emoji_head||{left_percent:65,top_percent:46,font_size_px:18,visor_width_px:29,visor_height_px:32};
  e.emoji.style.left=layout.left_percent+"%";
  e.emoji.style.top=layout.top_percent+"%";
  e.emoji.style.fontSize=layout.font_size_px+"px";
- const diameter=layout.diameter_px||21;
- e.emoji.style.width=diameter+"px";
- e.emoji.style.height=diameter+"px";
+ e.emoji.style.width=(layout.visor_width_px||layout.diameter_px||29)+"px";
+ e.emoji.style.height=(layout.visor_height_px||layout.diameter_px||32)+"px";
  e.emoji.style.transform=`translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`;
  if(!e.emoji.hidden&&e.emoji.textContent!==appearance.head_emoji)e.emoji.textContent=appearance.head_emoji;
 }
