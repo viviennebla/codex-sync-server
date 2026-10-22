@@ -67,7 +67,7 @@
 | 普通背景 | `trackFlow` | 在 `.track-motion` 定义；当前视觉整理 CSS 隐藏相关 DOM（保留兼容代码） |
 | 骑手基本状态 | `riderBob`, `tiredWobble`, `quotaGloomPulse`, `quotaSleepFloat` | 持续蹬动/疲惫/配额情绪 |
 | Action 主动姿态 | `sprintSurge`, `wheeliePop`, `bonkSag`, `victoryHop`, `socialSway`, `sipPause`, `stretchPause`, `yawnPause`, `coastGlide` | `triggerMotion` 加类；后续 CSS Presenter 可以由 Pixel Sprite 替代 |
-| 桌面趣味动作 | `sceneFlameFlicker`, `sceneHeatHop`, `sceneFlop`, `sceneFlopInward`, `sceneStars` | `scene-fun-actions.css` 中独立特效，桌面（min-width:761px）下仅随 Director 动作触发；PNG 人物本体与交通工具图片不变 |
+| 趣味动作（桌面优先） | `sceneFlameFlicker`, `sceneHeatHop`, `sceneFlop`, `sceneFlopInward`, `sceneStars` | `scene-fun-actions.css` 中独立特效，桌面（min-width:761px）下仅随 Director 动作触发；PNG 人物本体与交通工具图片不变 |
 | Action 身体细节 | `friendlyWave`, `sleepyNod`, `socialPropPop` | 摆手、低头、道具弹出 |
 | 交通工具与腿 | `wheelSpin`, `pedalLeg`, `bikeWheelie`, `bikeClunk`, `bikeBounce`, `scooterWobble`, `tinyOllie`, `walkHop`, `surfSplash`, `skateTwirl`, `scooterKick`, `skateboardPush`, `walkStride`, `skateGlide` | 各 transport 使用不同 CSS；自行车踩踏、滑板脚推、徒步迈步等不应全部被统一骑行覆盖 |
 | 附加粒子/状态 | `speedFlicker`, `flameFlicker`, `dustPop`, `sweatPop`, `musicFloat`, `comicBubblePop` | 冲刺、尘土、配额汗滴、音乐、趣味/留言气泡 |
@@ -240,7 +240,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 **测试与可视验收**：`node --test test/scene-motion.test.js` 覆盖五人全宽邻居、同路配对、边界漂移与数据刷新接线；`npm test` 全量 **129/129**。隔离 Chromium Preview 中控制随机序列，确认两个上路 Rider 同时进入 `is-waving`，Overlay 同时显示“嗨～ / 还蹬呢?”；另一组检查 6.8s 与约 22s 时的 `data-drift`：前者偏移约 1.94%，后者偏移延续至约 3.14%，没有因周期性预览刷新归零。此为隔离预览，不等于已部署生产环境。
 
 
-## 9. 2026-10-22 · Desktop Fun Actions
+## 9. 2026-10-22 · Desktop-first Fun Actions
 
 ![桌面冒火与趴下动作截图对照](assets/denglema-desktop-fun-actions-20261022.webp)
 
@@ -249,6 +249,6 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 
 - `overheat`：约 2.9s，像素火苗从人物后方蹿出，PNG 人物整体轻微发热跳动，文字气泡如“CPU 冒火了！”。
 - `flop`：约 3.35s，PNG 人物连同交通工具作为一个整体**夸张侧倒**、停顿片刻再起身，头顶 zZ 星星；最右侧角色向道路内侧倒下，避免裁切。**这不是新绘制的趴地 PNG 帧**；无素材时采用可回退的 CSS 姿势表演。
-- 两种效果均只做桌面端（宽度 761px 以上），不新增手机布局与视觉适配。没有更换 `public/riders/frames/**` 素材，也不把动作位置当成永久 `office_position`。
+- **开发、视觉设计与验收仅针对桌面端**；不写专门的手机判断或分支，手机自然运行同一套代码，不另做适配或验收。没有更换 `public/riders/frames/**` 素材，也不把动作位置当成永久 `office_position`。
 - 统一图层 `rider-motion` 里挂只读装饰，CSS 放在独立 `scene-fun-actions.css`；浏览器 `?preview=1&motion=overheat` 或 `?preview=1&motion=flop` 可强制演示并截图。低动态效果偏好停掉关键帧，保留静态视觉。
 
