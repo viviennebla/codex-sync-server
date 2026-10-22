@@ -67,7 +67,7 @@
 | 普通背景 | `trackFlow` | 在 `.track-motion` 定义；当前视觉整理 CSS 隐藏相关 DOM（保留兼容代码） |
 | 骑手基本状态 | `riderBob`, `tiredWobble`, `quotaGloomPulse`, `quotaSleepFloat` | 持续蹬动/疲惫/配额情绪 |
 | Action 主动姿态 | `sprintSurge`, `wheeliePop`, `bonkSag`, `victoryHop`, `socialSway`, `sipPause`, `stretchPause`, `yawnPause`, `coastGlide` | `triggerMotion` 加类；后续 CSS Presenter 可以由 Pixel Sprite 替代 |
-| 桌面趣味动作 | `sceneFlameFlicker`, `sceneHeatHop`, `sceneFlop`, `sceneStars` | `scene-fun-actions.css` 中独立特效，桌面（min-width:761px）下仅随 Director 动作触发；PNG 人物本体与交通工具图片不变 |
+| 桌面趣味动作 | `sceneFlameFlicker`, `sceneHeatHop`, `sceneFlop`, `sceneFlopInward`, `sceneStars` | `scene-fun-actions.css` 中独立特效，桌面（min-width:761px）下仅随 Director 动作触发；PNG 人物本体与交通工具图片不变 |
 | Action 身体细节 | `friendlyWave`, `sleepyNod`, `socialPropPop` | 摆手、低头、道具弹出 |
 | 交通工具与腿 | `wheelSpin`, `pedalLeg`, `bikeWheelie`, `bikeClunk`, `bikeBounce`, `scooterWobble`, `tinyOllie`, `walkHop`, `surfSplash`, `skateTwirl`, `scooterKick`, `skateboardPush`, `walkStride`, `skateGlide` | 各 transport 使用不同 CSS；自行车踩踏、滑板脚推、徒步迈步等不应全部被统一骑行覆盖 |
 | 附加粒子/状态 | `speedFlicker`, `flameFlicker`, `dustPop`, `sweatPop`, `musicFloat`, `comicBubblePop` | 冲刺、尘土、配额汗滴、音乐、趣味/留言气泡 |
@@ -121,7 +121,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 
 ## 7. 可核对的关键帧 / Action 目录
 
-以下清单是对目前两个 CSS 文件全部 `@keyframes`（`styles.css` **45**、`halloween-theme.css` **2**、`scene-fun-actions.css` **4**）及目前 `MOTION_ACTIONS`（**12** 个）的**机械索引**。包含已定义但未运行的项；测试会比对两边集合，不允许新增/删除却忘记更新本页。Runtime Hooks 用于守护设计的已知入口（不能据此声称未来新增的 JS 动画也会被自动发现）。
+以下清单是对目前两个 CSS 文件全部 `@keyframes`（`styles.css` **45**、`halloween-theme.css` **2**、`scene-fun-actions.css` **5**）及目前 `MOTION_ACTIONS`（**12** 个）的**机械索引**。包含已定义但未运行的项；测试会比对两边集合，不允许新增/删除却忘记更新本页。Runtime Hooks 用于守护设计的已知入口（不能据此声称未来新增的 JS 动画也会被自动发现）。
 
 <!-- animation-catalog:start -->
 ```json
@@ -216,6 +216,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
       "sceneFlameFlicker",
       "sceneHeatHop",
       "sceneFlop",
+      "sceneFlopInward",
       "sceneStars"
     ]
   }
@@ -244,7 +245,7 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 新增 `overheat`（短暂冒火）和 `flop`（夸张趴下休息）两个动作，仍由原 `MOTION_ACTIONS` / `triggerMotion` / Director 调度。保留其生命周期互斥、拖动优先、气泡 Overlay、自动移动与双人招手。
 
 - `overheat`：约 2.9s，像素火苗从人物后方蹿出，PNG 人物整体轻微发热跳动，文字气泡如“CPU 冒火了！”。
-- `flop`：约 3.35s，PNG 人物连同交通工具作为一个整体**夸张侧倒**、停顿片刻再起身，头顶 zZ 星星。**这不是新绘制的趴地 PNG 帧**；无素材时采用可回退的 CSS 姿势表演。
+- `flop`：约 3.35s，PNG 人物连同交通工具作为一个整体**夸张侧倒**、停顿片刻再起身，头顶 zZ 星星；最右侧角色向道路内侧倒下，避免裁切。**这不是新绘制的趴地 PNG 帧**；无素材时采用可回退的 CSS 姿势表演。
 - 两种效果均只做桌面端（宽度 761px 以上），不新增手机布局与视觉适配。没有更换 `public/riders/frames/**` 素材，也不把动作位置当成永久 `office_position`。
 - 统一图层 `rider-motion` 里挂只读装饰，CSS 放在独立 `scene-fun-actions.css`；浏览器 `?preview=1&motion=overheat` 或 `?preview=1&motion=flop` 可强制演示并截图。低动态效果偏好停掉关键帧，保留静态视觉。
 
