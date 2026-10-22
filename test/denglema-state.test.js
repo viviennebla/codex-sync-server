@@ -274,7 +274,7 @@ test("rider office anchors use a simple optimistic layout version", async (t) =>
     /lane must be 1-4/,
   );
   await assert.rejects(
-    updateWebUserOfficePosition("usr-drag-a", { lane: 1, x: 90 }, 2, root),
+    updateWebUserOfficePosition("usr-drag-a", { lane: 1, x: 100.1 }, 2, root),
     /x must be between/,
   );
 });
