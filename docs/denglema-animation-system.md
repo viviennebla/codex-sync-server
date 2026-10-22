@@ -242,6 +242,9 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 
 ## 9. 2026-10-22 · Desktop Fun Actions
 
+![桌面冒火与趴下动作截图对照](assets/denglema-desktop-fun-actions-20261022.webp)
+
+
 新增 `overheat`（短暂冒火）和 `flop`（夸张趴下休息）两个动作，仍由原 `MOTION_ACTIONS` / `triggerMotion` / Director 调度。保留其生命周期互斥、拖动优先、气泡 Overlay、自动移动与双人招手。
 
 - `overheat`：约 2.9s，像素火苗从人物后方蹿出，PNG 人物整体轻微发热跳动，文字气泡如“CPU 冒火了！”。
