@@ -39,6 +39,11 @@ test("homepage uses the shared DOM lane mapping and nearest-road pointer project
   assert.ok(pointerHandler);
   assert.match(pointerHandler, /readLaneLayout\(stage, layoutMode\)/);
   assert.match(pointerHandler, /pointerToLayoutPosition\(layout, event/);
+  assert.match(pointerHandler, /actorWidth \/ 2 \+ 10/);
+  assert.match(pointerHandler, /minX = side/);
+  assert.match(pointerHandler, /maxX = 100 - side/);
+  assert.match(app, /halloweenEnabled \? 0 : OFFICE_X_MIN/);
+  assert.match(app, /halloweenEnabled \? 100 : OFFICE_X_MAX/);
   assert.doesNotMatch(pointerHandler, /relativeY|0\.70|Math\.floor\(relativeY/);
   // The rider's new tap-vs-drag behavior must survive adapter integration.
   assert.match(app, /if \(distance <= 5\) return;/);
