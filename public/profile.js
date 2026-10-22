@@ -79,14 +79,30 @@ function renderRiderPresets(catalog) {
  }
  select.disabled=false;
 }
+function syncRiderHeadEditor() {
+  const mode=appearanceFields.head_mode.value;
+  const input=appearanceFields.head_emoji;
+  input.disabled=mode!=="emoji";
+  const avatar=String(currentProfileUser?.avatar_emoji||"").trim();
+  const customAvatar=!currentProfileUser?.avatar_url&&avatar&&avatar!=="🚴";
+  const hint=$("riderHeadHint");
+  if (!hint) return;
+  hint.textContent=mode==="auto"
+    ? (customAvatar?"正在自动使用头像 "+avatar+"；更换头像后面罩也会更新。":"没有自定义 Emoji 头像，当前显示原装表情。")
+    : mode==="art"?"已选择原装表情；更换头像不会修改面罩。"
+    :"手动贴脸优先于头像 Emoji；以后更换头像也不会覆盖。";
+}
+appearanceFields.head_mode?.addEventListener("change",syncRiderHeadEditor);
+
 function renderAppearance(value={}) {
-  const a={preset:riderCatalog?.default_preset||"helmet-commuter",head_mode:"art",head_variant:"auto",head_emoji:"🙂",backpack:true,...value};
+  const a={preset:riderCatalog?.default_preset||"helmet-commuter",head_mode:"auto",head_variant:"auto",head_emoji:"🙂",backpack:true,...value};
   for(const [key,field] of Object.entries(appearanceFields)) {
     if(!field)continue;
     if(key==="backpack")field.checked=a.backpack!==false;
     else if(key==="preset")field.value=riderCatalog?.presets?.[a.preset]?a.preset:(riderCatalog?.default_preset||"helmet-commuter");
     else field.value=a[key];
   }
+  syncRiderHeadEditor();
 }
 $("riderSaveAppearance")?.addEventListener("click",async()=>{
   const button=$("riderSaveAppearance");
@@ -159,8 +175,8 @@ async function selectTransport(transport) {
 }
 
 function renderProfileAvatar(user) {
-  currentProfileUser = user || currentProfileUser;
-  const value = currentProfileUser || {};
+  currentProfileUser = {...(currentProfileUser || {}), ...(user || {})};
+  const value = currentProfileUser;
   profileAvatar.replaceChildren();
   if (value.avatar_url) {
     const image = document.createElement("img");
@@ -170,6 +186,7 @@ function renderProfileAvatar(user) {
   } else {
     profileAvatar.textContent = value.avatar_emoji || "🚴";
   }
+  syncRiderHeadEditor();
 }
 
 function squareJpegDataUrl(file) {
