@@ -16,6 +16,8 @@ test("a reviewed reusable PNG vehicle can combine with an unrelated rider pack",
   await cp(join(publicDir,"riders/frames/helmet-commuter"),join(frames,"helmet-commuter"),{recursive:true});
   const rider=JSON.parse(await readFile(join(frames,"helmet-commuter","manifest.json"),"utf8"));
   rider.heads={neutral:rider.heads.neutral};
+  // Isolate the one vehicle contract under test from production registrations.
+  rider.transports={walk:rider.transports.walk};
   const framePaths=rider.transports.walk.layers.plain;
   rider.transports.walk.layers={plain:framePaths};
   rider.transports.scooter={...rider.transports.walk,vehicle_id:"city-scooter"};

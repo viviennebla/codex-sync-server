@@ -28,12 +28,16 @@ test("agent can register a second PNG character with zero server/runtime edits",
   await cp(origin,copy,{recursive:true});
   const manifest=JSON.parse(await readFile(join(copy,"manifest.json"),"utf8"));
   manifest.id="pixel-cat";manifest.label="像素猫猫";
+  // This fixture tests character imports without independently registered vehicle packs.
+  manifest.transports={bike:manifest.transports.bike,walk:manifest.transports.walk};
   await writeFile(join(copy,"manifest.json"),JSON.stringify(manifest));
   const catalog={schema_version:2,default_preset:"helmet-commuter",presets:{
    "helmet-commuter":"/riders/frames/helmet-commuter/manifest.json",
    "pixel-cat":"/riders/frames/pixel-cat/manifest.json"
   }};
   await cp(origin,join(frames,"helmet-commuter"),{recursive:true});
+  await writeFile(join(frames,"helmet-commuter","manifest.json"),
+    JSON.stringify({...manifest,id:"helmet-commuter",label:"头盔通勤客"}));
   await writeFile(join(frames,"manifest.json"),JSON.stringify(catalog));
   const registry=await loadRiderAssetRegistry(temp,{checkPng:true});
   assert.equal(Object.keys(registry.catalog.presets).length,2);

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "street-skateboard",
+  "label": "滑板",
+  "transport": "skateboard",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "frames": 1,
+  "fps": 9,
+  "layers": {
+    "back": [
+      "back/00.png"
+    ]
+  }
+}

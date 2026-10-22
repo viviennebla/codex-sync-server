@@ -4,5 +4,10 @@
   "presets": {
     "helmet-commuter": "/riders/frames/helmet-commuter/manifest.json"
   },
-  "vehicles": {}
+  "vehicles": {
+    "city-scooter": "/riders/vehicles/city-scooter/manifest.json",
+    "street-skateboard": "/riders/vehicles/street-skateboard/manifest.json",
+    "office-surfboard": "/riders/vehicles/office-surfboard/manifest.json",
+    "roller-skates": "/riders/vehicles/roller-skates/manifest.json"
+  }
 }
