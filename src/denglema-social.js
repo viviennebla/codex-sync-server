@@ -45,6 +45,12 @@ export function formatDenglemaUploadMessage(harness, totalTokens) {
 
 export const DENGLEMA_RELEASE_ANNOUNCEMENTS = [
   {
+    id: "event-feed-filter-93-2026-10",
+    emoji: "📬",
+    message: "#93 24h 动态能筛用户留言和系统提示 · 系统播报终于学会排队了",
+    href: "/",
+  },
+  {
     id: "approved-six-mascots-design-88-2026-10",
     emoji: "🎨",
     message: "#88 六角色原稿归档 · 临时截图终于让出了设计席位",
