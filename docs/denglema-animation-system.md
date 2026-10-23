@@ -252,3 +252,13 @@ Theme Ambient ────→ 背景 Glow / 静态小猫蝙蝠
 - **开发、视觉设计与验收仅针对桌面端**；不写专门的手机判断或分支，手机自然运行同一套代码，不另做适配或验收。没有更换 `public/riders/frames/**` 素材，也不把动作位置当成永久 `office_position`。
 - 统一图层 `rider-motion` 里挂只读装饰，CSS 放在独立 `scene-fun-actions.css`；浏览器 `?preview=1&motion=overheat` 或 `?preview=1&motion=flop` 可强制演示并截图。低动态效果偏好停掉关键帧，保留静态视觉。
 
+
+## 10. 2026-10-22 · 躺平动作锚点校准
+
+![躺平动作修复前后桌面截图](assets/denglema-flop-anchor-qa-20261022.webp)
+
+`flop` 原来使用 `.frame-rider-art { transform-origin: 54% 82% }`，在 `rotate(±83deg)` 同时改变 `translateY`；整体 PNG 旋转时视觉中心偏离道路上的原站位，尤其靠近道路边缘时显得像突然横向跳走。
+
+本轮只调整 `scene-fun-actions.css`：将旋转轴归到 **50%/50%**，每个阶段统一基准 `translate(-50%,-50%)`；最大旋转角收敛到 ±68°，最大垂直平移不超过 12px，收缩到 78% 以维持路面内的视觉占位。右侧骑手仍向画面内侧倒；低动态效果偏好使用相同的中心锚点与左右朝向。
+
+**约束**：不修改人物世界 X、保存位置、脚底/道路布局、动画 Director 的 3350ms 生命周期、气泡和 PNG 素材。桌面 Chromium 1440×900 / 900×900 实测，躺平保持阶段相对于常态 Sprite 外接框中心 **ΔX = 0px，ΔY ≈ 10.8px**。此外全体预览骑手均验证横向中心未偏移、Sprite 外接框不越出赛道容器。相关回归由 `test/scene-fun-actions.test.js` 守护。
