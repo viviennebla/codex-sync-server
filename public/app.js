@@ -3,7 +3,7 @@ import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
 import { adjacentSameRoadPairs, nextAmbientOffset } from "./scene-motion.js";
 import { syncSceneBubbles } from "./scene-bubble-runtime.js";
 import { LAYOUT_MODE, visibleLaneIds, resolveVisualLane, readLaneLayout, nearestVisibleLane, pointerToLayoutPosition } from "./scene-layout.js";
-import { loadFrameCatalog, mountFrameRider, disposeFrameRider } from "./rider-frame-runtime.js";
+import { loadFrameCatalog, mountFrameRider, disposeFrameRider } from "./rider-hybrid-runtime.js";
 
 const $ = (id) => document.getElementById(id);
 

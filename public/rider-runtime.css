@@ -28,3 +28,17 @@
 @media (prefers-reduced-motion: reduce) {
   .pixel-rider-art, .pixel-rider-svg { animation: none !important; }
 }
+
+/* Real-time helmet rig: preserve user avatar-in-visor mode. */
+.pixel-rider-art .rig-visor-emoji,
+.pixel-rider-art .rig-visor-avatar {
+ position:absolute;left:65%;top:31%;z-index:20;
+ width:25px;height:25px;transform:translate(-50%,-50%);
+ border-radius:48%;background:#18113b;box-sizing:border-box;
+ overflow:hidden;pointer-events:none;
+}
+.pixel-rider-art .rig-visor-emoji {
+ display:grid;place-items:center;color:white;white-space:nowrap;
+ font:20px/1 "Segoe UI Emoji","Apple Color Emoji",sans-serif;
+}
+.pixel-rider-art .rig-visor-avatar {object-fit:cover;display:block}

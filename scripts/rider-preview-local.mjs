@@ -11,8 +11,13 @@ const {catalog,allowedFiles}=await loadRiderAssetRegistry(publicDir,{checkPng:tr
 const port=Number(process.env.RIDER_PREVIEW_PORT||17881);
 const host="127.0.0.1";
 const types={".png":"image/png",".js":"text/javascript; charset=utf-8",
- ".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8"};
-const staticFiles=new Set(["/rider-preview.html","/rider-frame-runtime.js","/rider-frame-runtime.css"]);
+ ".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",
+ ".json":"application/json; charset=utf-8",".svg":"image/svg+xml",".webp":"image/webp"};
+const staticFiles=new Set(["/rider-preview.html","/rider-frame-runtime.js","/rider-frame-runtime.css",
+ "/rider-compare.html","/rider-runtime.js","/rider-runtime.css","/rider-hybrid-runtime.js",
+ "/riders/manifest.json","/riders/rigs/compact-side-right-v1.json",
+ "/riders/presets/helmet-commuter/manifest.json"]);
+const approvedLegacyArt=/^\/riders\/presets\/helmet-commuter\/(?:head(?:-(?:happy|focused|tired))?|body|backpack|arm_(?:front|back)|leg_(?:front|back))\.webp$|^\/riders\/presets\/helmet-commuter\/(?:bike-(?:frame|wheel)|scooter|skateboard|surf|skate)\.svg$/;
 const server=createServer(async(req,res)=>{
  try{
   const pathname=new URL(req.url,"http://localhost").pathname;
@@ -21,7 +26,7 @@ const server=createServer(async(req,res)=>{
    res.end(JSON.stringify(catalog));return;
   }
   const fileName=pathname==="/rider-preview"?"/rider-preview.html":pathname;
-  if(!staticFiles.has(fileName)&&!allowedFiles.has(fileName)){
+  if(!staticFiles.has(fileName)&&!allowedFiles.has(fileName)&&!approvedLegacyArt.test(fileName)){
    res.writeHead(404);res.end("Not in reviewed Rider Pack");return;
   }
   const file=resolve(publicDir,"."+fileName);

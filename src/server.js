@@ -1493,6 +1493,12 @@ const server = createServer(async (req, res) => {
     if (method === "GET" && url.pathname === "/rider-frame-runtime.js") {
       await sendStatic(res,"rider-frame-runtime.js","text/javascript; charset=utf-8"); return;
     }
+    if (method === "GET" && url.pathname === "/rider-hybrid-runtime.js") {
+      await sendStatic(res,"rider-hybrid-runtime.js","text/javascript; charset=utf-8"); return;
+    }
+    if (method === "GET" && url.pathname === "/rider-compare.html") {
+      await sendStatic(res,"rider-compare.html","text/html; charset=utf-8"); return;
+    }
     // Only paths referenced by a validated, checked-in rider package can be served.
     if(method==="GET" && (url.pathname.startsWith("/riders/frames/")||url.pathname.startsWith("/riders/vehicles/"))){
       const {allowedFiles}=await getRiderAssets();

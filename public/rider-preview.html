@@ -6,6 +6,7 @@
 <title>蹬了吗 · 2 / 4 / 6 精选角色验收</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/rider-frame-runtime.css">
+<link rel="stylesheet" href="/rider-runtime.css">
 <style>
   :root { color-scheme:dark; font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif; background:#18162b; color:#f4efff; }
   * {box-sizing:border-box}
@@ -45,7 +46,7 @@
 </head>
 <body><main>
   <h1>精选角色 · 像素素材验收</h1>
-  <p class="sub">对照审定原稿，检查 ② 泡泡套装客 · ④ 雨衣豆豆客 · ⑥ 软萌团子客（保留原有头盔通勤客）。这是实际 PNG + Runtime 动画，不是概念合成图。</p>
+  <p class="sub">对照审定原稿，检查 ② 泡泡套装客 · ④ 雨衣豆豆客 · ⑥ 软萌团子客。默认头盔通勤客骑行／步行使用连续骨架动画，其余角色使用逐帧 PNG，显示的是实际运行时效果。</p>
   <div class="tabs" id="modes" aria-label="人物状态">
     <button data-state="bike" aria-pressed="true">🚲 骑行</button>
     <button data-state="walk" aria-pressed="false">步行</button>
@@ -63,18 +64,18 @@
   <label class="preset-select">角色：<select id="previewPreset"></select></label>
   <div class="tabs character-tabs" id="characters" aria-label="快速切换角色"></div>
   <div class="grid">
-    <section class="panel"><h2>实际 PNG 拼装 · 2× 像素放大</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
+    <section class="panel"><h2>实际角色渲染 · 2× 放大</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
     <section class="panel"><h2>赛道大小预览 · 适配缩放</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
   </div>
   <div class="metrics">
-    <div class="small"><strong>当前素材</strong>按当前角色自动加载透明 PNG 帧与表情头</div>
+    <div class="small"><strong>当前渲染器</strong><span id="renderModeLabel">准备中</span></div>
     <div class="small"><strong>骨架管理</strong>128×100 统一帧画布</div>
-    <div class="small"><strong>状态切换</strong>PNG 循环帧 + 独立 PNG 表情头</div>
+    <div class="small"><strong>状态切换</strong>旧默认角色连续骨架 / 新角色 PNG 循环</div>
   </div>
-  <div class="foot">注意：这只是当前 PR 的程序渲染验收页。大图、动画与背景是否达到原始设计稿品质，需要以实际效果为准。页面使用项目现有 Rider Runtime，资源失败时不会显示伪造的人物。</div>
+  <div class="foot"><a href="/rider-compare.html" style="color:#f8c799">打开头盔角色 PNG / 骨架动态对照</a>。注意：这只是当前 PR 的程序渲染验收页。大图、动画与背景是否达到原始设计稿品质，需要以实际效果为准。页面使用项目当前混合 Rider Runtime，旧骨架素材加载失败时会保留 PNG 人物作为回退。</div>
 </main>
 <script type="module">
-import {loadFrameCatalog,mountFrameRider,disposeFrameRider} from "/rider-frame-runtime.js";
+import {loadFrameCatalog,mountFrameRider,disposeFrameRider,preferredRiderRenderer} from "/rider-hybrid-runtime.js";
 const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 角色素材按需播放",skateboard:"滑板 · 角色素材按需播放",surf:"冲浪 · 角色素材按需播放",skate:"轮滑 · 角色素材按需播放"};
 let catalog=null;let selectedState="bike";
 function stateClass(node,state) {
@@ -91,6 +92,9 @@ function select(state) {
  document.querySelectorAll("[data-state]").forEach(button=>button.setAttribute("aria-pressed",String(button.dataset.state===state)));
  for(const node of [main,tiny]) {stateClass(node,state);mountFrameRider(node,["walk","idle","happy","focused"].includes(state)?"walk":(["scooter","skateboard","surf","skate"].includes(state)?state:"bike"),catalog,{preset:document.getElementById("previewPreset").value,head_mode:"art",head_variant:"auto",backpack:true});}
  document.getElementById("stateLabel").textContent=labels[state];
+ const preset=document.getElementById("previewPreset").value;
+ const transport=["walk","idle","happy","focused"].includes(state)?"walk":(["scooter","skateboard","surf","skate"].includes(state)?state:"bike");
+ document.getElementById("renderModeLabel").textContent=preferredRiderRenderer(preset,transport)==="rig"?"SVG 骨架 + WebP 部件 · 连续动作":"透明 PNG · 逐帧动画";
 }
 document.getElementById("modes").addEventListener("click",e=>{const b=e.target.closest("[data-state]");if(b)select(b.dataset.state);});
 function recommendedMode(id){return ({"helmet-commuter":"bike","bubble-suit":"scooter","raincoat-bean":"walk","fluffy-bun":"skate"})[id]||"walk";}

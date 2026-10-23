@@ -140,3 +140,14 @@ public/riders/
 - 自行车的 SVG 源文件不进入运行时；为方便 Windows 上不安装 Cairo 也能重新导出，提供由相同 SVG 渲染的 `bike-frame.png`、`bike-wheel.png` 两份构建输入。
 - Chrome 在 `LAPTOP-PJM7MTNJ` 的 `/rider-preview?preset=helmet-commuter&mode=bike` 验收，实际 frame-body URL 随时间变化、128×100 PNG 正确解码，截图归档于 `docs/qa/riders/helmet-pedaling-restored-windows.png`。
 - 这是 PNG 离散 12 帧复原，不等同于旧运行时的无限细分实时关节/车轮旋转；若需要更平滑的轮轴运动，应在未来单独升级 PNG/Vehicle Pack 合同，而不是重新启用已停用的 SVG runtime。
+
+## 12. 按动作自然程度选择渲染器（覆盖第 11 节的“只用 PNG”决定）
+
+Windows Chrome 的 SVG/PNG 同屏验收表明：旧 `rider-runtime.js` 是由 SVG 容器定位 WebP 人物部件的骨架动画，而非将人物改成简陋 SVG 图形。原头盔角色的前后脚、车轮能连续运动；新发布的三套精细人物保持 PNG 外观。
+
+- `public/rider-hybrid-runtime.js` 对 helmet-commuter 的 bike、walk 使用原有 WebP + SVG Rig；泡泡套装客、雨衣豆豆客、软萌团子客以及其余未配置骨架的交通方式使用 PNG。
+- 旧 Rig 首次加载时仍显示 PNG，加载失败时继续显示 PNG。代码不会同时绘制两套人物。
+- 同一套分发器服务首页和 `/rider-preview`，可在 `/rider-compare.html` 切换 bike/walk，对照旧 Rig 与 PNG。
+- 背包、原角色面罩头像/Emoji、皇冠在两种运行时切换时保留。
+- Windows Chrome 在 1440 与 375px 下，检查了连续轮轴旋转、脚部位移、真实动画切换和资源解码。PNG/Rig 并排和切换截图留在 Windows 工作区的 `docs/qa/riders/`（机器未连接时不宣称已同步到 GitHub）。
+- 新角色下一轮脚部自然度优化，应先改善对应角色的原创姿态，不能套用头盔角色的手脚和装束。
