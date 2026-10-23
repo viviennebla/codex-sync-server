@@ -21,10 +21,11 @@
 
 ## 2026-10-23 工程实现
 
-六角色设计稿继续作为权威视觉基准。除原有头盔通勤客外，`public/riders/frames/` 新增泡泡套装客、胶囊连帽客、雨衣豆豆客、迷你机器人客和软萌团子客五套原创透明 PNG 帧角色。
+六角色原稿仍是权威视觉基准，但用户明确决定 **本轮只实装 ② 泡泡套装客、④ 雨衣豆豆客、⑥ 软萌团子客**；保留已有头盔通勤客，原稿中的③胶囊连帽客与⑤迷你机器人客不注册、不发布。
 
-- 生成脚本：`scripts/generate-approved-mascot-packs.py`（基于轮廓、配色和元素重绘，不对审定海报直接裁剪）
-- 所有角色均提供 walk 6 帧，bubble-suit / capsule-hoodie / mini-robot / fluffy-bun 另有 scooter / skateboard / surf / skate 各 6 帧；提供 plain/pack 与四种表情头
-- 本地 `/rider-preview` 可选择全部六角色，未登记的交通方式按 Rider Pack 合同回退 walk
-- Chromium 1440×900、375×812 本地验收六角色切换：PNG 均实际解码，JS error 和资源失败数为 0；`npm run riders:validate` 与 `npm test` 通过
-- **美术限制**：这是原稿导向的首版工程 PNG 重绘，并非原图直接切帧或专业逐帧精绘；需进行用户最终审美验收
+- 生成脚本：`scripts/generate-approved-mascot-packs.py`。在 128×100 像素网格上重新绘制不透明轮廓、明暗面和高光，独立产生透明 PNG；**不从原稿或生成的概念海报直接裁图**。
+- 三角色各有独立四种表情头、walk 八帧（plain/pack）；泡泡套装客另有 scooter 八帧、软萌团子客另有 skate 八帧。未登记的交通方式按合同回退 walk。
+- Windows 开发目录：`D:\workspace\codex-sync-server-mascot-art`。双击根目录 `open-rider-preview.cmd` 可在本机浏览器打开已有 `/rider-preview` 页面，也可执行 `node scripts/rider-preview-local.mjs`，访问 `http://127.0.0.1:17881/rider-preview`。
+- 本地 Preview 只提供已审核 Rider Pack 清单/API 和静态文件，复用线上 PNG Runtime，不连接账号、Usage 或生产数据库。
+- Windows Chrome 1440×900、375×812 已验证角色切换、逐帧更新、PNG 解码、无 HTTP 资源错误与 JS 页面异常；截图在 `docs/qa/riders/selected-*-windows.png`。
+- **美术限制**：这批为基于审定稿的程序化像素重绘，并非人工逐像素精修的最终美术；人眼确认大尺寸细节后再合并。

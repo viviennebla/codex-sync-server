@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "fluffy-bun",
   "label": "软萌团子客",
-  "description": "基于 2026-10-22 六角色审定原稿独立绘制的逐帧 PNG 角色。",
+  "description": "2026-10-22 审定稿：精细像素人物，逐帧绘制，透明分层。",
   "canvas": {
     "width": 128,
     "height": 100
@@ -14,17 +14,17 @@
     "tired": "heads/tired.png"
   },
   "emoji_head": {
-    "left_percent": 58,
-    "top_percent": 42,
-    "font_size_px": 22,
-    "visor_width_px": 23,
+    "left_percent": 68,
+    "top_percent": 45,
+    "font_size_px": 18,
+    "visor_width_px": 22,
     "visor_height_px": 24
   },
   "fallback_transport": "walk",
   "transports": {
     "walk": {
-      "frames": 6,
       "fps": 8,
+      "frames": 8,
       "head_offset": {
         "x": 0,
         "y": 0
@@ -36,7 +36,9 @@
           "walk/plain/02.png",
           "walk/plain/03.png",
           "walk/plain/04.png",
-          "walk/plain/05.png"
+          "walk/plain/05.png",
+          "walk/plain/06.png",
+          "walk/plain/07.png"
         ],
         "pack": [
           "walk/pack/00.png",
@@ -44,13 +46,15 @@
           "walk/pack/02.png",
           "walk/pack/03.png",
           "walk/pack/04.png",
-          "walk/pack/05.png"
+          "walk/pack/05.png",
+          "walk/pack/06.png",
+          "walk/pack/07.png"
         ]
       }
     },
     "skate": {
-      "frames": 6,
       "fps": 10,
+      "frames": 8,
       "head_offset": {
         "x": 0,
         "y": 0
@@ -62,7 +66,9 @@
           "skate/plain/02.png",
           "skate/plain/03.png",
           "skate/plain/04.png",
-          "skate/plain/05.png"
+          "skate/plain/05.png",
+          "skate/plain/06.png",
+          "skate/plain/07.png"
         ],
         "pack": [
           "skate/pack/00.png",
@@ -70,7 +76,9 @@
           "skate/pack/02.png",
           "skate/pack/03.png",
           "skate/pack/04.png",
-          "skate/pack/05.png"
+          "skate/pack/05.png",
+          "skate/pack/06.png",
+          "skate/pack/07.png"
         ]
       }
     }

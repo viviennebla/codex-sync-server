@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>蹬了吗 · 六角色拼装验收</title>
+<title>蹬了吗 · 2 / 4 / 6 精选角色验收</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/rider-frame-runtime.css">
 <style>
@@ -18,11 +18,13 @@
   .grid {display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .panel {border:1px solid #69518d;border-radius:18px;background:#231d3ad9;box-shadow:0 12px 32px #09071d4a;overflow:hidden}
   .panel h2 {font-size:16px;margin:0;padding:16px 18px;border-bottom:1px solid #51416a}
-  .scene {height:270px;position:relative;overflow:hidden;background:radial-gradient(circle at 70% 17%,#e9a86345 0 26px,transparent 45px),linear-gradient(180deg,#261d50 0 48%,#34306a 48% 52%,#252347 52% 76%,#191d43 76%)}
+  .scene {height:340px;position:relative;overflow:hidden;background:radial-gradient(circle at 70% 17%,#e9a86345 0 26px,transparent 45px),linear-gradient(180deg,#261d50 0 48%,#34306a 48% 52%,#252347 52% 76%,#191d43 76%)}
   .scene:after{content:"";position:absolute;top:70%;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,#dcc2f59c 0 28px,transparent 28px 67px)}
   .rider.has-frame-rider .rider-motion {position:absolute;inset:0}
   .rider {position:absolute;left:50%;top:53%;width:166px;height:136px;transform:translate(-50%,-40%) scale(.92);transform-origin:50% 70%}
   .rider-motion{position:absolute;inset:0}
+  #mainRider.rider {transform:translate(-50%,-40%) scale(2.1);}
+  #tinyRider.rider {transform:translate(-50%,-40%) scale(0.85)!important;}
   .pixel-rider-art{position:absolute;left:50%;top:48%;width:151px;height:119px;transform:translate(-50%,-50%);pointer-events:none}
   .pixel-rider-svg{display:block;width:100%;height:100%;overflow:visible;image-rendering:pixelated}
   .pixel-rider-svg image{image-rendering:pixelated}
@@ -32,13 +34,18 @@
   .small strong{display:block;color:#fff0cf;margin-bottom:5px}
   .options {padding:18px;display:flex;gap:8px;flex-wrap:wrap}
   .foot {font-size:13px;color:#beacd6;line-height:1.8;margin-top:20px}
-  @media(max-width:720px){.grid{grid-template-columns:1fr}.scene{height:240px}.metrics{grid-template-columns:1fr}}
+  .character-tabs {margin:12px 0 18px}
+  .character-tabs button {font-size:14px;padding:12px 16px;background:#2f2552}
+  .character-tabs button[aria-pressed=true] {background:#a88af7;color:#211338;border-color:#ecdbff}
+  .preset-select {font-size:13px;color:#d9c9f0}
+  .preset-select select {background:#281f43;color:#fff;border:1px solid #8e72bf;border-radius:8px;padding:6px 10px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}.scene{height:300px}.metrics{grid-template-columns:1fr}#mainRider.rider{transform:translate(-50%,-40%) scale(1.85)}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body><main>
-  <h1>六角色 · 拼装与动画验收</h1>
-  <p class="sub">逐帧 PNG + 头部叠层渲染。这里显示程序拼好的效果，不是 AI 概念渲染。仅用于视觉验收，不连接账号、Usage 或线上赛道。</p>
+  <h1>精选角色 · 像素素材验收</h1>
+  <p class="sub">对照审定原稿，检查 ② 泡泡套装客 · ④ 雨衣豆豆客 · ⑥ 软萌团子客（保留原有头盔通勤客）。这是实际 PNG + Runtime 动画，不是概念合成图。</p>
   <div class="tabs" id="modes" aria-label="人物状态">
     <button data-state="bike" aria-pressed="true">🚲 骑行</button>
     <button data-state="walk" aria-pressed="false">步行</button>
@@ -53,10 +60,11 @@
     <button data-state="surf" aria-pressed="false">冲浪</button>
     <button data-state="skate" aria-pressed="false">轮滑</button>
   </div>
-  <label>角色：<select id="previewPreset"></select></label>
+  <label class="preset-select">角色：<select id="previewPreset"></select></label>
+  <div class="tabs character-tabs" id="characters" aria-label="快速切换角色"></div>
   <div class="grid">
-    <section class="panel"><h2>实际拼装 · 原始大小</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
-    <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
+    <section class="panel"><h2>实际 PNG 拼装 · 2× 像素放大</h2><div class="scene"><div id="mainRider" class="rider"><div class="rider-motion"></div></div></div><p class="label" id="stateLabel">自行车 · 踩踏循环</p></section>
+    <section class="panel"><h2>赛道大小预览 · 适配缩放</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
   </div>
   <div class="metrics">
     <div class="small"><strong>当前素材</strong>按当前角色自动加载透明 PNG 帧与表情头</div>
@@ -85,7 +93,10 @@ function select(state) {
  document.getElementById("stateLabel").textContent=labels[state];
 }
 document.getElementById("modes").addEventListener("click",e=>{const b=e.target.closest("[data-state]");if(b)select(b.dataset.state);});
-document.getElementById("previewPreset").addEventListener("change",()=>select(selectedState));
-try{catalog=await loadFrameCatalog();const selectPreset=document.getElementById("previewPreset");for(const p of Object.values(catalog.presets)){const option=document.createElement("option");option.value=p.id;option.textContent=p.label;selectPreset.append(option);}select("bike");}catch(error){document.getElementById("stateLabel").textContent="素材加载失败："+error.message;}
+function recommendedMode(id){return ({"helmet-commuter":"bike","bubble-suit":"scooter","raincoat-bean":"walk","fluffy-bun":"skate"})[id]||"walk";}
+function choosePreset(id,mode){const input=document.getElementById("previewPreset");if(!catalog?.presets[id])return;input.value=id;document.querySelectorAll("#characters button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.preset===id)));select(mode||recommendedMode(id));}
+document.getElementById("previewPreset").addEventListener("change",e=>choosePreset(e.target.value));
+document.getElementById("characters").addEventListener("click",e=>{const b=e.target.closest("button[data-preset]");if(b)choosePreset(b.dataset.preset);});
+try{catalog=await loadFrameCatalog();const selectPreset=document.getElementById("previewPreset"), characters=document.getElementById("characters");for(const p of Object.values(catalog.presets)){const option=document.createElement("option");option.value=p.id;option.textContent=p.label;selectPreset.append(option);const b=document.createElement("button");b.type="button";b.dataset.preset=p.id;b.textContent=p.label;characters.append(b);}const query=new URLSearchParams(location.search);const requested=query.get("preset");choosePreset(catalog.presets[requested]?requested:catalog.default_preset,query.get("mode")||undefined);}catch(error){document.getElementById("stateLabel").textContent="素材加载失败："+error.message;}
 </script>
 </body></html>
