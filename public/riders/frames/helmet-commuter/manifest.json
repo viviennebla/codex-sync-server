@@ -79,81 +79,123 @@
       "fps": 9,
       "head_offset": {
         "x": 0,
-        "y": 0
+        "y": -4
       },
       "layers": {
-        "pack": [
-          "walk/pack/00.png",
-          "walk/pack/01.png",
-          "walk/pack/02.png",
-          "walk/pack/03.png",
-          "walk/pack/04.png",
-          "walk/pack/05.png"
-        ],
         "plain": [
-          "walk/plain/00.png",
-          "walk/plain/01.png",
-          "walk/plain/02.png",
-          "walk/plain/03.png",
-          "walk/plain/04.png",
-          "walk/plain/05.png"
+          "scooter/plain/00.png",
+          "scooter/plain/01.png",
+          "scooter/plain/02.png",
+          "scooter/plain/03.png",
+          "scooter/plain/04.png",
+          "scooter/plain/05.png"
+        ],
+        "pack": [
+          "scooter/pack/00.png",
+          "scooter/pack/01.png",
+          "scooter/pack/02.png",
+          "scooter/pack/03.png",
+          "scooter/pack/04.png",
+          "scooter/pack/05.png"
         ]
       },
-      "vehicle_id": "city-scooter"
+      "vehicle_id": "city-scooter",
+      "glide": {
+        "frames": 2,
+        "fps": 4,
+        "layers": {
+          "plain": [
+            "scooter/glide/plain/00.png",
+            "scooter/glide/plain/01.png"
+          ],
+          "pack": [
+            "scooter/glide/pack/00.png",
+            "scooter/glide/pack/01.png"
+          ]
+        }
+      }
     },
     "skateboard": {
       "frames": 6,
       "fps": 9,
       "head_offset": {
         "x": 0,
-        "y": 0
+        "y": -4
       },
       "layers": {
-        "pack": [
-          "walk/pack/00.png",
-          "walk/pack/01.png",
-          "walk/pack/02.png",
-          "walk/pack/03.png",
-          "walk/pack/04.png",
-          "walk/pack/05.png"
-        ],
         "plain": [
-          "walk/plain/00.png",
-          "walk/plain/01.png",
-          "walk/plain/02.png",
-          "walk/plain/03.png",
-          "walk/plain/04.png",
-          "walk/plain/05.png"
+          "skateboard/plain/00.png",
+          "skateboard/plain/01.png",
+          "skateboard/plain/02.png",
+          "skateboard/plain/03.png",
+          "skateboard/plain/04.png",
+          "skateboard/plain/05.png"
+        ],
+        "pack": [
+          "skateboard/pack/00.png",
+          "skateboard/pack/01.png",
+          "skateboard/pack/02.png",
+          "skateboard/pack/03.png",
+          "skateboard/pack/04.png",
+          "skateboard/pack/05.png"
         ]
       },
-      "vehicle_id": "street-skateboard"
+      "vehicle_id": "street-skateboard",
+      "glide": {
+        "frames": 2,
+        "fps": 4,
+        "layers": {
+          "plain": [
+            "skateboard/glide/plain/00.png",
+            "skateboard/glide/plain/01.png"
+          ],
+          "pack": [
+            "skateboard/glide/pack/00.png",
+            "skateboard/glide/pack/01.png"
+          ]
+        }
+      }
     },
     "surf": {
       "frames": 6,
       "fps": 9,
       "head_offset": {
         "x": 0,
-        "y": 0
+        "y": -4
       },
       "layers": {
-        "pack": [
-          "walk/pack/00.png",
-          "walk/pack/01.png",
-          "walk/pack/02.png",
-          "walk/pack/03.png",
-          "walk/pack/04.png",
-          "walk/pack/05.png"
-        ],
         "plain": [
-          "walk/plain/00.png",
-          "walk/plain/01.png",
-          "walk/plain/02.png",
-          "walk/plain/03.png",
-          "walk/plain/04.png",
-          "walk/plain/05.png"
+          "surf/plain/00.png",
+          "surf/plain/01.png",
+          "surf/plain/02.png",
+          "surf/plain/03.png",
+          "surf/plain/04.png",
+          "surf/plain/05.png"
+        ],
+        "pack": [
+          "surf/pack/00.png",
+          "surf/pack/01.png",
+          "surf/pack/02.png",
+          "surf/pack/03.png",
+          "surf/pack/04.png",
+          "surf/pack/05.png"
         ]
       },
-      "vehicle_id": "office-surfboard"
+      "vehicle_id": "office-surfboard",
+      "glide": {
+        "frames": 2,
+        "fps": 4,
+        "layers": {
+          "plain": [
+            "surf/glide/plain/00.png",
+            "surf/glide/plain/01.png"
+          ],
+          "pack": [
+            "surf/glide/pack/00.png",
+            "surf/glide/pack/01.png"
+          ]
+        }
+      }
     },
     "skate": {
       "frames": 6,
@@ -163,24 +205,38 @@
         "y": 0
       },
       "layers": {
-        "pack": [
-          "walk/pack/00.png",
-          "walk/pack/01.png",
-          "walk/pack/02.png",
-          "walk/pack/03.png",
-          "walk/pack/04.png",
-          "walk/pack/05.png"
-        ],
         "plain": [
-          "walk/plain/00.png",
-          "walk/plain/01.png",
-          "walk/plain/02.png",
-          "walk/plain/03.png",
-          "walk/plain/04.png",
-          "walk/plain/05.png"
+          "skate/plain/00.png",
+          "skate/plain/01.png",
+          "skate/plain/02.png",
+          "skate/plain/03.png",
+          "skate/plain/04.png",
+          "skate/plain/05.png"
+        ],
+        "pack": [
+          "skate/pack/00.png",
+          "skate/pack/01.png",
+          "skate/pack/02.png",
+          "skate/pack/03.png",
+          "skate/pack/04.png",
+          "skate/pack/05.png"
         ]
       },
-      "vehicle_id": "roller-skates"
+      "vehicle_id": "roller-skates",
+      "glide": {
+        "frames": 2,
+        "fps": 4,
+        "layers": {
+          "plain": [
+            "skate/glide/plain/00.png",
+            "skate/glide/plain/01.png"
+          ],
+          "pack": [
+            "skate/glide/pack/00.png",
+            "skate/glide/pack/01.png"
+          ]
+        }
+      }
     }
   }
 }

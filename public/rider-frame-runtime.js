@@ -41,9 +41,11 @@ function preload(src){
 function preloadPreset(preset,transport,appearance,catalog) {
  const mode=frameState(transport,preset),animation=preset.transports[mode];
  for(const src of animation.layers[appearance.backpack?"pack":"plain"])preload(assetUrl(src,catalog));
+ if(animation.glide)for(const src of animation.glide.layers[appearance.backpack?"pack":"plain"])preload(assetUrl(src,catalog));
  for(const src of Object.values(preset.heads))preload(assetUrl(src,catalog));
  const vehicle=evaluateVehicle(preset,mode,catalog);
- if(vehicle)for(const src of [...vehicle.layers.back,...vehicle.layers.front])preload(assetUrl(src,catalog));
+ if(vehicle)for(const src of [...vehicle.layers.back,...vehicle.layers.front,
+   ...(vehicle.glide?.layers.back||[]),...(vehicle.glide?.layers.front||[])])preload(assetUrl(src,catalog));
 }
 function evaluateVehicle(preset,mode,catalog){
  const id=preset.transports[mode]?.vehicle_id;
@@ -58,18 +60,23 @@ function emotionFor(node) {
 }
 function draw(e,now){
  const {preset,appearance}=e;
- const mode=frameState(e.transport,preset),animation=preset.transports[mode];
- if(!animation)return;
+ const mode=frameState(e.transport,preset),regular=preset.transports[mode];
+ if(!regular)return;
+ const coasting=e.node.classList.contains("is-coasting");
+ const animation=coasting&&regular.glide?regular.glide:regular;
+ const motionKey=mode+(animation===regular?":ride":":glide");
+ if(e.motionKey!==motionKey){e.started=now;e.motionKey=motionKey;}
  const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
  const index=reduced?0:frameNumber(now-e.started,animation.fps,animation.frames);
  const source=assetUrl(animation.layers[appearance.backpack?"pack":"plain"][index],e.catalog);
  if(e.body.getAttribute("src")!==source)e.body.src=source;
  const vehicle=evaluateVehicle(preset,mode,e.catalog);
+ const vehicleAnimation=coasting&&vehicle?.glide?vehicle.glide:vehicle;
  for(const part of ["back","front"]){
    const el=part==="back"?e.vehicleBack:e.vehicleFront;
-   const frames=vehicle?.layers?.[part];
+   const frames=vehicleAnimation?.layers?.[part];
    if(!frames?.length){el.hidden=true;continue;}
-   const vehicleIndex=reduced?0:frameNumber(now-e.started,vehicle.fps,vehicle.frames);
+   const vehicleIndex=reduced?0:frameNumber(now-e.started,vehicleAnimation.fps,vehicleAnimation.frames);
    const image=assetUrl(frames[vehicleIndex],e.catalog);
    el.hidden=false;
    if(el.getAttribute("src")!==image)el.src=image;
