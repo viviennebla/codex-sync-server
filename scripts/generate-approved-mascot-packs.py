@@ -14,10 +14,10 @@ import math
 import shutil
 from pathlib import Path
 from PIL import Image, ImageDraw
+from rider_gait import FRAME_COUNT, poses_for
 
 ROOT = Path(__file__).resolve().parents[1] / "public" / "riders" / "frames"
 SIZE = (128, 100)
-FRAME_COUNT = 8
 ROLES = (
     ("bubble-suit", "泡泡套装客", "scooter"),
     ("raincoat-bean", "雨衣豆豆客", "walk"),
@@ -230,12 +230,26 @@ def shadow(a):
     a.ellipse((43,91,112,96),"#29204644")
 
 
-def leg(a,x,y,knee,footx,fy,sock,shoe):
-    a.line([(x,y),(knee,fy-7),(footx,fy)],"#534483",6)
-    a.line([(x,y),(knee,fy-7)],sock,4)
-    a.rect((knee-3,fy-9,knee+2,fy-5),sock,2,outline="#bfb1ff")
-    a.ellipse((footx-7,fy-4,footx+6,fy+3),shoe,outline="#665493",w=2)
-    a.line([(footx,fy-2),(footx+5,fy-2)],"#f7fdff",2)
+def leg(a,hip_x,hip_y,pose,sock,shoe,mode,near):
+    """Jointed leg with proper lift and ground contact baked onto PNG."""
+    kx,ky=pose.knee_x,pose.knee_y
+    fx,fy=pose.foot_x,pose.foot_y
+    a.line([(hip_x,hip_y),(kx,ky),(fx,fy)],"#493879",6 if near else 5)
+    a.line([(hip_x,hip_y),(kx,ky)],sock,4 if near else 3)
+    a.ellipse((kx-2,ky-2,kx+2,ky+2),sock,outline="#a49bda",w=1)
+    a.ellipse((fx-7,fy-4,fx+6,fy+3),shoe,outline="#665493",w=2 if near else 1)
+    a.line([(fx,fy-2),(fx+5,fy-2)],"#f7fdff",2)
+    # Roller boots and wheels are a single moving part: wheel axle follows foot.
+    if mode=="skate":
+        a.rect((fx-9,fy+1,fx+8,fy+3),"#ee9acf" if near else "#b77ccc",2,outline="#7c4a9a")
+        for dx in (-5,4):
+            a.ellipse((fx+dx-3,fy+4,fx+dx+3,fy+10),
+                      "#62519d",outline="#fff0fc",w=1)
+            a.ellipse((fx+dx-1,fy+6,fx+dx+1,fy+8),"#ffdc79")
+    if not pose.support:
+        # Swinging boots lift over the ground; do not draw a ground-contact streak.
+        a.rect((fx+3,fy-5,fx+4,fy-4),"#ffffffaa")
+
 
 
 def backpack(a,role):
@@ -261,17 +275,19 @@ def backpack(a,role):
         a.rect((48,63,58,68),"#ffbcdf",3)
 
 
-def footwear(a,role,mode,frame):
-    s=math.sin(frame*math.tau/FRAME_COUNT)
-    if mode=="walk":
-        leg(a,66,75,56-5*s,52-10*s,88,"#fbf6ff","#b5e7ff" if role=="raincoat-bean" else "#f5d9ff")
-        leg(a,83,77,84+4*s,89+10*s,89,"#ffffff","#9dd8fa" if role=="raincoat-bean" else "#f4d6ff")
-    elif mode=="scooter":
-        leg(a,66,75,63,63-2*s,86,"#edf1ff","#c4b5ff")
-        leg(a,84,76,89,91+5*s,85,"#fff5ff","#ebdefd")
-    elif mode=="skate":
-        leg(a,66,77,59,57+7*s,85,"#ffdef6","#ff9aba")
-        leg(a,83,77,90,92-7*s,84,"#ffe9fc","#ff9aba")
+def footwear(a,role,mode,frame,layer):
+    """Separate far/near legs so the coat sits between the two limbs."""
+    pose=poses_for(mode,frame)[layer]
+    hip_x,hip_y=(65,75) if layer=="far" else (81,76)
+    palette={
+        "bubble-suit":("#d9d6ff","#f5d9ff"),
+        "raincoat-bean":("#fff8ed","#9dd8fa"),
+        "fluffy-bun":("#ffe1f8","#ff9aba")
+    }
+    sock,shoe=palette[role]
+    if layer=="far":
+        sock="#b0a4dc" if role!="raincoat-bean" else "#e9c87c"
+    leg(a,hip_x,hip_y,pose,sock,shoe,mode,near=(layer=="near"))
 
 
 def vehicle(a,mode,frame):
@@ -290,13 +306,10 @@ def vehicle(a,mode,frame):
         a.line([(103,49),(108,49)],"#d7fcff")
         if frame%2:a.sparkle(46,87,"#c9e9ff",1)
     if mode=="skate":
-        for x in (62,93):
-            a.rect((x-10,84,x+5,88),"#6f458c",2,outline="#f8b7e9")
-            a.rect((x-8,82,x+5,85),"#ffc2eb",2,outline="#f8eaff")
-            for dx in (-5,2):
-                a.ellipse((x+dx-3,89,x+dx+3,96),"#6551a4",outline="#ffd1f0")
-                a.ellipse((x+dx-1,91,x+dx+1,94),"#ffd65d")
-        a.line([(42,91),(36,92)],"#f6c7ff")
+        # Wheels are painted with their own moving boots, not nailed to ground.
+        if frame in (1,2,5,6):
+            a.line([(42,92),(37,93)],"#f6c7ff")
+            a.line([(35,91),(31,91)],"#ffb9f0bb")
 
 
 def clothing(a,role):
@@ -354,10 +367,20 @@ def body(role,mode,frame,pack):
     a=Art()
     shadow(a)
     if mode in ("scooter","skate"): vehicle(a,mode,frame)
-    footwear(a,role,mode,frame)
-    if pack:backpack(a,role)
-    clothing(a,role)
-    gloves(a,role,frame,mode)
+    footwear(a,role,mode,frame,"far")
+    # Move the mass of coat/backpack together by one pixel at mid-stride;
+    # support boots remain planted, instead of sliding the entire sprite.
+    bob=round(abs(math.sin(frame*math.tau/FRAME_COUNT)))
+    torso=Art()
+    if pack:backpack(torso,role)
+    clothing(torso,role)
+    a.im.alpha_composite(torso.im,(0,-bob))
+    a.d=ImageDraw.Draw(a.im,"RGBA")
+    footwear(a,role,mode,frame,"near")
+    arms=Art()
+    gloves(arms,role,frame,mode)
+    a.im.alpha_composite(arms.im,(0,-bob))
+    a.d=ImageDraw.Draw(a.im,"RGBA")
     # Stylish motion accents, but transparent and small.
     if frame in (1,5):
         a.rect((37,88,39,89),"#d9e8ffcc")

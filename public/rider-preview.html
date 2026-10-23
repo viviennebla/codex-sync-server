@@ -76,7 +76,7 @@
 </main>
 <script type="module">
 import {loadFrameCatalog,mountFrameRider,disposeFrameRider,preferredRiderRenderer} from "/rider-hybrid-runtime.js";
-const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 角色素材按需播放",skateboard:"滑板 · 角色素材按需播放",surf:"冲浪 · 角色素材按需播放",skate:"轮滑 · 角色素材按需播放"};
+const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 八段支撑 / 抬脚步态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 支撑脚固定 / 后脚蹬地收回",skateboard:"滑板 · 角色素材按需播放",surf:"冲浪 · 角色素材按需播放",skate:"轮滑 · 左右脚交替蹬地 / 轮子随鞋运动"};
 let catalog=null;let selectedState="bike";
 function stateClass(node,state) {
  node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");

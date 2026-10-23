@@ -5,6 +5,7 @@ import {join} from "node:path";
 import {createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
 import {loadRiderAssetRegistry} from "../src/rider-assets.js";
+import {PNG} from "pngjs";
 
 const publicDir=fileURLToPath(new URL("../public",import.meta.url));
 const expected={
@@ -38,5 +39,28 @@ test("only selected approved mascots are published with real animation PNGs",asy
    }
    assert.ok(new Set(hashes).size>=4,id+"/"+transport+": needs real animation frames");
   }
+ }
+});
+
+test("all selected movement packs change the actual boot and wheel pixel region",async()=>{
+ const selected=[["bubble-suit","walk"],["bubble-suit","scooter"],
+                 ["raincoat-bean","walk"],["fluffy-bun","walk"],["fluffy-bun","skate"]];
+ for(const [id,transport] of selected){
+  const frames=[];
+  for(let i=0;i<8;i++){
+   const relative="riders/frames/"+id+"/"+transport+"/plain/"+String(i).padStart(2,"0")+".png";
+   const bytes=await readFile(join(publicDir,relative));
+   frames.push(PNG.sync.read(bytes).data);
+  }
+  const changed=frames.map((p,i)=>{
+   const next=frames[(i+1)%frames.length];let difference=0;
+   // Shoes, contact shadow and (for skate) foot-bound wheels are below the coat.
+   for(let y=78;y<99;y++)for(let x=37;x<111;x++){
+    const z=(y*128+x)*4;
+    for(let c=0;c<4;c++)if(p[z+c]!==next[z+c]){difference++;break;}
+   }
+   return difference;
+  });
+  assert.ok(changed.every(n=>n>=70),id+"/"+transport+" has a frozen foot-frame transition: "+changed.join(","));
  }
 });
