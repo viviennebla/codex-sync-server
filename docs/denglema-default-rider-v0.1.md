@@ -151,3 +151,13 @@ Windows Chrome 的 SVG/PNG 同屏验收表明：旧 `rider-runtime.js` 是由 SV
 - 背包、原角色面罩头像/Emoji、皇冠在两种运行时切换时保留。
 - Windows Chrome 在 1440 与 375px 下，检查了连续轮轴旋转、脚部位移、真实动画切换和资源解码。PNG/Rig 并排和切换截图留在 Windows 工作区的 `docs/qa/riders/`（机器未连接时不宣称已同步到 GitHub）。
 - 新角色下一轮脚部自然度优化，应先改善对应角色的原创姿态，不能套用头盔角色的手脚和装束。
+
+## 13. 2026-10-23 头盔通勤客 walk 鞋尖反向修复
+
+问题：旧骨架 walk 在 `walkBackLeading` 改变时，对 `leg_front` 和 `leg_back` 两张源图**同时水平镜像**，使鞋尖在半个步态周期中突然掉头，肉眼看起来像双脚反穿／别着走。并非渲染器加载失败。
+
+- 不调整已验收的 `bike` 踩踏、车轮与场景坐标；只修改 `public/rider-runtime.js` 的 `walk` 源鞋朝向：原本向右的前脚不镜像，原本向左的后脚在 walk 时保持镜像。
+- 保留原有支撑相／摆动相关键帧、脚掌高度矫正、前后腿交替与头部外观；`walkLegTransform` 仍补偿镜像的关节位移，避免脚掌突然瞬移。
+- Windows `LAPTOP-PJM7MTNJ` 上用真实 Chrome 采集 12 帧连续对比，证实鞋尖不再半路翻转；采样 25 次期间，两条腿各有 16 种不同姿态，前脚不镜像、后脚始终镜像。切至 bike 后两只脚恢复不镜像，车轮仍转动，切至 ⑥ 软萌团子正常走 PNG 分发。
+- 截图：`docs/qa/riders/helmet-walk-toe-forward-windows.png`（实际 HTML）；逐帧拼图：`docs/qa/riders/helmet-walk-toe-forward-contact-windows.png`。
+- 以真实动态脚尖连续性为验收指标，不能只凭一帧截图认定步态已修好。

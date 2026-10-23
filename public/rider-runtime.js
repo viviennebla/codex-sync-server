@@ -275,6 +275,13 @@ export function walkBackLeading(rig, pose) {
 }
 
 
+// Sprite sources use opposite toe directions. For rightward walking, only
+// the original left-facing rear boot needs mirroring. Never switch orientation
+// based on which boot happens to be farther ahead mid-stride.
+export function shouldMirrorWalkBoot(name, walking = true) {
+  return walking && name === "leg_back";
+}
+
 export function advanceWheel(angleDegrees, speedDegreesPerSecond, elapsedMs) {
   return (angleDegrees + speedDegreesPerSecond * Math.max(0, elapsedMs) / 1000) % 360;
 }
@@ -427,22 +434,22 @@ function drawFrame(entry, now) {
     for (const name of ["head", "body", "backpack"]) {
       transform(get(name), 0, torsoBob);
     }
-    const backLeading = walking && walkBackLeading(rig, pose);
     for (const [name, key] of [["leg_front", "front"], ["leg_back", "back"]]) {
-      // Front art has a right-facing shoe; rear art has a left-facing shoe.
-      // When the rear leg overtakes the front leg, mirror both images so the
-      // leading toe always faces forward and the trailing toe points back.
-      // Only their image contents flip; the leg group stays hip-anchored.
+      // Both boots point in the rider's travel direction throughout the gait.
+      // The front-source boot already faces right. The back-source boot faces
+      // left, so mirror that source once for walk; never flip both boots when
+      // their screen X ordering crosses. That caused the visible backward shoe.
+      const mirror = shouldMirrorWalkBoot(name, walking);
       const image = get(name)?.querySelector("image");
       const [pivotX] = pivot(name);
-      const mirrorValue = backLeading ? `translate(${2 * pivotX} 0) scale(-1 1)` : "";
+      const mirrorValue = mirror ? `translate(${2 * pivotX} 0) scale(-1 1)` : "";
       if (mirrorValue) {
         if (image?.getAttribute("transform") !== mirrorValue) image?.setAttribute("transform", mirrorValue);
       } else {
-        image?.removeAttribute("transform"); // Restore original art for walk's other half and bike.
+        image?.removeAttribute("transform");
       }
       const [dx, dy, angle] = walking
-        ? walkLegTransform(rig, name, pose[key], backLeading)
+        ? walkLegTransform(rig, name, pose[key], mirror)
         : pose[key];
       transform(get(name), dx, dy, angle, ...pivot(name));
     }
