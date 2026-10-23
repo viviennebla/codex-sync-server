@@ -9,7 +9,7 @@ import {PNG} from "pngjs";
 
 const publicDir=fileURLToPath(new URL("../public",import.meta.url));
 const expected={
- "helmet-commuter":["bike","walk"],
+ "helmet-commuter":["bike","walk","scooter","skateboard","surf","skate"],
  "bubble-suit":["walk","scooter"],
  "raincoat-bean":["walk"],
  "fluffy-bun":["walk","skate"]

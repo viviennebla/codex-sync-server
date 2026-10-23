@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "office-surfboard",
+  "label": "冲浪板",
+  "transport": "surf",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "frames": 6,
+  "fps": 9,
+  "layers": {
+    "back": [
+      "back/00.png",
+      "back/01.png",
+      "back/02.png",
+      "back/03.png",
+      "back/04.png",
+      "back/05.png"
+    ]
+  },
+  "glide": {
+    "frames": 2,
+    "fps": 4,
+    "layers": {
+      "back": [
+        "glide/back/00.png",
+        "glide/back/01.png"
+      ]
+    }
+  }
+}

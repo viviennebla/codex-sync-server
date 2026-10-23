@@ -89,8 +89,36 @@ export async function loadRiderAssetRegistry(publicDir, options={}) {
         layers[part].push(url);
       }
     }
+    // Optional coasting asset sequence: same registered PNG-only contract.
+    // Keep existing one-state vehicle packs fully compatible.
+    let glide=null;
+    if(vehicle.glide!==undefined){
+      const g=vehicle.glide;
+      if(!isObject(g)||!Number.isInteger(g.frames)||g.frames<1||g.frames>24||
+         !Number.isFinite(g.fps)||g.fps<1||g.fps>24||
+         !isObject(g.layers)||!Array.isArray(g.layers.back)||g.layers.back.length!==g.frames)
+        fail("invalid vehicle glide "+id);
+      const alternate={};
+      for(const part of ["back","front"]){
+        const paths=g.layers[part]||[];
+        if(!Array.isArray(paths)||(paths.length!==0&&paths.length!==g.frames))
+          fail("invalid vehicle glide layer "+id+"/"+part);
+        alternate[part]=[];
+        for(const relative of paths){
+          const name=checkEntry(relative),url="/riders/vehicles/"+id+"/"+name;
+          if(!allowedFiles.has(url)){
+            const file=join(publicDir,url.slice(1));
+            totalBytes+=await inspectPNG(file,options);
+            if(++totalFiles>800||totalBytes>64*1024*1024)fail("catalog exceeds asset size/count limit");
+            digest.update(url).update(await readFile(file));allowedFiles.add(url);
+          }
+          alternate[part].push(url);
+        }
+      }
+      glide={frames:g.frames,fps:g.fps,layers:alternate};
+    }
     allowedFiles.add(path);
-    vehicles[id]={id,label:vehicle.label,transport:vehicle.transport,frames:vehicle.frames,fps:vehicle.fps,layers};
+    vehicles[id]={id,label:vehicle.label,transport:vehicle.transport,frames:vehicle.frames,fps:vehicle.fps,layers,...(glide?{glide}:{})};
   }
   for(const [id, path] of entries){
     if(!IDS.test(id) || path!==ROOT+id+"/manifest.json") fail("invalid preset registration "+id);
@@ -135,13 +163,30 @@ export async function loadRiderAssetRegistry(publicDir, options={}) {
         layers[variant]=[];
         for(const path of paths) layers[variant].push(await addAsset(path));
       }
+      let glide=null;
+      if(animation.glide!==undefined){
+        const g=animation.glide;
+        if(!isObject(g)||!Number.isInteger(g.frames)||g.frames<1||g.frames>24||
+           !Number.isFinite(g.fps)||g.fps<1||g.fps>24||
+           !isObject(g.layers)||!Array.isArray(g.layers.plain)||
+           (g.layers.pack!==undefined&&!Array.isArray(g.layers.pack)))
+          fail("invalid rider glide "+id+"/"+mode);
+        const alternate={};
+        for(const variant of ["plain","pack"]){
+          const paths=g.layers[variant]||g.layers.plain;
+          if(paths.length!==g.frames)fail("invalid rider glide frames "+id+"/"+mode+"/"+variant);
+          alternate[variant]=[];
+          for(const path of paths)alternate[variant].push(await addAsset(path));
+        }
+        glide={frames:g.frames,fps:g.fps,layers:alternate};
+      }
       const o=animation.head_offset||{x:0,y:0};
       if(!Number.isInteger(o.x)||!Number.isInteger(o.y)||Math.abs(o.x)>40||Math.abs(o.y)>40) fail("invalid head offset "+id+"/"+mode);
       const vehicleId=animation.vehicle_id||null;
       if(vehicleId&&(!vehicles[vehicleId]||vehicles[vehicleId].transport!==mode))
         fail("unregistered or incompatible vehicle "+id+"/"+mode);
       transports[mode]={frames:animation.frames,fps:animation.fps,layers,head_offset:o,vehicle_id:vehicleId,
-        supports_backpack:Boolean(animation.layers.pack)};
+        supports_backpack:Boolean(animation.layers.pack),...(glide?{glide}:{})};
     }
     allowedFiles.add(path);
     const emoji=preset.emoji_head||{left_percent:55,top_percent:16,font_size_px:39};

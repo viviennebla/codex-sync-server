@@ -7,5 +7,10 @@
     "raincoat-bean": "/riders/frames/raincoat-bean/manifest.json",
     "fluffy-bun": "/riders/frames/fluffy-bun/manifest.json"
   },
-  "vehicles": {}
+  "vehicles": {
+    "city-scooter": "/riders/vehicles/city-scooter/manifest.json",
+    "street-skateboard": "/riders/vehicles/street-skateboard/manifest.json",
+    "office-surfboard": "/riders/vehicles/office-surfboard/manifest.json",
+    "roller-skates": "/riders/vehicles/roller-skates/manifest.json"
+  }
 }

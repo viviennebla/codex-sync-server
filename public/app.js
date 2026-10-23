@@ -1,4 +1,5 @@
 import { mountThemeLayers } from "./theme-runtime.js";
+import { filterEventFeed } from "./event-feed-filter.js";
 import { planRiderPlacement, canShiftRider } from "./scene-placement.js";
 import { adjacentSameRoadPairs, nextAmbientOffset } from "./scene-motion.js";
 import { syncSceneBubbles } from "./scene-bubble-runtime.js";
@@ -44,6 +45,8 @@ const resetBegButton = $("resetBegButton");
 const resetBegCount = $("resetBegCount");
 const eventRail = $("eventRail");
 const eventList = $("eventList");
+const eventFilter = $("eventFilter");
+let latestEventRows = [];
 const eventComposer = $("eventComposer");
 const eventMessageInput = $("eventMessageInput");
 const eventSendButton = $("eventSendButton");
@@ -571,16 +574,17 @@ function celebrateNewAchievements(events) {
   showToast("✨ " + (event.message || "解锁新成就"), 3800);
 }
 
-function renderEvents(rows) {
+function renderEventList() {
   if (!eventList) return;
-  const values = Array.isArray(rows) ? rows : [];
-  celebrateNewAchievements(values);
+  const values = filterEventFeed(latestEventRows, eventFilter?.value || "all");
   eventList.replaceChildren();
 
   if (!values.length) {
     const empty = document.createElement("div");
     empty.className = "event-empty";
-    empty.textContent = "24 小时内还很安静。";
+    empty.textContent = latestEventRows.length
+      ? "这个分类暂时没有动态。"
+      : "24 小时内还很安静。";
     eventList.appendChild(empty);
   }
 
@@ -617,7 +621,14 @@ function renderEvents(rows) {
     item.append(icon, body);
     eventList.appendChild(item);
   });
+}
 
+function renderEvents(rows) {
+  if (!eventList) return;
+  const values = Array.isArray(rows) ? rows : [];
+  latestEventRows = values;
+  celebrateNewAchievements(values);
+  renderEventList();
   eventRail.classList.remove("hidden");
   syncRiderCommentBubbles(values);
 }
@@ -2493,6 +2504,8 @@ copyBindCommandButton.addEventListener("click", async () => {
 });
 
 resetBegButton?.addEventListener("click", () => { void begForReset(); });
+
+eventFilter?.addEventListener("change", renderEventList);
 
 eventComposer?.addEventListener("submit", (event) => {
   event.preventDefault();

@@ -1455,6 +1455,10 @@ const server = createServer(async (req, res) => {
       await sendStatic(res, "app.js", "text/javascript; charset=utf-8");
       return;
     }
+    if (method === "GET" && url.pathname === "/event-feed-filter.js") {
+      await sendStatic(res, "event-feed-filter.js", "text/javascript; charset=utf-8");
+      return;
+    }
     if (method === "GET" && url.pathname === "/profile.js") {
       await sendStatic(res, "profile.js", "text/javascript; charset=utf-8");
       return;
