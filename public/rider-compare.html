@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>蹬了吗 · 骨架 VS PNG 动画对比</title><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/rider-frame-runtime.css"><link rel="stylesheet" href="/rider-runtime.css">
+<style>
+*{box-sizing:border-box}body{font:16px/1.5 system-ui,sans-serif;margin:0;background:#151b39;color:#f8eefd}main{max-width:1150px;margin:auto;padding:22px}h1{font-size:26px;margin:0 0 8px}p{color:#c9b7e9} .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.panel{background:#29224b;border:1px solid #7560a5;border-radius:18px;overflow:hidden}.panel h2{padding:13px 16px;margin:0;font-size:17px}.stage{position:relative;height:310px;overflow:hidden;background:linear-gradient(#342653 58%,#323158 58% 61%,#252b4c 61%)}.stage:after{content:"";position:absolute;top:76%;height:3px;left:0;right:0;background:repeating-linear-gradient(90deg,#a399ce 0 35px,transparent 35px 62px)}.rider{position:absolute;left:50%;top:54%;width:166px;height:136px;transform:translate(-50%,-40%) scale(1.8);transform-origin:50% 70%}.rider-motion{position:absolute;inset:0}.detail{font-size:13px;padding:12px 18px;color:#d7c6f2}.buttons{display:flex;gap:10px;margin:18px 0}button{border:1px solid #8b75bc;background:#493869;color:white;padding:10px 18px;border-radius:10px;cursor:pointer}button[aria-pressed="true"]{background:#f6bb7e;color:#251b41}footer{color:#cbb6e6;font-size:13px;padding:16px 0}@media(max-width:750px){.row{grid-template-columns:1fr}.rider{transform:translate(-50%,-40%) scale(1.6)}}
+</style></head><body><main><h1>默认头盔角色 · 两种真实运行时对照</h1><p>左：12 帧 PNG。右：原始 SVG 容器 + WebP 部件，连续驱动脚踏和车轮。两种渲染器分别运行在真实 Runtime 中，并排观察动作。</p>
+<div class="buttons"><button data-mode="bike" aria-pressed="true">骑行</button><button data-mode="walk" aria-pressed="false">步行</button></div>
+<div class="row"><section class="panel"><h2>逐帧 PNG · 骑行 12 FPS / 步行 9 FPS</h2><div class="stage"><div class="rider" id="png"><div class="rider-motion"></div></div></div><div class="detail" id="pngInfo">等待加载</div></section>
+<section class="panel"><h2>SVG 骨架 + WebP · 连续动画</h2><div class="stage"><div class="rider" id="svg"><div class="rider-motion"></div></div></div><div class="detail" id="svgInfo">等待加载</div></section></div>
+<footer>仅用于角色美术比较；用 Chrome 查看动态细节。</footer></main>
+<script type="module">
+import {loadFrameCatalog,mountFrameRider} from "/rider-frame-runtime.js";
+import {loadRiderCatalog,mountRiderSprite} from "/rider-runtime.js";
+const left=document.getElementById("png"),right=document.getElementById("svg");
+try{
+ const [png,svg]=await Promise.all([loadFrameCatalog(),loadRiderCatalog()]);
+ let current="bike";
+ function show(mode){current=mode;
+  mountFrameRider(left,mode,png,{preset:"helmet-commuter",head_mode:"art",backpack:true});
+  mountRiderSprite(right,mode,svg);
+  document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===mode)));
+ }
+ show("bike");
+ document.querySelector(".buttons").addEventListener("click",e=>{let b=e.target.closest("button[data-mode]");if(b)show(b.dataset.mode)});
+ setInterval(()=>{
+  document.getElementById("pngInfo").textContent="当前帧："+(left.querySelector(".frame-body")?.getAttribute("src")?.split("/").pop()||"加载中");
+  document.getElementById("svgInfo").textContent=current==="bike"
+    ?"车轮角度："+(right.querySelector(".pixel-wheel-front")?.getAttribute("transform")||"加载中")
+    :"腿部姿态："+(right.querySelector(".sprite-leg_front")?.getAttribute("transform")||"加载中");
+ },200);
+}catch(error){document.getElementById("svgInfo").textContent="加载失败："+error.message;console.error(error);}
+</script></body></html>

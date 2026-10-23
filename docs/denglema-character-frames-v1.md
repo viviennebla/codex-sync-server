@@ -121,3 +121,16 @@ CI 在 `npm test` 之前执行该校验。服务端只开放 Manifest 实际声�
 - **合并门禁**：`.github/workflows/ci.yml`
 
 以后新增普通人物或载具，应**只修改素材仓库部分、注册表和文档**；不应该为每个新角色都修改服务器白名单、角色选择硬编码或渲染器。
+
+## 2026-10-23 ②④⑥ 共用步态曲线（Windows HTML 验收）
+
+本轮不改变审定稿角色外观、头部表情、载具类型或 128×100 透明 RGBA8 Rider Pack 合同；只重新绘制三套角色的腿部逐帧 PNG。
+
+- `scripts/rider_gait.py` 定义 8 帧公共支撑相／回摆相，前后腿反相 4 帧。**支撑脚着地**，摆动脚先抬起、前摆、再落地；膝盖 X/Y 独立参与轨迹。
+- `walk`：泡泡套装客、雨衣豆豆客、软萌团子客复用同一套八段步态，但鞋子、服装、颜色仍各自独立。
+- `scooter`：泡泡套装客前脚固定站在滑板车踏板上，后脚完成接地后蹬／抬脚收回的循环。
+- `skate`：软萌团子客左右脚轮流支撑与回摆，**轮子随每只鞋的脚踝位置移动**；不再让两组轮子固定在地面与角色腿分离。
+- 衣服和背包有约 1px 的阶段性重心起伏，不让整张人物 PNG 左右滑动伪装成行走；鞋尖始终保持右向。
+- 原有 `helmet-commuter` 的连续 SVG 容器 + WebP 骨架动画不动；`public/rider-frame-runtime.js` 渲染器接口不变，新素材通过已注册 Manifest 自动加载并更新 `asset_revision`。
+- 验证：`python -m unittest discover -s scripts -p test_rider_gait.py` 的 4 个步态模型测试通过；Node 相关回归包含脚部像素 ROI 相邻帧差异检查，23/23 通过；Windows Chrome 的 ②walk/scooter、④walk、⑥walk/skate 五种组合均观察到八个完整 PNG 帧，375px 无横向溢出、资源和 JS 错误为 0。
+- 浏览器截图集中在 `docs/qa/riders/motion-*-windows.png`，逐帧拼图在 `docs/qa/riders/selected-motion-contact-windows.png`。这些是实际程序生成 PNG/Chrome 截图，不是美术概念图。

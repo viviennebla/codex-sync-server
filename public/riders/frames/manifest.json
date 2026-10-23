@@ -2,7 +2,10 @@
   "schema_version": 2,
   "default_preset": "helmet-commuter",
   "presets": {
-    "helmet-commuter": "/riders/frames/helmet-commuter/manifest.json"
+    "helmet-commuter": "/riders/frames/helmet-commuter/manifest.json",
+    "bubble-suit": "/riders/frames/bubble-suit/manifest.json",
+    "raincoat-bean": "/riders/frames/raincoat-bean/manifest.json",
+    "fluffy-bun": "/riders/frames/fluffy-bun/manifest.json"
   },
   "vehicles": {
     "city-scooter": "/riders/vehicles/city-scooter/manifest.json",

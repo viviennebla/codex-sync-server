@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "raincoat-bean",
+  "label": "雨衣豆豆客",
+  "description": "2026-10-22 审定稿：精细像素人物，逐帧绘制，透明分层。",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "heads": {
+    "neutral": "heads/neutral.png",
+    "happy": "heads/happy.png",
+    "focused": "heads/focused.png",
+    "tired": "heads/tired.png"
+  },
+  "emoji_head": {
+    "left_percent": 68,
+    "top_percent": 45,
+    "font_size_px": 18,
+    "visor_width_px": 22,
+    "visor_height_px": 24
+  },
+  "fallback_transport": "walk",
+  "transports": {
+    "walk": {
+      "fps": 8,
+      "frames": 8,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png",
+          "walk/plain/06.png",
+          "walk/plain/07.png"
+        ],
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png",
+          "walk/pack/06.png",
+          "walk/pack/07.png"
+        ]
+      }
+    }
+  }
+}

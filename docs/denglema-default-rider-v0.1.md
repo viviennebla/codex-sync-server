@@ -130,3 +130,34 @@ public/riders/
 六帧逐帧检查后确认前后脚虽然交换 X 位置，但 **`leg_front.webp` 的鞋尖固定向右，`leg_back.webp` 的鞋尖固定向左**，因此换到后方的脚不自然。现在步行时按当前两脚的实际屏幕 X 顺序确定哪只脚领先，必要时只水平镜像腿图片内容，使**领先脚朝前、后摆脚朝后**；并校正镜像导致的脚掌位移，保持接地点不变。骑行仍用原始腿图片，不引入新的载具绑定逻辑。
 
 [查看更新后的六个关键姿态（真实浏览器截图）](qa/riders/helmet-walk-six-keyframes.png)。逐帧数据、镜像前后脚坐标与骑行恢复都已纳入验收；动态离线 HTML 继续使用 [原入口](previews/helmet-commuter-motion-qa.html)。
+
+## 11. 2026-10-23 PNG 踩踏轨迹回归修复
+
+在 Rider Pack #81 将默认角色切换为 6 帧 PNG 后，原来由 `pedalTargets()` 驱动的两脚绕曲柄运动被简化成了左右 ±5px 的正弦偏移；默认角色看起来像把脚固定在横向滑动的踏板上。旧 SVG Rig 路径保留在仓库里，但不再作为首页人物渲染器使用。
+
+- `scripts/export-rider-frames.py` 重新复用 `compact-side-right-v1.json` 中的 `crank.center/radius` 轨迹，前后脚按严格 180° 相位差逐帧输出。
+- bike 的每个 plain/pack 序列改为 **12 帧、12 FPS**，wheel 和踏板随相位一起烘焙到 PNG；walk 六帧与既有头部素材不变。
+- 自行车的 SVG 源文件不进入运行时；为方便 Windows 上不安装 Cairo 也能重新导出，提供由相同 SVG 渲染的 `bike-frame.png`、`bike-wheel.png` 两份构建输入。
+- Chrome 在 `LAPTOP-PJM7MTNJ` 的 `/rider-preview?preset=helmet-commuter&mode=bike` 验收，实际 frame-body URL 随时间变化、128×100 PNG 正确解码，截图归档于 `docs/qa/riders/helmet-pedaling-restored-windows.png`。
+- 这是 PNG 离散 12 帧复原，不等同于旧运行时的无限细分实时关节/车轮旋转；若需要更平滑的轮轴运动，应在未来单独升级 PNG/Vehicle Pack 合同，而不是重新启用已停用的 SVG runtime。
+
+## 12. 按动作自然程度选择渲染器（覆盖第 11 节的“只用 PNG”决定）
+
+Windows Chrome 的 SVG/PNG 同屏验收表明：旧 `rider-runtime.js` 是由 SVG 容器定位 WebP 人物部件的骨架动画，而非将人物改成简陋 SVG 图形。原头盔角色的前后脚、车轮能连续运动；新发布的三套精细人物保持 PNG 外观。
+
+- `public/rider-hybrid-runtime.js` 对 helmet-commuter 的 bike、walk 使用原有 WebP + SVG Rig；泡泡套装客、雨衣豆豆客、软萌团子客以及其余未配置骨架的交通方式使用 PNG。
+- 旧 Rig 首次加载时仍显示 PNG，加载失败时继续显示 PNG。代码不会同时绘制两套人物。
+- 同一套分发器服务首页和 `/rider-preview`，可在 `/rider-compare.html` 切换 bike/walk，对照旧 Rig 与 PNG。
+- 背包、原角色面罩头像/Emoji、皇冠在两种运行时切换时保留。
+- Windows Chrome 在 1440 与 375px 下，检查了连续轮轴旋转、脚部位移、真实动画切换和资源解码。PNG/Rig 并排和切换截图留在 Windows 工作区的 `docs/qa/riders/`（机器未连接时不宣称已同步到 GitHub）。
+- 新角色下一轮脚部自然度优化，应先改善对应角色的原创姿态，不能套用头盔角色的手脚和装束。
+
+## 13. 2026-10-23 头盔通勤客 walk 鞋尖反向修复
+
+问题：旧骨架 walk 在 `walkBackLeading` 改变时，对 `leg_front` 和 `leg_back` 两张源图**同时水平镜像**，使鞋尖在半个步态周期中突然掉头，肉眼看起来像双脚反穿／别着走。并非渲染器加载失败。
+
+- 不调整已验收的 `bike` 踩踏、车轮与场景坐标；只修改 `public/rider-runtime.js` 的 `walk` 源鞋朝向：原本向右的前脚不镜像，原本向左的后脚在 walk 时保持镜像。
+- 保留原有支撑相／摆动相关键帧、脚掌高度矫正、前后腿交替与头部外观；`walkLegTransform` 仍补偿镜像的关节位移，避免脚掌突然瞬移。
+- Windows `LAPTOP-PJM7MTNJ` 上用真实 Chrome 采集 12 帧连续对比，证实鞋尖不再半路翻转；采样 25 次期间，两条腿各有 16 种不同姿态，前脚不镜像、后脚始终镜像。切至 bike 后两只脚恢复不镜像，车轮仍转动，切至 ⑥ 软萌团子正常走 PNG 分发。
+- 截图：`docs/qa/riders/helmet-walk-toe-forward-windows.png`（实际 HTML）；逐帧拼图：`docs/qa/riders/helmet-walk-toe-forward-contact-windows.png`。
+- 以真实动态脚尖连续性为验收指标，不能只凭一帧截图认定步态已修好。

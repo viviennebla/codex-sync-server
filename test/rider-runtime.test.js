@@ -3,7 +3,7 @@ import { readFile, readdir, access } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, walkLegTransform, walkBackLeading, advanceWheel } from "../public/rider-runtime.js";
+import { frameIndex, resolveSpriteState, resolveEmotion, pedalTargets, walkPose, walkLegTransform, walkBackLeading, shouldMirrorWalkBoot, advanceWheel } from "../public/rider-runtime.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "public");
 const riderDir = join(root, "riders/presets/helmet-commuter");
@@ -34,7 +34,7 @@ test("art manifest lists independent transparent resources and has no handwritte
   const names = (await readdir(riderDir)).sort();
   assert.deepEqual(names, [
     ...parts.map(name => name + ".webp"),
-    ...heads, "bike-frame.svg", "bike-wheel.svg",
+    ...heads, "bike-frame.svg", "bike-wheel.svg", "bike-frame.png", "bike-wheel.png",
     "scooter.svg", "skateboard.svg", "surf.svg", "skate.svg", "manifest.json"
   ].sort());
   for (const name of parts) {
@@ -180,13 +180,23 @@ test("every interpolated phase has a grounded support foot and no seam jump", as
   }
   const runtime = await readFile(join(root,"rider-runtime.js"),"utf8");
   assert.match(runtime,/const torsoBob = walking/);
-  assert.match(runtime,/walkLegTransform\(rig, name, pose\[key\], backLeading\)/);
+  assert.match(runtime,/walkLegTransform\(rig, name, pose\[key\], mirror\)/);
 });
 
-test("trailing shoes face backwards after front/back crossing without foot teleporting", async () => {
+test("right-facing walking boots never flip direction mid-stride; mirrored rear foot stays planted", async () => {
   const rig = await loadJson(join(root, "riders/rigs/compact-side-right-v1.json"));
   assert.equal(walkBackLeading(rig, walkPose(rig, 0)), false);
   assert.equal(walkBackLeading(rig, walkPose(rig, 3)), true);
+  const leadingStates = new Set();
+  for (const frame of Array.from({length:120}, (_, i)=>i/20)) {
+    const pose=walkPose(rig,frame);
+    leadingStates.add(walkBackLeading(rig,pose));
+    // All 120 interpolated poses preserve the source-art toe direction.
+    assert.equal(shouldMirrorWalkBoot("leg_front"),false);
+    assert.equal(shouldMirrorWalkBoot("leg_back"),true);
+    assert.equal(shouldMirrorWalkBoot("leg_back",false),false);
+  }
+  assert.deepEqual([...leadingStates].sort(),[false,true], "both crossing orders occur without swapping the shoe art");
   const limbKeys = [["leg_front", "front"], ["leg_back", "back"]];
   for (const frame of [0, 1, 2, 2.5, 3, 4, 5, 5.5]) {
     const pose = walkPose(rig, frame);
@@ -206,6 +216,8 @@ test("trailing shoes face backwards after front/back crossing without foot telep
   }
   const runtime = await readFile(join(root,"rider-runtime.js"),"utf8");
   assert.match(runtime, /Bike poses always use their original unmirrored boot images/);
+  assert.match(runtime, /shouldMirrorWalkBoot\(name, walking\)/);
+  assert.doesNotMatch(runtime, /const mirrorValue = backLeading/);
 });
 
 test("pedal targets are antipodal; front and rear wheels move and brake independently of feet", async () => {
