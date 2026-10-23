@@ -23,8 +23,8 @@
   "fallback_transport": "walk",
   "transports": {
     "bike": {
-      "fps": 10,
-      "frames": 6,
+      "fps": 12,
+      "frames": 12,
       "head_offset": {
         "x": 0,
         "y": -14
@@ -36,7 +36,13 @@
           "bike/pack/02.png",
           "bike/pack/03.png",
           "bike/pack/04.png",
-          "bike/pack/05.png"
+          "bike/pack/05.png",
+          "bike/pack/06.png",
+          "bike/pack/07.png",
+          "bike/pack/08.png",
+          "bike/pack/09.png",
+          "bike/pack/10.png",
+          "bike/pack/11.png"
         ],
         "plain": [
           "bike/plain/00.png",
@@ -44,7 +50,13 @@
           "bike/plain/02.png",
           "bike/plain/03.png",
           "bike/plain/04.png",
-          "bike/plain/05.png"
+          "bike/plain/05.png",
+          "bike/plain/06.png",
+          "bike/plain/07.png",
+          "bike/plain/08.png",
+          "bike/plain/09.png",
+          "bike/plain/10.png",
+          "bike/plain/11.png"
         ]
       }
     },

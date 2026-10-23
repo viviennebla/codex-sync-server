@@ -1,7 +1,6 @@
 from PIL import Image
 import json,math,io
 from pathlib import Path
-import cairosvg
 ROOT=Path(__file__).resolve().parents[1]
 preset=ROOT/'public/riders/presets/helmet-commuter'
 out=ROOT/'public/riders/frames/helmet-commuter'
@@ -19,6 +18,15 @@ def place(canvas,n,dx=0,dy=0,angle=0):
     canvas.alpha_composite(im,(round(g['x']+dx),round(g['y']+dy)))
 bike_geom=rig['vehicles']['bike']
 def raster(svg):
+    # Reviewable pixel sources: pre-rasterized from the same SVG source using
+    # Chromium. No native Cairo DLL or SVG rendering is needed at runtime.
+    candidate=preset/(Path(svg).stem+'.png')
+    if candidate.exists():
+        return Image.open(candidate).convert('RGBA')
+    try:
+        import cairosvg
+    except (ImportError,OSError) as error:
+        raise RuntimeError('No baked bike PNG and CairoSVG unavailable: '+str(svg)) from error
     return Image.open(io.BytesIO(cairosvg.svg2png(url=str(preset/svg)))).convert('RGBA')
 bike_frame=raster('bike-frame.svg')
 bike_wheel=raster('bike-wheel.svg')
@@ -32,9 +40,29 @@ def vehicle(canvas,phase):
     bg.alpha_composite(bike_frame.resize((124,64),Image.Resampling.LANCZOS))
     bg=bg.resize((bike_geom['width'],bike_geom['height']),Image.Resampling.LANCZOS)
     canvas.alpha_composite(bg,(bike_geom['x'],bike_geom['y']))
+BIKE_FRAMES=12
+WALK_FRAMES=6
+
+def pedal_pose(phase):
+    # Preserve the original approved pedalTargets geometry from rider-runtime:
+    # opposite feet circle the same crank with an exact 180-degree phase shift.
+    crank=bike_geom['crank']
+    cx,cy=crank['center'];rx,ry=crank['radius']
+    a=phase*math.tau
+    return {'leg_front':(cx+rx*math.cos(a),cy+ry*math.sin(a)),
+            'leg_back': (cx-rx*math.cos(a),cy-ry*math.sin(a))}
+
+def pedal_leg(canvas,name,target,lift):
+    g=rig['limbs'][name]
+    foot_x=g['x']+g['foot_anchor'][0]
+    foot_y=g['y']+g['foot_anchor'][1]
+    # The original runtime applies -12 to the core and compensates the visual
+    # distance halfway towards the pedal, yielding pedal world Y + lift / 2.
+    place(canvas,name,dx=target[0]-foot_x,dy=target[1]+lift/2-foot_y)
+
 def export_frame(mode,i,backpack):
     c=Image.new('RGBA',(W,H))
-    phase=i/6
+    phase=i/(BIKE_FRAMES if mode=='bike' else WALK_FRAMES)
     if mode=='bike':vehicle(c,phase)
     if mode=='walk':
         x=math.sin(phase*2*math.pi)
@@ -46,24 +74,19 @@ def export_frame(mode,i,backpack):
         place(c,'arm_front',dx=3*x,angle=13*x)
     else:
         lift=-12
-        b=math.sin(phase*2*math.pi)
-        place(c,'leg_back',dx=5*b,dy=lift+3*b)
+        feet=pedal_pose(phase)
+        pedal_leg(c,'leg_back',feet['leg_back'],lift)
         if backpack:place(c,'backpack',dy=lift)
         place(c,'arm_back',dx=12,dy=lift)
         place(c,'body',dy=lift)
-        place(c,'leg_front',dx=-5*b,dy=lift-3*b)
+        pedal_leg(c,'leg_front',feet['leg_front'],lift)
         place(c,'arm_front',dx=12,dy=lift)
     d=out/mode/('pack' if backpack else 'plain')
     d.mkdir(parents=True,exist_ok=True)
     c.save(d/f'{i:02d}.png',optimize=True)
-for mode in ['walk','bike']:
+for mode in ['bike']:
     for pack in [False,True]:
-        for i in range(6):export_frame(mode,i,pack)
-for emotion,source in [('neutral','head'),('happy','head-happy'),('focused','head-focused'),('tired','head-tired')]:
-    im=Image.open(preset/(source+'.webp')).convert('RGBA')
-    g=rig['slots']['head']
-    im=im.resize((g['width'],g['height']),Image.Resampling.LANCZOS)
-    c=Image.new('RGBA',(W,H));c.alpha_composite(im,(g['x'],g['y']))
-    hd=out/'heads';hd.mkdir(exist_ok=True)
-    c.save(hd/(emotion+'.png'),optimize=True)
+        for i in range(BIKE_FRAMES):export_frame(mode,i,pack)
+# walk art is intentionally left untouched: this patch only restores pedaling.
+# Expression heads and the original walk PNGs are not regenerated.
 print('exported', len(list(out.rglob('*.png'))),'PNG frames')

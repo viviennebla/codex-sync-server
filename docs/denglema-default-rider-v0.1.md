@@ -130,3 +130,13 @@ public/riders/
 六帧逐帧检查后确认前后脚虽然交换 X 位置，但 **`leg_front.webp` 的鞋尖固定向右，`leg_back.webp` 的鞋尖固定向左**，因此换到后方的脚不自然。现在步行时按当前两脚的实际屏幕 X 顺序确定哪只脚领先，必要时只水平镜像腿图片内容，使**领先脚朝前、后摆脚朝后**；并校正镜像导致的脚掌位移，保持接地点不变。骑行仍用原始腿图片，不引入新的载具绑定逻辑。
 
 [查看更新后的六个关键姿态（真实浏览器截图）](qa/riders/helmet-walk-six-keyframes.png)。逐帧数据、镜像前后脚坐标与骑行恢复都已纳入验收；动态离线 HTML 继续使用 [原入口](previews/helmet-commuter-motion-qa.html)。
+
+## 11. 2026-10-23 PNG 踩踏轨迹回归修复
+
+在 Rider Pack #81 将默认角色切换为 6 帧 PNG 后，原来由 `pedalTargets()` 驱动的两脚绕曲柄运动被简化成了左右 ±5px 的正弦偏移；默认角色看起来像把脚固定在横向滑动的踏板上。旧 SVG Rig 路径保留在仓库里，但不再作为首页人物渲染器使用。
+
+- `scripts/export-rider-frames.py` 重新复用 `compact-side-right-v1.json` 中的 `crank.center/radius` 轨迹，前后脚按严格 180° 相位差逐帧输出。
+- bike 的每个 plain/pack 序列改为 **12 帧、12 FPS**，wheel 和踏板随相位一起烘焙到 PNG；walk 六帧与既有头部素材不变。
+- 自行车的 SVG 源文件不进入运行时；为方便 Windows 上不安装 Cairo 也能重新导出，提供由相同 SVG 渲染的 `bike-frame.png`、`bike-wheel.png` 两份构建输入。
+- Chrome 在 `LAPTOP-PJM7MTNJ` 的 `/rider-preview?preset=helmet-commuter&mode=bike` 验收，实际 frame-body URL 随时间变化、128×100 PNG 正确解码，截图归档于 `docs/qa/riders/helmet-pedaling-restored-windows.png`。
+- 这是 PNG 离散 12 帧复原，不等同于旧运行时的无限细分实时关节/车轮旋转；若需要更平滑的轮轴运动，应在未来单独升级 PNG/Vehicle Pack 合同，而不是重新启用已停用的 SVG runtime。

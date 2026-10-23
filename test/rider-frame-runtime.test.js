@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import {createHash} from "node:crypto";
 import {frameState,frameNumber,resolveAppearance} from "../public/rider-frame-runtime.js";
 import {normalizeRiderAppearance,createWebUser,updateWebUserRiderAppearance,readDenglemaUser} from "../src/denglema-state.js";
 import {mkdtemp,rm} from "node:fs/promises";
@@ -13,7 +14,9 @@ test("PNG character catalog provides real transparent 128x100 frames in all vari
  assert.equal(manifest.schema_version,2);
  const preset=JSON.parse(await readFile(join(root,"riders/frames/helmet-commuter/manifest.json"),"utf8"));
  const paths=[...Object.values(preset.heads),...Object.values(preset.transports).flatMap(t=>Object.values(t.layers).flat())];
- assert.equal(paths.length,28);
+ assert.equal(preset.transports.bike.frames,12,"pedaling is baked in twelve crank phases");
+ assert.equal(preset.transports.bike.fps,12);
+ assert.equal(paths.length,4+2*(12+6));
  for(const url of paths){
    assert.match(url,/^[a-z0-9/_-]+\.png$/);
    const buffer=await readFile(join(root,"riders/frames/helmet-commuter",url));
@@ -21,6 +24,20 @@ test("PNG character catalog provides real transparent 128x100 frames in all vari
    assert.equal(buffer.readUInt32BE(16),128);
    assert.equal(buffer.readUInt32BE(20),100);
    assert.equal(buffer[25],6,"RGBA PNG alpha required");
+ }
+});
+test("helmet bike uses a complete distinct 12-phase pedal cycle in both pack variants",async()=>{
+ const preset=JSON.parse(await readFile(join(root,"riders/frames/helmet-commuter/manifest.json"),"utf8"));
+ const bike=preset.transports.bike;
+ assert.equal(bike.frames,12);
+ assert.equal(bike.fps,12);
+ for(const variant of ["plain","pack"]){
+  const hashes=[];
+  for(const name of bike.layers[variant]){
+   const data=await readFile(join(root,"riders/frames/helmet-commuter",name));
+   hashes.push(createHash("sha256").update(data).digest("hex"));
+  }
+  assert.equal(new Set(hashes).size,12,"every pedal/wheel phase should render a distinct PNG: "+variant);
  }
 });
 test("frame presenter is PNG-only, supports emoji head and honors reduced-motion frame zero",()=>{
