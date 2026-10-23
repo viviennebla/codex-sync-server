@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>蹬了吗 · 默认人物拼装验收</title>
+<title>蹬了吗 · 六角色拼装验收</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/rider-frame-runtime.css">
 <style>
@@ -37,7 +37,7 @@
 </style>
 </head>
 <body><main>
-  <h1>头盔通勤客 · 拼装与动画验收</h1>
+  <h1>六角色 · 拼装与动画验收</h1>
   <p class="sub">逐帧 PNG + 头部叠层渲染。这里显示程序拼好的效果，不是 AI 概念渲染。仅用于视觉验收，不连接账号、Usage 或线上赛道。</p>
   <div class="tabs" id="modes" aria-label="人物状态">
     <button data-state="bike" aria-pressed="true">🚲 骑行</button>
@@ -48,10 +48,10 @@
     <button data-state="focused" aria-pressed="false">专注</button>
     <button data-state="tired" aria-pressed="false">疲惫 / 刹车</button>
     <button data-state="coasting" aria-pressed="false">滑行</button>
-    <button data-state="scooter" aria-pressed="false">滑板车（待 PNG）</button>
-    <button data-state="skateboard" aria-pressed="false">滑板（待 PNG）</button>
-    <button data-state="surf" aria-pressed="false">冲浪（待 PNG）</button>
-    <button data-state="skate" aria-pressed="false">轮滑（待 PNG）</button>
+    <button data-state="scooter" aria-pressed="false">滑板车</button>
+    <button data-state="skateboard" aria-pressed="false">滑板</button>
+    <button data-state="surf" aria-pressed="false">冲浪</button>
+    <button data-state="skate" aria-pressed="false">轮滑</button>
   </div>
   <label>角色：<select id="previewPreset"></select></label>
   <div class="grid">
@@ -59,7 +59,7 @@
     <section class="panel"><h2>小尺寸可读性 · 约 70% 比例</h2><div class="scene"><div id="tinyRider" class="rider" style="transform:translate(-50%,-40%) scale(.64)"><div class="rider-motion"></div></div></div><p class="label">模拟拥挤赛道下的小角色</p></section>
   </div>
   <div class="metrics">
-    <div class="small"><strong>当前素材</strong>24 张透明 PNG 主体帧 + 4 张 PNG 表情头</div>
+    <div class="small"><strong>当前素材</strong>按当前角色自动加载透明 PNG 帧与表情头</div>
     <div class="small"><strong>骨架管理</strong>128×100 统一帧画布</div>
     <div class="small"><strong>状态切换</strong>PNG 循环帧 + 独立 PNG 表情头</div>
   </div>
@@ -67,7 +67,7 @@
 </main>
 <script type="module">
 import {loadFrameCatalog,mountFrameRider,disposeFrameRider} from "/rider-frame-runtime.js";
-const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 暂无专属 PNG",skateboard:"滑板 · 暂无专属 PNG",surf:"冲浪 · 暂无专属 PNG",skate:"轮滑 · 暂无专属 PNG"};
+const main=document.getElementById("mainRider"), tiny=document.getElementById("tinyRider"), labels={bike:"自行车 · 踩踏循环（双轮旋转）",walk:"步行 · 六段落脚姿态",idle:"待机",happy:"开心 · 独立头部素材","bike-happy":"骑车 + 开心头部",focused:"专注 · 独立头部素材",tired:"疲惫 / 刹车",coasting:"滑行 · 车轮继续滚动",scooter:"滑板车 · 角色素材按需播放",skateboard:"滑板 · 角色素材按需播放",surf:"冲浪 · 角色素材按需播放",skate:"轮滑 · 角色素材按需播放"};
 let catalog=null;let selectedState="bike";
 function stateClass(node,state) {
  node.classList.remove("is-chill","is-tired","is-fast","is-celebrating","is-coasting","is-bonking","is-waving");

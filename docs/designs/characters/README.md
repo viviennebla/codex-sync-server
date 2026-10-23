@@ -18,3 +18,13 @@
 
 - 本目录仅保留用户明确确认的参考母版；未确认的 AI 候选图和临时演示图不应入库。
 - 开发截图统一放 [`docs/qa/riders/`](../../qa/riders/README.md) 并保留文档引用。不能把这些历史截图误标为审定设计稿。
+
+## 2026-10-23 工程实现
+
+六角色设计稿继续作为权威视觉基准。除原有头盔通勤客外，`public/riders/frames/` 新增泡泡套装客、胶囊连帽客、雨衣豆豆客、迷你机器人客和软萌团子客五套原创透明 PNG 帧角色。
+
+- 生成脚本：`scripts/generate-approved-mascot-packs.py`（基于轮廓、配色和元素重绘，不对审定海报直接裁剪）
+- 所有角色均提供 walk 6 帧，bubble-suit / capsule-hoodie / mini-robot / fluffy-bun 另有 scooter / skateboard / surf / skate 各 6 帧；提供 plain/pack 与四种表情头
+- 本地 `/rider-preview` 可选择全部六角色，未登记的交通方式按 Rider Pack 合同回退 walk
+- Chromium 1440×900、375×812 本地验收六角色切换：PNG 均实际解码，JS error 和资源失败数为 0；`npm run riders:validate` 与 `npm test` 通过
+- **美术限制**：这是原稿导向的首版工程 PNG 重绘，并非原图直接切帧或专业逐帧精绘；需进行用户最终审美验收

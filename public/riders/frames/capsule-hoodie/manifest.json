@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "id": "capsule-hoodie",
+  "label": "胶囊连帽客",
+  "description": "基于 2026-10-22 六角色审定原稿独立绘制的逐帧 PNG 角色。",
+  "canvas": {
+    "width": 128,
+    "height": 100
+  },
+  "heads": {
+    "neutral": "heads/neutral.png",
+    "happy": "heads/happy.png",
+    "focused": "heads/focused.png",
+    "tired": "heads/tired.png"
+  },
+  "emoji_head": {
+    "left_percent": 58,
+    "top_percent": 42,
+    "font_size_px": 22,
+    "visor_width_px": 23,
+    "visor_height_px": 24
+  },
+  "fallback_transport": "walk",
+  "transports": {
+    "walk": {
+      "frames": 6,
+      "fps": 8,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "plain": [
+          "walk/plain/00.png",
+          "walk/plain/01.png",
+          "walk/plain/02.png",
+          "walk/plain/03.png",
+          "walk/plain/04.png",
+          "walk/plain/05.png"
+        ],
+        "pack": [
+          "walk/pack/00.png",
+          "walk/pack/01.png",
+          "walk/pack/02.png",
+          "walk/pack/03.png",
+          "walk/pack/04.png",
+          "walk/pack/05.png"
+        ]
+      }
+    },
+    "skateboard": {
+      "frames": 6,
+      "fps": 10,
+      "head_offset": {
+        "x": 0,
+        "y": 0
+      },
+      "layers": {
+        "plain": [
+          "skateboard/plain/00.png",
+          "skateboard/plain/01.png",
+          "skateboard/plain/02.png",
+          "skateboard/plain/03.png",
+          "skateboard/plain/04.png",
+          "skateboard/plain/05.png"
+        ],
+        "pack": [
+          "skateboard/pack/00.png",
+          "skateboard/pack/01.png",
+          "skateboard/pack/02.png",
+          "skateboard/pack/03.png",
+          "skateboard/pack/04.png",
+          "skateboard/pack/05.png"
+        ]
+      }
+    }
+  }
+}
