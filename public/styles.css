@@ -2516,14 +2516,17 @@ button { font: inherit; }
 }
 .event-rail-head {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   padding: 2px 8px 0;
 }
 .event-rail-head > div {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 6px;
 }
 .event-rail-head strong {
   font-size: 14px;
@@ -2533,6 +2536,23 @@ button { font: inherit; }
   color: #847b74;
   font-size: 10px;
   font-weight: 800;
+}
+.event-filter {
+  flex: 0 0 auto;
+  max-width: 94px;
+  padding: 5px 6px;
+  border: 1px solid rgba(39,49,60,.16);
+  border-radius: 12px;
+  background: rgba(255,250,240,.94);
+  color: #53504b;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.event-filter:focus-visible {
+  outline: 2px solid #7481ad;
+  outline-offset: 2px;
 }
 .event-list {
   min-height: 90px;
@@ -2693,6 +2713,9 @@ button { font: inherit; }
     padding: 8px;
     border-radius: 20px;
   }
+  .event-rail-head span { display: none; }
+  .event-rail-head { padding: 2px 2px 0; }
+  .event-filter { max-width: 91px; }
   .event-item {
     grid-template-columns: 26px minmax(0,1fr);
     gap: 7px;
