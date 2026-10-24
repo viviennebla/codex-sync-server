@@ -2,6 +2,8 @@
 
 > Status: schema v2 · harness-agnostic
 
+> 本合同只定义公开榜单所需的 **Daily Cumulative Sample**，不包含私有 Session 事件；统一 Usage 模型与迁移边界见 [Unified Usage Data Model](./unified-usage-data-model.md)。
+
 蹬了吗只定义“如何把一个 Agent Harness 的当天累计 usage 交给服务端”。它不要求数据来自 Codex。
 
 Codex、Cursor、Claude Code 或其他 Agent Harness 都可以作为 adapter，只要最终产出同一份 cumulative daily sample。
